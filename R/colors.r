@@ -1,0 +1,91 @@
+# ===============================================================================
+#
+# PROGRAMMERS:
+#
+# jean-romain.roussel.1@ulaval.ca  -  https://github.com/Jean-Romain/lidR
+#
+# COPYRIGHT:
+#
+# Copyright 2016 Jean-Romain Roussel
+#
+# This file is part of lidR R package.
+#
+# lidR is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
+#
+# ===============================================================================
+
+
+
+#' Automatic colorization
+#'
+#' Attribute a color to each element of a vector
+#'
+#' @param x A vector
+#' @param palette function. A color palette function. Default is \code{height.colors} provided by the package lidR
+#' @param ncolors numeric. The number of colors in the palette.
+#' @param trim numeric.
+set.colors = function(x, palette, ncolors = 50, trim = 1)
+{
+
+  if(trim < 1)
+  {
+    n = x %>% stats::quantile(trim)
+    x[x > n] = n
+  }
+
+  if(diff(range(x, na.rm = T)) == 0)
+    colors = palette(ncolors)[1]
+  else
+    colors = palette(ncolors)[as.numeric(cut(x, breaks = ncolors))]
+
+	return(colors)
+}
+
+#' Palettes
+#'
+#' Create a vector of n contiguous colors
+#'
+#' @param n The number of colors (> 1) to be in the palette
+#' @family lidrpalettes
+#' @name lidrpalettes
+#' @seealso \link[grDevices:heat.colors]{grDevices::Palettes}
+NULL
+
+#' @export
+#' @rdname lidrpalettes
+#' @family lidrpalettes
+height.colors = function(n)
+{
+  colfunc <- grDevices::colorRampPalette(c("blue", "cyan2", "green3", "yellow", "red"))
+  return(colfunc(n))
+}
+
+#' @export
+#' @rdname lidrpalettes
+#' @family lidrpalettes
+forest.colors = function(n)
+{
+  colfunc <- grDevices::colorRampPalette(c("darkgreen", "lightgreen"))
+  return(colfunc(n))
+}
+
+
+#' @export
+#' @rdname lidrpalettes
+#' @family lidrpalettes
+random.colors = function(n)
+{
+  colfunc <- grDevices::colorRampPalette(sample(grDevices::colors(distinct = T), n))
+  return(colfunc(n))
+}
