@@ -19,6 +19,4 @@ Create a \code{LAS} object
 }
 \seealso{
 \link[lidR:LAS]{Class LAS}
-\link[lidR:summary]{summary}
 }
-
