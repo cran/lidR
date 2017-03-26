@@ -30,7 +30,7 @@
 #' Individual tree segmentation with several possible algorithms (see details). The function
 #' attributes to each point of the point cloud a number identifying the detected tree
 #' the point comes from (\code{treeID} column). By default the classification is done at the
-#' point level. However, with some algorithms it is possible to return a raster image of the
+#' point cloud level. However, with some algorithms it is possible to return a raster image of the
 #' classification. There are currently 3 algorithms implemented. See relevant sections.
 #'
 #' @param .las An object of the class \code{LAS}
@@ -52,7 +52,7 @@
 #'
 #' This is the algorithm developed by Dalponte and Coomes (see references). This algorithm exists
 #' in the package \pkg{itcSegment}. This version is identical to the original but with
-#' superfluous code removed and rewritten in pure C++. Consequently it is 6 times faster.
+#' superfluous code removed and rewritten in C++. Consequently it is 6 times faster.
 #' Note that this algorithm strictly performs a segmentation while the original method as implemented
 #' in \code{itcSegment} and described in the manuscript also performs a pre- and post-process when
 #' these tasks are expected to be done by the user.
@@ -111,22 +111,13 @@
 #' chm = raster::focal(chm, w = kernel, fun = mean)
 #' raster::plot(chm, col = height.colors(50)) # check the image
 #'
-#' # segmentation (default parameters but th = 4 + extra output)
-#' extra = lastrees(las, "dalponte2016", chm, th = 4, extra = TRUE)
+#' # segmentation
+#' lastrees(las, "dalponte2016", chm, th = 5)
 #'
 #' # plot points that actually are trees
 #' trees = lasfilter(las, !is.na(treeID))
 #' plot(trees, color = "treeID", colorPalette = random.colors(100))
 #'
-#' \dontrun{
-#' lastrees(las, "watershed", chm, th = 4)
-#'
-#' tree = lasfilter(las, !is.na(treeID))
-#' plot(tree, color = "treeID", colorPalette = random.colors(100))
-#'
-#' lastrees(las, "li2012")
-#' plot(las, color = "treeID", colorPalette = random.colors(100))
-#' }
 #' @references
 #' Dalponte, M. and Coomes, D. A. (2016), Tree-centric mapping of forest carbon density from
 #' airborne laser scanning and hyperspectral data. Methods Ecol Evol, 7: 1236–1245. doi:10.1111/2041-210X.12575\cr\cr
@@ -153,8 +144,8 @@ dalponte2012 = function(.las, image, extra, searchWinSize = 3, TRESHSeed = 0.45,
   l = dim(image)[1]
   w = dim(image)[2]
 
-  Canopy <- matrix(w, l, data = image, byrow = FALSE)
-  Canopy <- Canopy[1:w, l:1]
+  Canopy <- raster::as.matrix(image)
+  Canopy <- t(apply(Canopy, 2, rev))
   Canopy[is.na(Canopy) | Canopy < th] <- 0
 
   Maxima = itc_treetops(Canopy, searchWinSize)
@@ -186,7 +177,9 @@ li2012 = function(.las, dt1 = 1.5, dt2 = 2, R = 10)
 
   id = algo_li2012(.las@data$X, .las@data$Y, .las@data$Z, c(dt1, dt2), R = R)
 
-  .las@data[, treeID := id]
+  .las@data[, treeID := id][]
+
+  return(invisible())
 }
 
 watershed = function(.las, image, extra, th = 2, tolerance = 1, ext = 1)
@@ -194,8 +187,8 @@ watershed = function(.las, image, extra, th = 2, tolerance = 1, ext = 1)
   l = dim(image)[1]
   w = dim(image)[2]
 
-  Canopy <- matrix(w, l, data = image, byrow = FALSE)
-  Canopy <- Canopy[1:w, l:1]
+  Canopy <- raster::as.matrix(image)
+  Canopy <- t(apply(Canopy, 2, rev))
   Canopy[Canopy < th] <- NA
 
   if (!requireNamespace("EBImage", quietly = TRUE))

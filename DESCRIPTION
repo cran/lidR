@@ -2,8 +2,8 @@ Package: lidR
 Type: Package
 Title: Airborne LiDAR Data Manipulation and Visualization for Forestry
         Applications
-Version: 1.1.0
-Date: 2017-02-05
+Version: 1.2.0
+Date: 2017-03-26
 Authors@R: c(
     person("Jean-Romain", "Roussel", email = "jean-romain.roussel.1@ulaval.ca", role = c("aut", "cre", "cph")),
     person("David", "Auty", email = "", role = c("aut", "ctb"), comment = "Reviews the documentation"),
@@ -19,32 +19,33 @@ BugReports: https://github.com/Jean-Romain/lidR/issues
 License: GPL-3
 Depends: R (>= 3.1.0),magrittr,methods
 Imports: rlas (>=
-        1.1.0),rgl,stats,utils,grDevices,tools,parallel,raster,rgeos,data.table,RANN,Rcpp,lazyeval
-Suggests: rgdal,akima,gstat,sp,testthat,EBImage
+        1.1.0),rgl,stats,utils,grDevices,tools,parallel,raster,rgeos,data.table,RANN,Rcpp,lazyeval,geometry,gstat
+Suggests: rgdal,sp,testthat,EBImage,hexbin
 LazyData: true
-RoxygenNote: 6.0.0
-LinkingTo: Rcpp
+RoxygenNote: 6.0.1
+LinkingTo: Rcpp,RcppProgress
 Encoding: UTF-8
 biocViews:
 Collate: 'RcppExports.R' 'catalog.r' 'catalog_apply.r'
         'catalog_index.r' 'catalog_query.r' 'catalog_select.r'
         'deprecated.r' 'grid_canopy.r' 'grid_density.r'
-        'grid_metrics.r' 'grid_metrics3d.r' 'grid_terrain.r'
-        'lasheader-class.r' 'las-class.r' 'lasarea.r' 'lascheck.r'
-        'lasclassify.r' 'lasclip.r' 'lascolor.r' 'lasdecimate.r'
-        'lasextent.r' 'lasfilter.r' 'lasindentify.r' 'lasmetrics.r'
+        'grid_hexametrics.r' 'grid_metrics.r' 'grid_metrics3d.r'
+        'grid_terrain.r' 'grid_tincanopy.r' 'lasheader-class.r'
+        'las-class.r' 'lasarea.r' 'lascheck.r' 'lasclassify.r'
+        'lasclip.r' 'lascolor.r' 'lasdecimate.r' 'lasextent.r'
+        'lasfilter.r' 'lasground.r' 'lasindentify.r' 'lasmetrics.r'
         'lasnormalize.r' 'lasroi.r' 'lassummary.r' 'lastrees.r'
         'lidRError.r' 'metrics.r' 'mutatebyref.r' 'plot.catalog.r'
-        'plot.las.r' 'plot.lasmetrics.r' 'plot.lasmetrics3d.r'
-        'plot3d.r' 'readLAS.r' 'utils_colors.r' 'utils_geometry.r'
-        'utils_interpolations.r' 'utils_misc.r' 'utils_typecast.r'
-        'writeLAS.r' 'zzz.r'
+        'plot.las.r' 'plot.lashexametrics.r' 'plot.lasmetrics.r'
+        'plot.lasmetrics3d.r' 'plot3d.r' 'readLAS.r' 'utils_colors.r'
+        'utils_geometry.r' 'utils_interpolations.r' 'utils_misc.r'
+        'utils_typecast.r' 'writeLAS.r' 'zzz.r'
 NeedsCompilation: yes
-Packaged: 2017-02-05 22:21:43 UTC; jr
+Packaged: 2017-03-26 13:34:35 UTC; jr
 Author: Jean-Romain Roussel [aut, cre, cph],
   David Auty [aut, ctb] (Reviews the documentation),
   Florian De Boissieu [ctb] (Fixed bugs and improved catalog features),
   Andrew Sánchez Meador [ctb] (Helped to review the documentation)
 Maintainer: Jean-Romain Roussel <jean-romain.roussel.1@ulaval.ca>
 Repository: CRAN
-Date/Publication: 2017-02-06 00:11:41
+Date/Publication: 2017-03-26 16:12:04 UTC

@@ -95,6 +95,34 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_normales
+NumericMatrix get_normales(IntegerMatrix M, NumericMatrix X, int size, bool edge_size);
+RcppExport SEXP lidR_get_normales(SEXP MSEXP, SEXP XSEXP, SEXP sizeSEXP, SEXP edge_sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerMatrix >::type M(MSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type X(XSEXP);
+    Rcpp::traits::input_parameter< int >::type size(sizeSEXP);
+    Rcpp::traits::input_parameter< bool >::type edge_size(edge_sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_normales(M, X, size, edge_size));
+    return rcpp_result_gen;
+END_RCPP
+}
+// MorphologicalOpening
+NumericVector MorphologicalOpening(NumericVector X, NumericVector Y, NumericVector Z, double resolution);
+RcppExport SEXP lidR_MorphologicalOpening(SEXP XSEXP, SEXP YSEXP, SEXP ZSEXP, SEXP resolutionSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type X(XSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type Y(YSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type Z(ZSEXP);
+    Rcpp::traits::input_parameter< double >::type resolution(resolutionSEXP);
+    rcpp_result_gen = Rcpp::wrap(MorphologicalOpening(X, Y, Z, resolution));
+    return rcpp_result_gen;
+END_RCPP
+}
 // point_in_polygon
 bool point_in_polygon(NumericVector vertx, NumericVector verty, float pointx, float pointy);
 RcppExport SEXP lidR_point_in_polygon(SEXP vertxSEXP, SEXP vertySEXP, SEXP pointxSEXP, SEXP pointySEXP) {

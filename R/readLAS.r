@@ -122,9 +122,23 @@ readLAS = function(files,
 
   data = lapply(files, function(file)
   {
-    rlas::readlasdata(file, Intensity, ReturnNumber, NumberOfReturns,
-                      ScanDirectionFlag, EdgeOfFlightline, Classification,
-                      ScanAngle, UserData, PointSourceID, RGB, filter)
+    header = rlas::readlasheader(file)
+    data   = rlas::readlasdata(file, Intensity, ReturnNumber, NumberOfReturns,
+                               ScanDirectionFlag, EdgeOfFlightline, Classification,
+                               ScanAngle, UserData, PointSourceID, RGB, filter)
+
+    # Can happend if filter is badly used
+    if(dim(data)[1] == 0)
+       return(NULL)
+
+    # If filter is used, obviously header would not be in accordance with the data.
+    # Thus, hard check is useless
+    if(nchar(filter) > 0)
+      lascheck(data, header, hard = F)
+    else
+      lascheck(data, header, hard = T)
+
+    return(data)
   })
 
   data = data.table::rbindlist(data)
@@ -134,7 +148,7 @@ readLAS = function(files,
 
   header = rlas::readlasheader(files[1])
 
-  las = LAS(data, header)
+  las = LAS(data, header, check = F)
 
   if(pulseID)
     laspulse(las)

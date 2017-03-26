@@ -32,8 +32,6 @@
 #' Interpolate ground points and create a rasterized digital terrain model. The interpolation
 #' can be done using 3 methods: \code{"knnidw"}, \code{"delaunay"} or \code{"kriging"} (see
 #' details). The algorithm uses the points classified as "ground" to compute the interpolation.
-#' The function forces the original lowest ground point of each pixel (if it exists) to be
-#' chosen instead of the interpolated values.
 #'
 #' \describe{
 #' \item{\code{knnidw}}{Interpolation is done using a k-nearest neighbour (KNN) approach with
@@ -52,9 +50,11 @@
 #' @param res numeric resolution.
 #' @param method character can be \code{"knnidw"}, \code{"delaunay"} or \code{"kriging"} (see details)
 #' @param k numeric. number of k-nearest neighbours when the selected method is either \code{"knnidw"} or \code{"kriging"}
-#' @param model a variogram model computed with \link[gstat:vgm]{vgm} when the selected method is \code{"kriging"}.
-#' If null it performs an ordinary or weighted least squares prediction.
-#' @return A \code{RasterLayer} from package raster
+#' @param model a variogram model computed with \link[gstat:vgm]{vgm} when the selected method
+#' is \code{"kriging"}. If null it performs an ordinary or weighted least squares prediction.
+#' @param keep_lowest logical. The function forces the original lowest ground point of each
+#' pixel (if it exists) to be chosen instead of the interpolated values.
+#' @return A \code{lasmetrics} data.table.
 #' @export
 #' @examples
 #' LASfile <- system.file("extdata", "Topography.laz", package="lidR")
@@ -81,7 +81,7 @@
 #' \link[akima:interp]{interp}
 #' \link[lidR:lasnormalize]{lasnormalize}
 #' \link[raster:raster]{RasterLayer}
-grid_terrain = function(.las, res = 1, method, k = 10L, model = gstat::vgm(.59, "Sph", 874))
+grid_terrain = function(.las, res = 1, method, k = 10L, model = gstat::vgm(.59, "Sph", 874), keep_lowest = FALSE)
 {
   . <- X <- Y <- Z <- NULL
 
@@ -94,21 +94,6 @@ grid_terrain = function(.las, res = 1, method, k = 10L, model = gstat::vgm(.59, 
 
   ground  = ground@data[, .(X,Y,Z)]
 
-  # test integrity of the data
-  dup_xyz  = duplicated(ground, by = c("X", "Y", "Z"))
-  dup_xy   = duplicated(ground, by = c("X", "Y"))
-  ndup_xyz = sum(dup_xyz)
-  ndup_xy  = sum(dup_xy & !dup_xyz)
-
-  if(ndup_xyz > 0)
-    warning(paste("There were",  ndup_xyz, "ground points with duplicated X Y Z coordinates. They were removed."), call. = FALSE)
-
-  if(ndup_xy > 0)
-    warning(paste("There were", ndup_xy, "duplicated ground points. Some X Y coordinates were repeated but with different Z coordinates. min Z were retained."), call. = FALSE)
-
-  if(ndup_xy > 0 | ndup_xyz > 0)
-    ground = ground[, .(Z = min(Z)), by = .(X,Y)]
-
   ext  = extent(.las)
   grid = make_grid(ext@xmin, ext@xmax, ext@ymin, ext@ymax, res)
 
@@ -116,9 +101,12 @@ grid_terrain = function(.las, res = 1, method, k = 10L, model = gstat::vgm(.59, 
 
   grid[, Z := round(Zg, 3)]
 
-  # force ground point to be dominant
-  grid = rbind(grid, grid_metrics(lasfilterground(.las), list(Z = min(Z)), res))
-  grid = grid[, list(Z = min(Z)), by = .(X,Y)]
+  # force lowest ground point to be dominant
+  if(keep_lowest)
+  {
+    grid = rbind(grid, grid_metrics(lasfilterground(.las), list(Z = min(Z)), res))
+    grid = grid[, list(Z = min(Z)), by = .(X,Y)]
+  }
 
   as.lasmetrics(grid, res)
 
