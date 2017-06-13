@@ -14,7 +14,9 @@
 \alias{.stdmetrics_pulse}
 \alias{stdmetrics_ctrl}
 \alias{.stdmetrics_ctrl}
-\title{Predefined standard metrics function}
+\alias{stdtreemetrics}
+\alias{.stdtreemetrics}
+\title{Predefined standard metrics functions}
 \format{An object of class \code{expression} of length 1.}
 \usage{
 stdmetrics(x, y, z, i, a, rn, class, pulseID, dz = 1)
@@ -40,6 +42,10 @@ stdmetrics_pulse(pulseID, rn)
 stdmetrics_ctrl(x, y, z, a)
 
 .stdmetrics_ctrl
+
+stdtreemetrics(x, y, z)
+
+.stdtreemetrics
 }
 \arguments{
 \item{x, y, z, i, a}{Coordinates of the points, Intensity and ScanAngle}
@@ -51,7 +57,7 @@ stdmetrics_ctrl(x, y, z, a)
 \item{dz}{Layer thickness for metrics requiring this data, such as \link[lidR:entropy]{entropy}}
 }
 \description{
-Predefined functions usable in \link[lidR:grid_metrics]{grid_metrics} and \link[lidR:lasmetrics]{lasmetrics}
+Predefined functions usable in \link{grid_metrics}, \link{grid_hexametrics}, \link{lasmetrics}, \link{tree_metrics},
 and their convenient shortcuts. The philosophy of the \code{lidR} package is to provide an easy way
 to compute user-defined metrics rather than to provide them. However, for efficiency and to save time, a set of
 standard metrics has been predefined. To use these functions please read the Details and Examples sections.
@@ -77,7 +83,10 @@ values, but if the elevation values are provided it can compute additional metri
 intensity at a given percentile of height.\cr\cr
 Each function has a convenient associated variable. It is the name of the function, with a
 dot before the name. This enables the function to be used without writing parameters. The cost
-of such a feature is inflexibility. It corresponds to a predefined behaviour (see examples)
+of such a feature is inflexibility. It corresponds to a predefined behaviour (see examples)\cr\cr
+\code{stdtreemetrics} is a special function which works with \link{tree_metrics}. Actually
+it won't fail with other functions but the output make sense more sense if computed at the
+individual tree level.
 }
 \examples{
 LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
@@ -88,7 +97,7 @@ lidar \%>\% grid_metrics(stdmetrics(X,Y,Z,Intensity, ScanAngle,
                                   ReturnNumber, Classification, pulseID,
                                   dz = 1))
 
-# Super convenient shortcut
+# Convenient shortcut
 lidar \%>\% grid_metrics(.stdmetrics)
 
 # Basic metrics from intensities
@@ -97,7 +106,7 @@ lidar \%>\% grid_metrics(stdmetrics_i(Intensity))
 # All the metrics from intensities
 lidar \%>\% grid_metrics(stdmetrics_i(Intensity, Z, Classification, ReturnNumber))
 
-# Super convenient shortcut
+# Convenient shortcut for the previous example
 lidar \%>\% grid_metrics(.stdmetrics_i)
 
 # Compute the metrics only on first return
@@ -106,8 +115,9 @@ lidar \%>\% lasfilterfirst \%>\% grid_metrics(.stdmetrics_z)
 # Compute the metrics with a threshold at 2 meters
 lidar \%>\% lasfilter(Z > 2) \%>\% grid_metrics(.stdmetrics_z)
 
-# Works also with lasmetrics
+# Works also with lasmetrics and grid_hexametrics
 lidar \%>\% lasmetrics(.stdmetrics)
+lidar \%>\% grid_hexametrics(.stdmetrics)
 
 # Combine some predefined function with your own new metrics
 # Here convenient shortcuts are no longer usable.
@@ -124,13 +134,16 @@ myMetrics = function(z, i)
 
 lidar \%>\% grid_metrics(myMetrics(Z, Intensity))
 
-# You can write your own convenient shorcut like this:
+# You can write your own convenient shorcuts like this:
 .myMetrics = expression(myMetrics(Z,Intensity))
 
 lidar \%>\% grid_metrics(.myMetrics)
 }
 \seealso{
-\link[lidR:grid_metrics]{grid_metrics}
-\link[lidR:lasmetrics]{lasmetrics}
+\link{grid_metrics}
+\link{lasmetrics}
+\link{grid_hexametrics}
+\link{grid_metrics3d}
+\link{tree_metrics}
 }
 \keyword{datasets}

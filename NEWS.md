@@ -1,4 +1,32 @@
-### lidR v1.2.0 (in development)
+### lidR v1.2.1 (Release data: 2017-06-12)
+
+#### NEW FEATURES
+
+* new function `tree_metrics`.
+* new function `stdtreemetrics`.
+* `grid_tincanopy()` gains a parameter `subcircle` like `grid_canopy()`
+* new function `rumple_index` for measuring roughness of a digital model (terrain or canopy)
+* global options to parameterize the package - avaible with `lidr_options()`
+
+#### BUG FIXES
+
+* Installation fails if package sp is missing.
+* Memory leak in QuadTree algorithm. Memory is now free after QuadTree deletion.
+* Dalponte's algorithm had a bug due to the use of std::abs which works with intergers. Replaced by std::fabs which works with doubles.
+* In `grid_tincanopy` `x > 0` was replaced by `x >= 0` to avoid errors in the canopy height models
+* Triangle boudaries are now taken into account in the rasterization of the Delaunay triangulation
+
+#### OTHER CHANGES
+
+* `lastrees` Li et al. algorithm for tree segmentation is now ten to a thousand of times faster than in v1.2.0
+* `grid_terrain`, the interpolation is now done only within the convex hull of the point cloud
+* `grid_tincanopy` makes the triangulation only for highest return per grid cell.
+* `grid_tincanopy` and `grid_terrain` using Delaunay triangulation is now ten to a hundred times faster than in v1.2.0
+* `as.raster` now relies on `sp` and is more flexible
+* `as.raster` automatically returns a `RasterStack` if no layer is provided.
+* `plot.lasmetrics` inherits `as.raster` changes and can display a `RasterStack`
+
+### lidR v1.2.0 (Release date: 2017-03-26)
 
 #### NEW FEATURES
 
@@ -16,12 +44,10 @@
 * Fix bug in `stdmetric_z` when `max(Z) = 0`
 * [[#54](https://github.com/Jean-Romain/lidR/pull/54)] better recomputation of the header of LAS objects.
 
-
 #### OTHER CHANGES
 
 * Slightly faster point classification from shapefiles.
 * [[#51](https://github.com/Jean-Romain/lidR/pull/51)] in `grid_terrain`, forcing the lowest point to be retained is now an option `keep_lowest = FALSE`
-
 
 ### lidR v1.1.0 (Release date: 2017-02-05)
 

@@ -38,7 +38,7 @@
 #' \code{"watershed"} or \code{"li2012"} (see sections relevant to each algorithm).
 #' @param image RasterLayer. Image of the canopy if the algorithm works on a canopy surface model.
 #' But some algorithms work on the raw point cloud (see relevant sections). You can compute
-#' it with \link{grid_canopy} or read it from external file.
+#' it with \link{grid_canopy} or \link{grid_tincanopy} or read it from external file.
 #' @param ... parameters for the algorithms. These depend on the algorithm used (see details about the algorithms)
 #' @param extra logical. By default the function works at the point cloud level and returns nothing.
 #' If \code{extra = TRUE} the function can return a \link[raster:raster]{RasterLayer} or a list of 2 RasterLayers
@@ -46,7 +46,7 @@
 #'
 #' @return Nothing, the point cloud is updated by reference. If \code{extra = TRUE},
 #' \code{"dalponte2012"} returns two RasterLayers, \code{"watershed"} returns one RasterLayer
-#' and \code{"Li2012"} does not support the \code{extra} parameter.
+#' and \code{"li2012"} does not support the \code{extra} parameter.
 #'
 #' @section Dalponte 2016:
 #'
@@ -117,18 +117,17 @@
 #' # plot points that actually are trees
 #' trees = lasfilter(las, !is.na(treeID))
 #' plot(trees, color = "treeID", colorPalette = random.colors(100))
-#'
 #' @references
 #' Dalponte, M. and Coomes, D. A. (2016), Tree-centric mapping of forest carbon density from
 #' airborne laser scanning and hyperspectral data. Methods Ecol Evol, 7: 1236–1245. doi:10.1111/2041-210X.12575\cr\cr
 #' Li, W., Guo, Q., Jakubowski, M. K., & Kelly, M. (2012). A new method for segmenting individual
 #' trees from the lidar point cloud. Photogrammetric Engineering & Remote Sensing, 78(1), 75-84.
 #' @export
-lastrees <-function(.las, algorithm, image = NULL, ..., extra = FALSE)
+lastrees <- function(.las, algorithm, image = NULL, ..., extra = FALSE)
 {
-  if(algorithm == "dalponte2016" )
+  if (algorithm == "dalponte2016" )
     return(dalponte2012(.las, image, extra, ...))
-  else if(algorithm == "watershed")
+  else if (algorithm == "watershed")
     return(watershed(.las, image, extra, ...))
   else if (algorithm == "li2012")
     return(li2012(.las, ...))
@@ -158,7 +157,7 @@ dalponte2012 = function(.las, image, extra, searchWinSize = 3, TRESHSeed = 0.45,
 
   lasclassify(.las, Crowns, "treeID")
 
-  if(extra == FALSE)
+  if (extra == FALSE)
     return(invisible(NULL))
   else
   {
@@ -173,9 +172,12 @@ li2012 = function(.las, dt1 = 1.5, dt2 = 2, R = 10)
 {
   treeID <- NULL
 
-  data.table::setorderv(.las@data, "Z", order=-1L)
+  if (dt1 > dt2)  stop("dt1 greater than dt2", call. = FALSE)
+  if (R <= 0)     stop("R <= 0", call. = FALSE)
 
-  id = algo_li2012(.las@data$X, .las@data$Y, .las@data$Z, c(dt1, dt2), R = R)
+  data.table::setorderv(.las@data, "Z", order = -1L)
+
+  id = algo_li2012(.las@data$X, .las@data$Y, .las@data$Z, dt1, dt2, R = R, LIDROPTIONS("progress"))
 
   .las@data[, treeID := id][]
 
@@ -201,7 +203,7 @@ watershed = function(.las, image, extra, th = 2, tolerance = 1, ext = 1)
 
   lasclassify(.las, Crowns, "treeID")
 
-  if(extra == FALSE)
+  if (extra == FALSE)
     return(invisible(NULL))
   else
   {

@@ -25,9 +25,9 @@
 #
 # ===============================================================================
 
-#' Predefined standard metrics function
+#' Predefined standard metrics functions
 #'
-#' Predefined functions usable in \link[lidR:grid_metrics]{grid_metrics} and \link[lidR:lasmetrics]{lasmetrics}
+#' Predefined functions usable in \link{grid_metrics}, \link{grid_hexametrics}, \link{lasmetrics}, \link{tree_metrics},
 #' and their convenient shortcuts. The philosophy of the \code{lidR} package is to provide an easy way
 #' to compute user-defined metrics rather than to provide them. However, for efficiency and to save time, a set of
 #' standard metrics has been predefined. To use these functions please read the Details and Examples sections.
@@ -52,7 +52,10 @@
 #' intensity at a given percentile of height.\cr\cr
 #' Each function has a convenient associated variable. It is the name of the function, with a
 #' dot before the name. This enables the function to be used without writing parameters. The cost
-#' of such a feature is inflexibility. It corresponds to a predefined behaviour (see examples)
+#' of such a feature is inflexibility. It corresponds to a predefined behaviour (see examples)\cr\cr
+#' \code{stdtreemetrics} is a special function which works with \link{tree_metrics}. Actually
+#' it won't fail with other functions but the output make sense more sense if computed at the
+#' individual tree level.
 #'
 #' @param x,y,z,i,a Coordinates of the points, Intensity and ScanAngle
 #' @param rn,class ReturnNumber, Classification
@@ -67,7 +70,7 @@
 #'                                   ReturnNumber, Classification, pulseID,
 #'                                   dz = 1))
 #'
-#' # Super convenient shortcut
+#' # Convenient shortcut
 #' lidar %>% grid_metrics(.stdmetrics)
 #'
 #' # Basic metrics from intensities
@@ -76,7 +79,7 @@
 #' # All the metrics from intensities
 #' lidar %>% grid_metrics(stdmetrics_i(Intensity, Z, Classification, ReturnNumber))
 #'
-#' # Super convenient shortcut
+#' # Convenient shortcut for the previous example
 #' lidar %>% grid_metrics(.stdmetrics_i)
 #'
 #' # Compute the metrics only on first return
@@ -85,8 +88,9 @@
 #' # Compute the metrics with a threshold at 2 meters
 #' lidar %>% lasfilter(Z > 2) %>% grid_metrics(.stdmetrics_z)
 #'
-#' # Works also with lasmetrics
+#' # Works also with lasmetrics and grid_hexametrics
 #' lidar %>% lasmetrics(.stdmetrics)
+#' lidar %>% grid_hexametrics(.stdmetrics)
 #'
 #' # Combine some predefined function with your own new metrics
 #' # Here convenient shortcuts are no longer usable.
@@ -103,13 +107,16 @@
 #'
 #' lidar %>% grid_metrics(myMetrics(Z, Intensity))
 #'
-#' # You can write your own convenient shorcut like this:
+#' # You can write your own convenient shorcuts like this:
 #' .myMetrics = expression(myMetrics(Z,Intensity))
 #'
 #' lidar %>% grid_metrics(.myMetrics)
 #' @seealso
-#' \link[lidR:grid_metrics]{grid_metrics}
-#' \link[lidR:lasmetrics]{lasmetrics}
+#' \link{grid_metrics}
+#' \link{lasmetrics}
+#' \link{grid_hexametrics}
+#' \link{grid_metrics3d}
+#' \link{tree_metrics}
 #' @rdname stdmetrics
 #' @export
 stdmetrics = function(x, y, z, i, a, rn, class, pulseID, dz = 1)
@@ -153,7 +160,7 @@ stdmetrics = function(x, y, z, i, a, rn, class, pulseID, dz = 1)
 #' @references Bouvier, M., Durrieu, S., Fournier, R. a, & Renaud, J. (2015).  Generalizing predictive models of forest inventory attributes using an area-based approach with airborne LiDAR data. Remote Sensing of Environment, 156, 322-334. http://doi.org/10.1016/j.rse.2014.10.004
 #' @seealso \link[lidR:LAD]{LAD}
 #' @export gap_fraction_profile
-gap_fraction_profile = function (z, dz = 1, z0 = 2)
+gap_fraction_profile = function(z, dz = 1, z0 = 2)
 {
 
   bk = seq(floor((min(z)-z0)/dz)*dz+z0, ceiling((max(z)-z0)/dz)*dz+z0, dz)
@@ -310,61 +317,6 @@ VCI = function(z, zmax, by = 1)
   z = z[z < zmax]
 
   return(entropy(z, by, zmax))
-}
-
-# fractal_dimension
-#
-# Computes the fractal dimension of a surface. The fractal dimension is a measure
-# of roughness.
-#
-# Fractal dimension computes the roughness based on the box counting method (see Taud and Parrot).
-# If the input has an NA value, it returns NA. If the input is too small it returns NA.
-# If the input matrix is not a square matrix, the function cuts the input matrix to create a square matrix.
-# @param mtx numeric matrix that is the representation of a surface model
-# @return numeric. A number between 0 and 3. 3 being the dimension of a volume
-# @references Taud, H., & Parrot, J.-F. (2005). Mesure de la rugosite des MNT a l'aide de la dimension fractale. Geomorphologie : Relief, Processus, Environnement, 4, 327-338. http://doi.org/10.4000/geomorphologie.622
-# @examples
-# mtx = matrix(runif(100), 10, 10)
-# fractal_dimension(mtx)
-# @export fractal_dimension
-fractal_dimension = function(mtx)
-{
-  if( sum(is.na(mtx)) > 0 )
-    return(NA_real_)
-
-  size = min(dim(mtx))
-
-  if( size < 6)
-    return(NA_real_)
-
-  size = ifelse(size %% 2 == 0, size, size-1)
-
-  mtx = mtx[1:size, 1:size]
-
-  q = 1:size
-  q = q[size %% q == 0]
-
-  if(length(q) < 3)
-    return(as.numeric(NA))
-
-  nbbox = sapply(q, .countBox, mtx=mtx)
-
-  lm = stats::lm(log(nbbox) ~ log(q))
-
-  return(abs(as.numeric(stats::coefficients(lm)[2])))
-}
-
-.countBox = function(q, mtx)
-{
-	  rg <- (row(mtx)-1)%/%q+1
-    cg <- (col(mtx)-1)%/%q+1
-    rci <- (rg-1)*max(cg) + cg
-    N <- prod(dim(mtx))/(q^2)
-
-	  lasclip = lapply(1:N, function(x) mtx[rci==x])
-	  box = sapply(lasclip,max)/q
-
-	  return(sum(box))
 }
 
 #' @rdname stdmetrics
@@ -538,6 +490,35 @@ stdmetrics_ctrl = function(x, y, z, a)
 #' @rdname stdmetrics
 #' @export
 .stdmetrics_ctrl = expression(stdmetrics_ctrl(X, Y, Z, ScanAngle))
+
+#' @rdname stdmetrics
+#' @export
+stdtreemetrics = function(x, y, z)
+{
+  npoints = length(x)
+
+  j = which.max(z)
+
+  zmax = z[j]
+  xmax = x[j]
+  ymax = y[j]
+
+  convhull.area = area(x,y)
+
+  metrics = list(
+    npoints = npoints,
+    convhull_area = convhull.area,
+    zmax.z = zmax,
+    zmax.x = xmax,
+    zmax.y = ymax
+  )
+
+  return(metrics)
+}
+
+#' @rdname stdmetrics
+#' @export
+.stdtreemetrics = expression(stdtreemetrics(X, Y, Z))
 
 # canopy = canopyMatrix(x,y,z, canopyResolution)
 

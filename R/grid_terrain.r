@@ -37,16 +37,15 @@
 #' \item{\code{knnidw}}{Interpolation is done using a k-nearest neighbour (KNN) approach with
 #' an inverse distance weighting (IDW). This is a fast but basic method for spatial
 #' data interpolation.}
-#' \item{\code{delaunay}}{Interpolation based on Delaunay triangulation using the \link[akima:interp]{interp}
-#' function from package \code{akima}. This method is very fast. It makes a linear interpolation
-#' within each triangle. Note that with this method no extrapolation is done outside of the
-#' convex hull determined by the ground points.}
+#' \item{\code{delaunay}}{Interpolation based on Delaunay triangulation. It makes a linear
+#' interpolation within each triangle. Note that with this method no extrapolation is done
+#' outside of the convex hull determined by the ground points.}
 #' \item{\code{kriging}}{Interpolation is done by universal kriging using the \link[gstat:krige]{krige}
 #' function. This method combines the KNN approach with the kriging approach. For each point of interest
 #' it kriges the terrain using the k-nearest neighbour ground points. This method is more difficult
 #' to manipulate but it is also the most advanced method for interpolating spatial data. }
 #' }
-#' @param .las LAS objet
+#' @param .las LAS object
 #' @param res numeric resolution.
 #' @param method character can be \code{"knnidw"}, \code{"delaunay"} or \code{"kriging"} (see details)
 #' @param k numeric. number of k-nearest neighbours when the selected method is either \code{"knnidw"} or \code{"kriging"}
@@ -78,7 +77,6 @@
 #' \link[lidR:lasnormalize]{lasnormalize}
 #' \link[gstat:vgm]{vgm}
 #' \link[gstat:krige]{krige}
-#' \link[akima:interp]{interp}
 #' \link[lidR:lasnormalize]{lasnormalize}
 #' \link[raster:raster]{RasterLayer}
 grid_terrain = function(.las, res = 1, method, k = 10L, model = gstat::vgm(.59, "Sph", 874), keep_lowest = FALSE)
@@ -87,23 +85,41 @@ grid_terrain = function(.las, res = 1, method, k = 10L, model = gstat::vgm(.59, 
 
   stopifnotlas(.las)
 
+  verbose("Selecting ground points...")
+
   ground = suppressWarnings(lasfilterground(.las))
 
-  if(is.null(ground))
+  if (is.null(ground))
     stop("No ground points found. Impossible to compute a DTM.", call. = F)
 
   ground  = ground@data[, .(X,Y,Z)]
 
+  verbose("Generating interpolation coordinates...")
+
   ext  = extent(.las)
   grid = make_grid(ext@xmin, ext@xmax, ext@ymin, ext@ymax, res)
 
+  hull = convex_hull(.las$X, .las$Y)
+
+  # buffer around convex hull
+  sphull = sp::Polygon(hull)
+  sphull = sp::SpatialPolygons(list(sp::Polygons(list(sphull), "null")))
+  hull = rgeos::gBuffer(sphull, width = res)
+  hull = hull@polygons[[1]]@Polygons[[1]]@coords
+
+  grid = grid[points_in_polygon(hull[,1], hull[,2], grid$X, grid$Y)]
+
+  verbose("Interpolating ground points...")
+
   Zg = interpolate(ground, grid, method, k, model)
 
-  grid[, Z := round(Zg, 3)]
+  grid[, Z := round(Zg, 3)][]
 
   # force lowest ground point to be dominant
-  if(keep_lowest)
+  if (keep_lowest)
   {
+    verbose("Forcing the lowest ground points to be retained...")
+
     grid = rbind(grid, grid_metrics(lasfilterground(.las), list(Z = min(Z)), res))
     grid = grid[, list(Z = min(Z)), by = .(X,Y)]
   }

@@ -1,17 +1,15 @@
 ![](https://raw.githubusercontent.com/Jean-Romain/lidR/gh-pages/images/lidr-ban.png)<br/>
 
-![CRAN](https://img.shields.io/badge/CRAN-1.1.0-brightgreen.svg)  ![Github](https://img.shields.io/badge/Github-1.2.0-green.svg) ![licence](https://img.shields.io/badge/Licence-GPL--3-blue.svg)
-
 R package for Airborne LiDAR Data Manipulation and Visualization for Forestry Applications
 
-The lidR package provides functions to read and write `.las` and `.laz` files, plot a point cloud, compute metrics using an area-based approach, compute digital canopy models, thin lidar data, manage a catalog of datasets, automatically extract ground inventories, process a set of tiles in multicore, classify data from shapefiles, and provides other tools to manipulate LiDAR data. The lidR package is designed mainly for research purposes using an area-based approach.
+The lidR package provides functions to read and write `.las` and `.laz` files, plot a point cloud, compute metrics using an area-based approach, compute digital canopy models, thin lidar data, manage a catalog of datasets, automatically extract ground inventories, process a set of tiles in multicore, individual tree segmentation, classify data from geographic data, and provides other tools to manipulate LiDAR data.
 
 lidR provides an open-source and R-based implementation of several classical functions used in software dedicated to LiDAR data manipulation. lidR is flexible because it allows the user to program their own tools and manipulate their own objects in R rather than rely on a set of predefined tools.
 
 Please contact the author for bug reports or feature requests (on github, preferably). I enjoy implementing new features!
 
-1. [Features](#features)
-2. [Install lidR from github](#install-lidr-from-github)
+1. [Features](#features-not-exhaustive)
+2. [Install lidR](#install-lidr)
 3. [Some examples](#some-examples)
 4. [Changelog](#changelog)
 
@@ -29,11 +27,11 @@ Please contact the author for bug reports or feature requests (on github, prefer
 - [Manage a catalog of `.las` tiles](https://github.com/Jean-Romain/lidR/wiki/catalog)
 - [Thin a point cloud to reach a homogeneous pulse density](https://github.com/Jean-Romain/lidR/wiki/lasdecimate)
 - [Automatically extract a set of ground plot inventories](https://github.com/Jean-Romain/lidR/wiki/catalog_queries)
-- [Analyse a full set of tiles in parallel computing](https://github.com/Jean-Romain/lidR/wiki/catalog_#process-all-the-file-of-a-catalog_apply)
+- [Analyse a full set of tiles in parallel computing](https://github.com/Jean-Romain/lidR/wiki/catalog_apply)
 - [Compute a digital canopy model (DCM)](https://github.com/Jean-Romain/lidR/wiki/grid_canopy)
 - [Compute a digital terrain model (DTM)](https://github.com/Jean-Romain/lidR/wiki/grid_terrain)
 - [Normalize a point cloud substracting a DTM](https://github.com/Jean-Romain/lidR/wiki/lasnormalize)
-- [Individual tree segmentation](https://github.com/Jean-Romain/lidR/wiki/lastrees)
+- [Individual tree segmentation](https://github.com/Jean-Romain/lidR/wiki/Tree-segmentation-from-A-to-Z)
 
 # Install `lidR`
 

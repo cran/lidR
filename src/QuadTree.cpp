@@ -56,7 +56,15 @@ QuadTree::QuadTree(const BoundingBox boundary, const int parent_depth) : boundar
   SW = 0;
 }
 
-QuadTree QuadTree::create(const std::vector<double> x, const std::vector<double> y)
+QuadTree::~QuadTree()
+{
+  delete NE;
+  delete NW;
+  delete SE;
+  delete SW;
+}
+
+QuadTree* QuadTree::create(const std::vector<double> x, const std::vector<double> y)
 {
   int n = x.size();
 
@@ -83,12 +91,12 @@ QuadTree QuadTree::create(const std::vector<double> x, const std::vector<double>
   double yrange = ymax - ymin;
   double range = xrange > yrange ? xrange/2 : yrange/2;
 
-  QuadTree tree( (xmin+xmax)/2, (ymin+ymax)/2, range);
+  QuadTree *tree = new QuadTree( (xmin+xmax)/2, (ymin+ymax)/2, range);
 
   for(int i = 0 ; i < n ; i++)
   {
     Point p(x[i], y[i], i);
-    tree.insert(p);
+    tree->insert(p);
   }
 
   return tree;
@@ -164,11 +172,12 @@ void QuadTree::range_lookup(const BoundingBox bb, std::vector<Point*>& res, cons
   return;
 }
 
-void QuadTree::rect_lookup(const double xc, const double yc, const double range, std::vector<Point*>& res)
+void QuadTree::rect_lookup(const double xc, const double yc, const double half_width, const double half_height, std::vector<Point*>& res)
 {
-  range_lookup(BoundingBox(Point(xc, yc), Point(range, range)), res, 1);
+  range_lookup(BoundingBox(Point(xc, yc), Point(half_width, half_height)), res, 1);
   return;
 }
+
 
 void QuadTree::circle_lookup(const double cx, const double cy, const double range, std::vector<Point*>& res)
 {

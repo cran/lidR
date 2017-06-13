@@ -53,6 +53,9 @@
 #' @export catalog_queries
 #' @examples
 #' \dontrun{
+#' # Global option to display a progressbar
+#' lidr_option(progress = TRUE)
+#'
 #' # Build a Catalog
 #' catalog = catalog("<Path to a folder containing a set of .las or .laz files>")
 #'
@@ -71,10 +74,26 @@ catalog_queries = function(obj, x, y, r, r2 = NULL, roinames = NULL, mc.cores = 
 {
   . <- tiles <- NULL
 
-  nplot = length(x)
-  shape = if(is.null(r2)) 0 else 1
+  objtxt = lazyeval::expr_text(obj)
+  xtxt   = lazyeval::expr_text(x)
+  ytxt   = lazyeval::expr_text(y)
+  rtxt   = lazyeval::expr_text(r)
 
-  if(is.null(roinames)) roinames = paste0("ROI", 1:nplot)
+  if (!is(obj, "Catalog"))
+    stop(paste0(objtxt, " is not a Catalog."), call. = FALSE)
+
+  if (length(x) != length(y))
+    stop(paste0(xtxt, " is not same length as ", ytxt), call. = FALSE)
+
+  if (length(r) > 1 & (length(x) != length(r)))
+    stop(paste0(xtxt, " is not same length as ", rtxt), call. = FALSE)
+
+  nplot = length(x)
+  shape = if (is.null(r2)) 0 else 1
+
+  if (is.null(roinames)) roinames = paste0("ROI", 1:nplot)
+
+  verbose("Indexing files...")
 
   # Make an index of the file in which are each query
   lasindex = obj %>% catalog_index(x, y, r, r2, roinames)
@@ -90,17 +109,21 @@ catalog_queries = function(obj, x, y, r, r2 = NULL, roinames = NULL, mc.cores = 
   # Recompute the number of queries
   nplot = length(lasindex)
 
-  cat("Extracting data...\n")
+  verbose("Extracting data...")
 
-  if(mc.cores == 1)
+  if (mc.cores == 1)
   {
-    p = utils::txtProgressBar(max = nplot, style = 3)
+    if (LIDROPTIONS("progress"))
+      p = utils::txtProgressBar(max = nplot, style = 3)
+    else
+      p = NULL
+
     output = lapply(lasindex, .getQuery, shape, p)
   }
   else
   {
     cl = parallel::makeCluster(mc.cores, outfile = "")
-    parallel::clusterExport(cl, varlist=c(utils::lsf.str(envir = globalenv()), ls(envir = environment())), envir = environment())
+    parallel::clusterExport(cl, varlist = c(utils::lsf.str(envir = globalenv()), ls(envir = environment())), envir = environment())
     output = parallel::parLapply(cl, lasindex, .getQuery, shape)
     parallel::stopCluster(cl)
   }
@@ -117,15 +140,15 @@ catalog_queries = function(obj, x, y, r, r2 = NULL, roinames = NULL, mc.cores = 
 {
   x <- y <- r <- r2 <- NULL
 
-  if(shape == 0)
+  if (shape == 0)
     filter = query %$% paste("-inside_circle", x, y, r)
   else
-    filter = query %$% paste("-inside", x-r, y-r2, x+r, y+r2)
+    filter = query %$% paste("-inside", x - r, y - r2, x + r, y + r2)
 
   lidardata = list(readLAS(query$tiles, all = TRUE, filter = filter))
   names(lidardata) = query$roinames
 
-  if(!is.null(p))
+  if (!is.null(p))
   {
     i = utils::getTxtProgressBar(p) + 1
     utils::setTxtProgressBar(p, i)
