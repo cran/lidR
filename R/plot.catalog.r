@@ -6,7 +6,7 @@
 #
 # COPYRIGHT:
 #
-# Copyright 2016 Jean-Romain Roussel
+# Copyright 2017 Jean-Romain Roussel
 #
 # This file is part of lidR R package.
 #
@@ -27,34 +27,71 @@
 
 
 
-#' Plot a Catalog object
+#' Plot a LAScatalog object
 #'
-#' This functions implements a \link[graphics:plot]{plot} method for Catalog objects
+#' This functions implements a \link[graphics:plot]{plot} method for LAScatalog objects
 #'
-#' @param x A Catalog object
-#' @param y Unused (inherited from base plot)
-#' @param \dots Unused (inherited from base plot)
-#' @method plot Catalog
+#' @param x A LAScatalog object
+#' @param y logical. Disable interactive display
+#' @param \dots inherited from base plot
+#' @method plot LAScatalog
 #' @export
 #' @examples
 #' \dontrun{
-#'
-#' catalog = catalog("<Path to a folder containing a set of .las files>")
+#' ctg = catalog("<Path to a folder containing a set of .las files>")
 #' plot(catalog)
+#'
+#' # Exemple with a single file
+#' proj4   <- "+proj=utm +zone=17"
+#' LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
+#'
+#' ctg = catalog(LASfile)
+#' plot(ctg, proj4)
 #' }
-plot.Catalog = function(x, y, ...)
+plot.LAScatalog = function(x, y = TRUE, ...)
 {
-  Min.X <- Min.Y <- Max.X <- Max.Y <- filename <- NULL
+  param = list(...)
 
-  xmin = min(x$Min.X)
-  xmax = max(x$Max.X)
-  ymin = min(x$Min.Y)
-  ymax = max(x$Max.Y)
+  xmin = min(x@data$`Min X`)
+  xmax = max(x@data$`Max X`)
+  ymin = min(x@data$`Min Y`)
+  ymax = max(x@data$`Max Y`)
 
-  xcenter = (x$Min.X+x$Max.X)/2
-  ycenter = (x$Min.Y+x$Max.Y)/2
+  xcenter = (xmin + xmax)/2
+  ycenter = (ymin + ymax)/2
 
-  graphics::plot(xcenter, ycenter, xlim=c(xmin, xmax), col="white", ylim = c(ymin, ymax), asp=1, xlab="X", ylab="Y")
-  x %$% graphics::rect(Min.X, Min.Y, Max.X, Max.Y)
+  if (is.null(param$xlim))
+    param$xlim = c(xmin, xmax)
+
+  if (is.null(param$ylim))
+    param$ylim = c(ymin, ymax)
+
+  if (is.null(param$xlab))
+    param$xlab = "X"
+
+  if (is.null(param$ylab))
+    param$ylab = "Y"
+
+  if (is.null(param$asp))
+    param$xlab = "X"
+
+  if (is.null(param$asp))
+    param$asp = 1
+
+  if (is.null(param$col))
+    param$col = "white"
+
+  param$x = xcenter
+  param$y = ycenter
+
+  if (!is.na(x@crs@projargs) & y)
+  {
+    mapview::mapview(as.spatial(x))
+  }
+  else
+  {
+    do.call(graphics::plot, param)
+    graphics::rect(x@data$`Min X`, x@data$`Min Y`, x@data$`Max X`, x@data$`Max Y`, col = grDevices::rgb(0, 0, 1, alpha=0.1))
+  }
 }
 

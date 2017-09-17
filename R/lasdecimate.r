@@ -37,7 +37,7 @@
 #' density. If the required pulse density is greater than the actual pulse density it returns
 #' an unchanged set of points (it cannot increase the pulse density). If \code{homogenize = FALSE} is selected, it
 #' randomly removes pulses to reach the required pulse density over the whole area
-#' (see \code{\link[lidR:lasarea]{lasarea}}). The cell size must be large enough
+#' (see \code{\link[lidR:area]{area}}). The cell size must be large enough
 #' to compute a coherent local pulse density i.e., in a 2 pulse/m^2 dataset, 25 square meters would be
 #' feasible; however, an extent too small to thin (e.g. <1 square meter) would not be feasible because
 #' pulse density does not have meaning at this scale.
@@ -49,7 +49,7 @@
 #' @return It returns a \code{LAS} object.
 #' @examples
 #' LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
-#' lidar = readLAS(LASfile)
+#' lidar = readLAS(LASfile, select = "xyztP")
 #'
 #' # By default the method is homogenize = TRUE
 #' thinned = lidar %>% lasdecimate(1, res = 5)
@@ -72,7 +72,7 @@ lasdecimate = function(.las, density, homogenize = TRUE, res = 5)
 
   if(homogenize == FALSE)
   {
-    n = round(density*lasarea(.las))
+    n = round(density*area(.las))
     selected = selected_pulses(.las@data$pulseID, n)
   }
   else

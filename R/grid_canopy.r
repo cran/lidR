@@ -29,28 +29,46 @@
 
 #' Canopy surface model
 #'
-#' Creates a canopy surface model using a LiDAR point cloud. For each pixel the
-#' function returns the highest point found. This basic method could be improved by replacing
-#' each LiDAR return with a small disk. An interpolation for empty pixels is also available.
+#' Creates a canopy surface model using a LiDAR point cloud. For each pixel the function
+#' returns the highest point found (point-to-raster). This basic method could be improved
+#' by replacing each LiDAR return with a small disk. An interpolation for empty pixels is
+#' also available.
 #'
-#' The algorithm relies on the 'local maximum'. For each pixel the function returns the highest
-#' point found. This method implies that the resulting surface model can contain empty pixels.
-#' Those 'holes' can be filled by interpolation. Internally, the interpolation is based on the same method
-#' used in the function \link[lidR:grid_terrain]{grid_terrain}. Therefore the
-#' documentation for \link[lidR:grid_terrain]{grid_terrain} is also applicable to this function.
-#' (see also examples)
+#' The algorithm relies on a point-to-raster approach. For each pixel the elevation of the
+#' highest point is found and attributed to this pixel. This method implies that the resulting
+#' surface model can contain empty pixels. Those 'holes' can be filled by interpolation.
+#' Internally, the interpolation is based on the same method used in the function
+#' \link[lidR:grid_terrain]{grid_terrain}. Therefore the documentation for
+#' \link[lidR:grid_terrain]{grid_terrain} is also applicable to this function (see also
+#' examples).\cr\cr
+#' The 'subcircle' tweak replaces each point with 8 points around the original one. This allows
+#' for virtual 'emulation' of the fact that a lidar point is not a point as such, but more
+#' realistically a disc. This tweak densifies the point cloud and the resulting canopy model is
+#' smoother and contains fewer 'pits' and empty pixels.
+#'
+#' @section Use with a \code{LAScatalog}:
+#' When the parameter \code{x} is a \link[lidR:LAScatalog-class]{LAScatalog} the function processes
+#' the entire dataset in a continuous way using a multicore process. Parallel computing is set
+#' by default to the number of core available in the computer. The user can modify the global
+#' options using the function \link{catalog_options}.\cr\cr
+#' \code{lidR} support .lax file. Computation speed will be \emph{significantly} improved with a
+#' spatial index.
+#'
 #' @aliases  grid_canopy
-#' @param .las An object of class \code{LAS}
+#' @param x An object of class \link{LAS} or a \link{catalog} (see section "Use with a LAScatalog")
 #' @param res numeric. The size of a grid cell in LiDAR data coordinates units. Default is
 #' 2 meters i.e. 4 square meters.
-#' @param subcircle numeric radius of the circles. To obtain fewer empty pixels the algorithm
-#' can replace each return with a circle composed of 8 points before computing the maximum elevation
-#' in each pixel.
+#' @param subcircle numeric. radius of the circles. To obtain fewer empty pixels the algorithm
+#' can replace each return with a circle composed of 8 points (see details).
 #' @param na.fill character. name of the algorithm used to interpolate the data and fill the empty pixels.
 #' Can be \code{"knnidw"}, \code{"delaunay"} or \code{"kriging"} (see details).
 #' @param ... extra parameters for the algorithm used to interpolate the empty pixels (see details)
-#' @return It returns a \code{data.table} with the class \code{lasmetrics}, which enables easier plotting and
-#' RasterLayer casting.
+#' @param filter character. Streaming filter while reading the files (see \link{readLAS}).
+#' If \code{x} is a \code{LAScatalog} the function \link{readLAS} is called internally. The
+#' user cannot manipulate the lidar data directly but can use streaming filters instead.
+#' @return Returns a \code{data.table} of class \code{lasmetrics}, which enables easier
+#' plotting and RasterLayer casting.
+#'
 #' @examples
 #' LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
 #' lidar = readLAS(LASfile)
@@ -76,7 +94,13 @@
 #' \link[lidR:grid_metrics]{grid_metrics}
 #' \link[lidR:as.raster.lasmetrics]{as.raster}
 #' @export grid_canopy
-grid_canopy = function(.las, res = 2, subcircle = 0, na.fill = "none", ...)
+grid_canopy = function(x, res = 2, subcircle = 0, na.fill = "none", ..., filter = "")
+{
+  UseMethod("grid_canopy", x)
+}
+
+#' @export
+grid_canopy.LAS = function(x, res = 2, subcircle = 0, na.fill = "none", ..., filter = "")
 {
   . <- X <- Y <- Z <- NULL
 
@@ -84,26 +108,36 @@ grid_canopy = function(.las, res = 2, subcircle = 0, na.fill = "none", ...)
   {
     verbose("Subcircling points...")
 
-    ex = extent(.las)
+    ex = extent(x)
 
-    dt = .las@data[, .(X,Y,Z)]
+    dt = x@data[, .(X,Y,Z)]
     dt = subcircled(dt, subcircle, 8)
     dt = dt[between(X, ex@xmin, ex@xmax) & between(Y, ex@ymin, ex@ymax)]
-    .las = suppressWarnings(LAS(dt))
+    x = suppressWarnings(LAS(dt))
 
     rm(dt)
   }
 
   verbose("Gridding highest points in each cell...")
 
-  dsm   = grid_metrics(.las, list(Z = max(Z)), res)
+  dsm   = grid_metrics(x, list(Z = max(Z)), res)
 
   if (na.fill != "none")
   {
     verbose("Interpolating empty cells...")
 
-    ex = extent(.las)
+    ex = extent(x)
     grid = make_grid(ex@xmin, ex@xmax, ex@ymin, ex@ymax, res)
+
+    hull = convex_hull(x@data$X, x@data$Y)
+
+    # buffer around convex hull
+    sphull = sp::Polygon(hull)
+    sphull = sp::SpatialPolygons(list(sp::Polygons(list(sphull), "null")))
+    hull = rgeos::gBuffer(sphull, width = res)
+    hull = hull@polygons[[1]]@Polygons[[1]]@coords
+
+    grid = grid[points_in_polygon(hull[,1], hull[,2], grid$X, grid$Y)]
 
     data.table::setkeyv(grid, c("X", "Y"))
     data.table::setkeyv(dsm, c("X", "Y"))
@@ -118,8 +152,21 @@ grid_canopy = function(.las, res = 2, subcircle = 0, na.fill = "none", ...)
     as.lasmetrics(dsm, res)
   }
 
-  rm(.las)
-  gc()
-
   return(dsm)
 }
+
+#' @export
+grid_canopy.LAScatalog = function(x, res = 2, subcircle = 0, na.fill = "none", ..., filter = "")
+{
+  oldbuffer <- CATALOGOPTIONS("buffer")
+
+  if (subcircle == 0)
+    CATALOGOPTIONS(buffer = res)
+
+  canopy = grid_catalog(x, grid_canopy, res, "xyz", filter, subcircle = subcircle, na.fill = na.fill, ...)
+
+  CATALOGOPTIONS(buffer = oldbuffer)
+
+  return(canopy)
+}
+

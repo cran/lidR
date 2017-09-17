@@ -80,7 +80,7 @@ lasclassify = function(.las, source, field = NULL)
 
   if (is(source, "SpatialPolygonsDataFrame"))
     values = classify_from_shapefile(.las, source, field)
-  else if (is(source, "RasterLayer"))
+  else if (is(source, "RasterLayer") | is(source, "RasterStack"))
     values = classify_from_rasterlayer(.las, source, field)
   else
     stop("No method for this source format.", call. = F)
@@ -123,7 +123,7 @@ classify_from_shapefile = function(.las, shapefile, field = NULL)
   }
 
   # Crop the shapefile to minimize the computations removing out of bounds polygons
-  verbose("Croping the shapefile")
+  verbose("Croping the shapefile...")
   polys = raster::crop(shapefile, extent(.las) + 20)
 
 
@@ -173,7 +173,7 @@ classify_from_shapefile = function(.las, shapefile, field = NULL)
 
     if (method == 1)
     {
-      verbose("Retrieving correspondances in the table of attributes")
+      verbose("Retrieving correspondances in the table of attributes...")
 
       inpoly = ids > 0
       inhole = is_hole[ids + 1]
@@ -182,22 +182,22 @@ classify_from_shapefile = function(.las, shapefile, field = NULL)
       id = idpolys[ids[inpoly.nothole]]
       values[inpoly.nothole] = polys@data[, field][id]
 
-      message(paste0("Assigned the value of field ", field , " from the table of attibutes to the points"))
+      verbose(paste0("Assigned the value of field ", field , " from the table of attibutes to the points"))
     }
     else if (method == 2)
     {
       values = ids > 0 & !is_hole[ids + 1]
-      message("Assigned a boolean value to the points")
+      verbose("Assigned a boolean value to the points")
     }
     else
     {
       values = ifelse(ids == 0, NA_real_, ids)
-      message("Assigned a number to each individual polygon")
+      verbose("Assigned a number to each individual polygon")
     }
   }
   else
   {
-    message("No polygon found within the data", call. = F)
+    verbose("No polygon found within the data", call. = F)
   }
 
   return(values)
@@ -207,10 +207,14 @@ classify_from_rasterlayer = function(.las, raster, field = NULL)
 {
   . <- X <- Y <- info <- NULL
 
-  if (is.null(field)) field = lazyeval::expr_label(raster)
+  if (is.null(field))
+    field = lazyeval::expr_label(raster)
 
-  values = raster::extract(raster, .las@data[, .(X,Y)])
-
+  xres = raster::res(raster)[1]
+  xmin = raster@extent@xmin
+  ymin = raster@extent@ymin
+  m  = raster::as.matrix(raster)
+  values = fast_extract(m, .las@data$X, .las@data$Y, xmin, ymin, xres) # 15 times faster than raster::extract + much memory effcient
   return(values)
 }
 

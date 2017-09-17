@@ -29,29 +29,43 @@
 
 #' Digital Terrain Model
 #'
-#' Interpolate ground points and create a rasterized digital terrain model. The interpolation
+#' Interpolates ground points and creates a rasterized digital terrain model. The interpolation
 #' can be done using 3 methods: \code{"knnidw"}, \code{"delaunay"} or \code{"kriging"} (see
-#' details). The algorithm uses the points classified as "ground" to compute the interpolation.
+#' details). The algorithm uses the points classified as "ground" to compute the interpolation.\cr
+#' Depending on the interpolation method, the edges of the dataset can be more, or less poorly
+#' interpolated. A buffer around the region of interest is always recommended to avoid edge
+#' effects.
 #'
 #' \describe{
 #' \item{\code{knnidw}}{Interpolation is done using a k-nearest neighbour (KNN) approach with
 #' an inverse distance weighting (IDW). This is a fast but basic method for spatial
 #' data interpolation.}
 #' \item{\code{delaunay}}{Interpolation based on Delaunay triangulation. It makes a linear
-#' interpolation within each triangle. Note that with this method no extrapolation is done
-#' outside of the convex hull determined by the ground points.}
-#' \item{\code{kriging}}{Interpolation is done by universal kriging using the \link[gstat:krige]{krige}
-#' function. This method combines the KNN approach with the kriging approach. For each point of interest
-#' it kriges the terrain using the k-nearest neighbour ground points. This method is more difficult
-#' to manipulate but it is also the most advanced method for interpolating spatial data. }
+#' interpolation within each triangle. There are usually few cells outside the convex hull,
+#' determined by the ground points at the very edge of the dataset that cannot be interpolated
+#' with a triangulation. Extrapolation is done using knnidw.}
+#' \item{\code{kriging}}{Interpolation is done by universal kriging using the
+#' \link[gstat:krige]{krige} function. This method combines the KNN approach with the kriging
+#' approach. For each point of interest the terrain is kriged using the k-nearest neighbour ground
+#' points. This method is more difficult to manipulate but it is also the most advanced method for
+#' interpolating spatial data. }
 #' }
-#' @param .las LAS object
-#' @param res numeric resolution.
-#' @param method character can be \code{"knnidw"}, \code{"delaunay"} or \code{"kriging"} (see details)
+#'
+#' @section Use with a \code{LAScatalog}:
+#' When the parameter \code{x} is a \link[lidR:LAScatalog-class]{LAScatalog} the function processes
+#' the entire dataset in a continuous way using a multicore process. Parallel computing is set
+#' by default to the number of core available in the computer. A buffer is required to avoid
+#' edge artifacts. The user can modify the global options using the function \link{catalog_options}.\cr\cr
+#' \code{lidR} support .lax files. Computation speed will be \emph{significantly} improved with a
+#' spatial index.
+#'
+#' @param x An object of class \link{LAS} or a \link{catalog} (see section "Use with a LAScatalog")
+#' @param res numeric. resolution.
+#' @param method character. can be \code{"knnidw"}, \code{"delaunay"} or \code{"kriging"} (see details)
 #' @param k numeric. number of k-nearest neighbours when the selected method is either \code{"knnidw"} or \code{"kriging"}
 #' @param model a variogram model computed with \link[gstat:vgm]{vgm} when the selected method
-#' is \code{"kriging"}. If null it performs an ordinary or weighted least squares prediction.
-#' @param keep_lowest logical. The function forces the original lowest ground point of each
+#' is \code{"kriging"}. If null, it performs an ordinary or weighted least squares prediction.
+#' @param keep_lowest logical. This function forces the original lowest ground point of each
 #' pixel (if it exists) to be chosen instead of the interpolated values.
 #' @return A \code{lasmetrics} data.table.
 #' @export
@@ -79,35 +93,58 @@
 #' \link[gstat:krige]{krige}
 #' \link[lidR:lasnormalize]{lasnormalize}
 #' \link[raster:raster]{RasterLayer}
-grid_terrain = function(.las, res = 1, method, k = 10L, model = gstat::vgm(.59, "Sph", 874), keep_lowest = FALSE)
+grid_terrain = function(x, res = 1, method, k = 10L, model = gstat::vgm(.59, "Sph", 874), keep_lowest = FALSE)
 {
-  . <- X <- Y <- Z <- NULL
+  UseMethod("grid_terrain", x)
+}
 
-  stopifnotlas(.las)
+#' @export
+grid_terrain.LAS = function(x, res = 1, method, k = 10L, model = gstat::vgm(.59, "Sph", 874), keep_lowest = FALSE)
+{
+  . <- X <- Y <- Z <- Classification <- NULL
+
+  # ========================
+  # Select the ground points
+  # ========================
 
   verbose("Selecting ground points...")
 
-  ground = suppressWarnings(lasfilterground(.las))
+  if (!"Classification" %in% names(x@data))
+    stop("LAS object does not contain 'Classification' data")
 
-  if (is.null(ground))
+  ground = x@data[Classification == LASGROUND, .(X,Y,Z)]
+
+  if (nrow(ground) == 0)
     stop("No ground points found. Impossible to compute a DTM.", call. = F)
 
-  ground  = ground@data[, .(X,Y,Z)]
+  # =================================
+  # Find where to interpolate the DTM
+  # =================================
 
   verbose("Generating interpolation coordinates...")
 
-  ext  = extent(.las)
+  # All the coordinates in the extent
+
+  ext  = extent(x)
   grid = make_grid(ext@xmin, ext@xmax, ext@ymin, ext@ymax, res)
 
-  hull = convex_hull(.las$X, .las$Y)
+  # Keep only those in the convex hull of the point
+  # Otherwise algorithms are able to extrapolate the terrain
 
-  # buffer around convex hull
+  hull = convex_hull(x@data$X, x@data$Y)
+
   sphull = sp::Polygon(hull)
   sphull = sp::SpatialPolygons(list(sp::Polygons(list(sphull), "null")))
-  hull = rgeos::gBuffer(sphull, width = res)
+  hull = rgeos::gBuffer(sphull, width = 0.5*res)
   hull = hull@polygons[[1]]@Polygons[[1]]@coords
 
-  grid = grid[points_in_polygon(hull[,1], hull[,2], grid$X, grid$Y)]
+  keep = points_in_polygon(hull[,1], hull[,2], grid$X, grid$Y)
+
+  grid = grid[keep]
+
+  # =======================
+  # Interpolate the terrain
+  # =======================
 
   verbose("Interpolating ground points...")
 
@@ -120,11 +157,19 @@ grid_terrain = function(.las, res = 1, method, k = 10L, model = gstat::vgm(.59, 
   {
     verbose("Forcing the lowest ground points to be retained...")
 
-    grid = rbind(grid, grid_metrics(lasfilterground(.las), list(Z = min(Z)), res))
+    grid = rbind(grid, grid_metrics(lasfilterground(x), list(Z = min(Z)), res))
     grid = grid[, list(Z = min(Z)), by = .(X,Y)]
   }
 
   as.lasmetrics(grid, res)
 
   return(grid)
+}
+
+#' @export
+grid_terrain.LAScatalog = function(x, res = 1, method, k = 10L, model = gstat::vgm(.59, "Sph", 874), keep_lowest = FALSE)
+{
+  terrain = grid_catalog(x, grid_terrain, res, "xyzc", "-keep_class 2", method = method, k = k, model = model, keep_lowest = keep_lowest)
+
+  return(terrain)
 }

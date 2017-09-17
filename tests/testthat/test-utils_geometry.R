@@ -26,7 +26,6 @@ test_that("points in polygon works", {
 test_that("tsearch works", {
   x <- c(-1, -1, 1)
   y <- c(-1, 1, -1)
-  p <- cbind(x, y)
   tri <- matrix(c(1, 2, 3), 1, 3)
 
   ## Should be in triangle #1
@@ -50,14 +49,50 @@ test_that("tsearch works", {
   expect_true(is.na(ts))
 })
 
+test_that("tsearch pass computer precision tests", {
+  x <- c(6.89, 7.15, 7.03)
+  y <- c(7.76, 7.75, 8.35)
+  tri <- matrix(c(1, 2, 3), 1, 3)
+
+  ts <- lidR:::tsearch(x, y, tri, 7.125, 7.875)
+  expect_equal(ts, 1)
+
+  x <- c(278287.03, 278286.89, 278287.15)
+  y <- c(602248.35, 602247.76, 602247.75)
+
+  tri = matrix(c(1,2,3), 1,3)
+  ts <- lidR:::tsearch(x, y, tri, 278287.125, 602247.875)
+  expect_equal(ts, 1)
+
+  tri = matrix(c(3,2,1), 1,3)
+  ts <- lidR:::tsearch(x, y, tri, 278287.125, 602247.875)
+  expect_equal(ts, 1)
+
+  tri = matrix(c(2,3,1), 1,3)
+  ts <- lidR:::tsearch(x, y, tri, 278287.125, 602247.875)
+  expect_equal(ts, 1)
+
+  tri = matrix(c(2,1,3), 1,3)
+  ts <- lidR:::tsearch(x, y, tri, 278287.125, 602247.875)
+  expect_equal(ts, 1)
+
+  tri = matrix(c(3,1,2), 1,3)
+  ts <- lidR:::tsearch(x, y, tri, 278287.125, 602247.875)
+  expect_equal(ts, 1)
+
+  tri <- matrix(c(1, 2, 3), 1, 3)
+  ts <- lidR:::tsearch(x, y, tri, 278287.125, 602247.875)
+  expect_equal(ts, 1)
+})
+
 test_that("tinfo works", {
   x <- c(0, 1, 0)
   y <- c(0, 0, 1)
   z <- c(1, 0, 0)
-  p <- cbind(x, y, z)
-  tri <- matrix(c(1, 2, 3, 1), 1, 4)
+  X <- cbind(x, y, z)
+  D <- matrix(c(1, 2, 3, 1), 1, 4)
 
-  info = lidR:::tinfo(tri, p)
+  info = lidR:::tinfo(D, X)
 
   # normal vector is (1,1,1)
   n = c(info[,1], info[,2], info[,3]) %>% as.numeric
@@ -74,6 +109,38 @@ test_that("tinfo works", {
 
   # Max edge size is sqrt(2)
   expect_equal(as.numeric(info[,7]), sqrt(2))
+
+  D <- matrix(c(1, 2, 3, 1), 1, 4)
+
+  x = c(0,0,1)
+  y = c(0,1,1)
+  z = c(0,0,1)
+  X = cbind(x,y,z)
+
+  I = as.numeric(lidR:::tinfo(D, X))
+
+  expect_equal(I[5], sqrt(2)/2)
+  expect_equal(I[6], 1/2)
+
+  x = c(0,0,1)
+  y = c(0,1,0)
+  z = c(0,1,1)
+  X = cbind(x,y,z)
+
+  I = as.numeric(lidR:::tinfo(D, X))
+
+  expect_equal(I[5], sqrt(3)/2)
+  expect_equal(I[6], 1/2)
+
+  x = c(0,0,1)
+  y = c(0,1,1)
+  z = c(0,0,2)
+  X = cbind(x,y,z)
+
+  I = as.numeric(lidR:::tinfo(D, X))
+
+  expect_equal(I[5], sqrt(5)/2)
+  expect_equal(I[6], 1/2)
 })
 
 

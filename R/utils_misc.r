@@ -60,12 +60,12 @@ group_grid_3d = function(x, y, z, res, start = c(0,0,0))
 
 f_grid = function(x, res, start)
 {
-  round_any(x-0.5*res-start, res)+0.5*res+start
+  round_any(x - 0.5 * res - start, res) + 0.5 * res + start
 }
 
 verbose = function(...)
 {
-  if(LIDROPTIONS("verbose"))
+  if (LIDROPTIONS("verbose"))
     cat(..., "\n")
 }
 
@@ -84,3 +84,5 @@ dummy_las = function(n)
 
   return(las)
 }
+
+`%+%` <- function(a, b) paste0(a, b)

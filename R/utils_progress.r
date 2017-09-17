@@ -25,32 +25,21 @@
 #
 # ===============================================================================
 
+txtProgressBarMulticore = function(min = 0, max = 1, initial = 0, char = "=", width = NA, title, label, style = 1, file = "")
+{
+  sink(tempfile())
+  pbfile = tempfile()
+  write(0, pbfile)
+  progressBar  = utils::txtProgressBar(min, max, initial, char, width, title, label, style, file)
+  attr(progressBar, "pbfile") = pbfile
+  sink()
+  return(progressBar)
+}
 
-
-#' Extent
-#'
-#' Returns an Extent object of a \code{LAS} object.
-#'
-#' @aliases extent
-#' @param x An object of the class \code{LAS}
-#' @param \dots Unused
-#' @return Extent object
-#' @examples
-#' LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
-#' lidar = readLAS(LASfile)
-#'
-#' extent(lidar)
-#' @seealso \code{\link[raster:extent]{raster::extent} }
-#' @export extent
-#' @importMethodsFrom raster extent
-setMethod("extent", "LAS",
-	function(x)
-	{
-	  stopifnotlas(x)
-		return(raster::extent(min(x@data$X), max(x@data$X), min(x@data$Y), max(x@data$Y)))
-	}
-)
-
-#' @export
-#' @rdname extent-LAS-method
-lasextent <- extent
+addTxtProgressBarMulticore = function(pb, value)
+{
+  pbfile = attr(pb, "pbfile")
+  i = data.table::fread(pbfile)$V1 + value
+  utils::setTxtProgressBar(pb, i)
+  write(i, pbfile)
+}

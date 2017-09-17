@@ -29,19 +29,25 @@
 
 #' Rasterize the space and compute metrics for each cell
 #'
-#' Computes a series of descriptive statistics defined by the user for a LiDAR dataset within
-#' each pixel of a raster. Output is a data.frame in which each line is a pixel (single grid cell),
-#' and each column is a metric.
+#' Computes a series of user-defined descriptive statistics for a LiDAR dataset within
+#' each pixel of a raster. Output is a data.table in which each line is a pixel (single grid cell),
+#' and each column is a metric. Works both with \link{LAS} or \link{catalog} objects.
+#' \code{grid_metrics} is similar to \link{lasmetrics} or \link{grid_hexametrics} except it
+#' computes metrics within each cell in a predefined grid. The grid cell coordinates are
+#' pre-determined for a given resolution.
 #'
-#' \code{grid_metrics} is similar to \link{lasmetrics} or \link{grid_hexametrics} except it computes metrics within each cell
-#' in a predefined grid. The grid cell coordinates are pre-determined for a given resolution.
-#' So the algorithm will always provide the same coordinates independently of the dataset.
-#' When start = (0,0) and res = 20 grid_metrics will produce the following raster centers:
-#' (10,10), (10,30), (30,10) etc.. When start = (-10, -10) and res = 20 grid_metrics will
-#' produce the following raster centers: (0,0), (0,20), (20,0) etc.. In Quebec (Canada) reference
-#' is (-831600,  117980) in the NAD83 coordinate system. The function to be applied to each
-#' cell is a classical function (see examples) that returns a labelled list of metrics.
-#' The following existing function can help the user to compute some metrics:
+#' \code{grid_metrics} is similar to \link{lasmetrics} or \link{grid_hexametrics} except it
+#' computes metrics within each cell in a predefined grid. The grid cell coordinates are
+#' pre-determined for a given resolution, so the algorithm will always provide the same coordinates
+#' independently of the dataset. When start = (0,0) and res = 20 grid_metrics will produce the
+#' following raster centers: (10,10), (10,30), (30,10) etc.. When start = (-10, -10) and res = 20
+#' grid_metrics will produce the following raster centers: (0,0), (0,20), (20,0) etc.. In Quebec
+#' (Canada) the reference is (-831600,  117980) in the NAD83 coordinate system.
+#'
+#' @section Parameter \code{func}:
+#' The function to be applied to each cell is a classical function (see examples) that
+#' returns a labelled list of metrics. The following existing functions allows the user to
+#' compute some metrics:
 #' \itemize{
 #' \item{\link[lidR:stdmetrics]{stdmetrics}}
 #' \item{\link[lidR:entropy]{entropy}}
@@ -49,16 +55,33 @@
 #' \item{\link[lidR:LAD]{LAD}}
 #' } Users must write their own functions to create metrics. \code{grid_metrics} will
 #' dispatch the LiDAR data for each cell in the user's function. The user writes their
-#' function without considering grid cells, only a cloud of points (see example).
+#' function without considering grid cells, only a point cloud (see example).
 #'
-#' @param .las An object of class \code{LAS}
-#' @param func the function to be applied to each cell
+#' @section Parameter \code{start}:
+#' The algorithm will always provide the same coordinates independently of the dataset.
+#' When start = (0,0) and res = 20 grid_metrics will produce the following raster centers:
+#' (10,10), (10,30), (30,10) etc..  When start = (-10, -10) and res = 20 grid_metrics will
+#' produce the following raster centers: (0,0), (0,20), (20,0) etc.. In Quebec (Canada)
+#' reference is (-831600,  117980) in the NAD83 coordinate system.
+#'
+#' @section Use with a \code{LAScatalog}:
+#' When the parameter \code{x} is a \link[lidR:LAScatalog-class]{LAScatalog} the function processes
+#' the entire dataset in a continuous way using a multicore process. Parallel computing is set
+#' by default to the number of core available in the computer. The user can modify the global
+#' options using the function \link{catalog_options}.\cr\cr
+#' \code{lidR} support .lax files. Computation speed will be \emph{significantly} improved with a
+#' spatial index.
+#'
+#' @param x An object of class \link{LAS} or a \link{catalog} (see section "Use with a LAScatalog")
+#' @param func the function to be applied to each cell (see section "Parameter func")
 #' @param res numeric. The size of the cells. Default 20.
-#' @param start vector x and y coordinates for the reference raster. Default is (0,0).
+#' @param start vector x and y coordinates for the reference raster. Default is (0,0) (see section "Parameter start").
 #' @param splitlines logical. If TRUE the algorithm will compute the metrics for each
 #' flightline individually. It returns the same cells several times in overlap.
-#' @param debug logical. If you encounter a non trivial error try \code{debug = TRUE}.
-#' @return It returns a \code{data.table} containing the metrics for each cell. The table
+#' @param filter character. Streaming filter while reading the files (see \link{readLAS}).
+#' If the input is a \code{LAScatalog} the function \link{readLAS} is called internally. The
+#' user cannot manipulate the lidar data directly but can use streaming filters instead.
+#' @return Returns a \code{data.table} containing the metrics for each cell. The table
 #' has the class "lasmetrics" enabling easy plotting.
 #' @examples
 #' LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
@@ -90,13 +113,35 @@
 #' plot(metrics, "zsqmean")
 #' #etc.
 #' @export
-grid_metrics = function(.las, func, res = 20, start = c(0,0), splitlines = FALSE, debug = FALSE)
+grid_metrics = function(x, func, res = 20, start = c(0,0), splitlines = FALSE, filter = "")
 {
-  stopifnotlas(.las)
+  UseMethod("grid_metrics", x)
+}
 
+#' @export
+grid_metrics.LAS = function(x, func, res = 20, start = c(0,0), splitlines = FALSE, filter = "")
+{
   call = substitute(func)
 
-  stat <- lasaggregate(.las, by = "XY", call, res, start, c("X", "Y"), splitlines, debug)
+  stat <- lasaggregate(x, by = "XY", call, res, start, c("X", "Y"), splitlines)
+
+  return(stat)
+}
+
+#' @export
+grid_metrics.LAScatalog = function(x, func, res = 20, start = c(0,0), splitlines = FALSE, filter = "")
+{
+  call = substitute(func)
+
+  if (any(start != 0))  warning("Parameter start is currently disabled for LAScatalogs")
+  if (splitlines)       warning("Parameter splitlines is currently disabled for LAScatalogs")
+
+  oldbuffer <- CATALOGOPTIONS("buffer")
+  CATALOGOPTIONS(buffer = 0)
+
+  stat <- grid_catalog(x, grid_metrics, res, "*+", filter, func = call)
+
+  CATALOGOPTIONS(buffer = oldbuffer)
 
   return(stat)
 }

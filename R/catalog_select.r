@@ -29,12 +29,12 @@
 
 #' Select LAS files interactively
 #'
-#' Select a set of LAS tiles from a Catalog using the mouse interactively. This function
-#' enables the user to select a set of las files from a Catalog by clicking
+#' Select a set of LAS tiles from a LAScatalog using the mouse interactively. This function
+#' enables the user to select a set of las files from a LAScatalog by clicking
 #' on the map of the file using the mouse. The selected files will be highlighted in red on
 #' the plot after selection is complete.
-#' @param x A Catalog object
-#' @return A Catalog object
+#' @param x A LAScatalog object
+#' @return A LAScatalog object
 #' @export
 #' @examples
 #' \dontrun{
@@ -42,18 +42,52 @@
 #' selectedFiles = catalog_select(project)
 #' }
 #' @seealso
-#' \link[lidR:catalog]{Catalog}
+#' \link[lidR:catalog]{LAScatalog}
 catalog_select = function(x)
 {
-  Min.X <- Min.Y <- Max.X <- Max.Y <- filename <- NULL
+  `Min X` <- `Min Y` <- `Max X` <- `Max Y` <- filename <- geometry <- NULL
 
-  graphics::plot(x)
+  if (!is.na(x@crs@projargs))
+  {
+    catalog <- as.spatial(x)
+    sfdata <- mapedit::selectFeatures(catalog)
+    data.table::setDT(sfdata)
+    sfdata[, geometry := NULL]
+    newnames <- gsub(x = names(sfdata), pattern = "(\\.)+", replacement = " ")
+    data.table::setnames(sfdata, names(sfdata), newnames)
+    x@data <- sfdata
+    return(x)
+  }
+  else
+  {
+    graphics::plot(x)
+    selected = with(x@data, identify_tile(`Min X`, `Max X`, `Min Y`, `Max Y`))
+    x@data <- x@data[selected]
+    return(x)
+  }
+}
 
-  selected = x %$% graphics::identify((Min.X+Max.X)/2, (Min.Y+Max.Y)/2, plot=F)
+identify_tile <- function(minx, maxx, miny, maxy, plot = FALSE, ...)
+{
+  n <- length(minx)
+  x <- (minx + maxx)/2
+  y <- (miny + maxy)/2
 
-  x = x[selected,]
+  sel <- rep(FALSE, n)
 
-  x %$% graphics::rect(Min.X, Min.Y, Max.X, Max.Y, col="red")
+  while(sum(sel) < n)
+  {
+    ans <- graphics::identify(x[!sel], y[!sel], n = 1, plot = FALSE, ...)
 
-  return(x)
+    if(!length(ans))
+      break
+
+    ans <- which(!sel)[ans]
+
+    graphics::rect(minx[ans], miny[ans], maxx[ans], maxy[ans], col = "forestgreen")
+
+    sel[ans] <- TRUE
+  }
+
+  return(which(sel))
 }

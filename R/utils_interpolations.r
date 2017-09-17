@@ -49,13 +49,13 @@ interpolate = function(points, coord, method, k, model)
 
   if (method == "knnidw")
   {
-    cat("[using inverse distance weighting]\n")
+    verbose("[using inverse distance weighting]\n")
     return(interpolate_knnidw(points, coord, k))
   }
   else if (method == "delaunay")
   {
-    cat("[using Delaunay triangulation]\n")
-    return(interpolate_delaunay(points, coord))
+    verbose("[using Delaunay triangulation]\n")
+    return(interpolate_delaunay(points, coord, k = k))
   }
   else if (method == "kriging")
   {
@@ -67,15 +67,16 @@ interpolate = function(points, coord, method, k, model)
 
 interpolate_knnidw = function(points, coord, k)
 {
-  . <- X <- Y <- NULL
+  #nn = RANN::nn2(points[, .(X,Y)], coord[, .(X,Y)], k = k)
+  #nn = knn(points$X, points$Y, coord$X, coord$Y, k)
+  #dx = nn$nn.idx
+  #w = 1/nn$nn.dist
+  #w = ifelse(is.infinite(w), 1e8, w)
+  #z = matrix(points[as.numeric(idx)]$Z, ncol = dim(w)[2])
 
-  nn = RANN::nn2(points[, .(X,Y)], coord[, .(X,Y)], k = k)
-  idx = nn$nn.idx
-  w = 1/nn$nn.dist
-  w = ifelse(is.infinite(w), 1e8, w)
-  z = matrix(points[as.numeric(idx)]$Z, ncol = dim(w)[2])
+  z = knnidw(points$X, points$Y, points$Z, coord$X, coord$Y, k)
 
-  return(rowSums(z*w)/rowSums(w))
+  return(z)
 }
 
 interpolate_kriging = function(points, coord, model, k)
@@ -85,20 +86,22 @@ interpolate_kriging = function(points, coord, model, k)
   return(x$var1.pred)
 }
 
-interpolate_delaunay <- function(points, coord, th = 0)
+interpolate_delaunay <- function(points, coord, th = 0, k = 0)
 {
   pitfree = th > 0  # specific case if using khosravipour algorithm in grid_tincanopy
+
+  verbose("Delaunay triangulation...")
 
   X <- as.matrix(points)
   Y <- as.matrix(coord)
 
-  verbose("Delaunay triangulation...")
+  dn   <- suppressMessages(geometry::delaunayn(X[,1:2], options = "QbB"))
 
-  dn   <- suppressMessages(geometry::delaunayn(X[,1:2]))
+  # geometry::trimesh(dn, X)
 
   verbose("Searching for the enclosing Delaunay convex hull...")
 
-  idx  <- tsearch(X[,1], X[,2], dn, Y[,1], Y[,2], LIDROPTIONS("progress"))
+  idx  <- tsearch(points$X, points$Y, dn, coord$X, coord$Y, LIDROPTIONS("progress"))
 
   #uidx <- unique(idx)
   #uidx <- uidx[!is.na(uidx)]
@@ -112,6 +115,15 @@ interpolate_delaunay <- function(points, coord, th = 0)
   N = N[idx,]
 
   z = -(Y[,1] * N[,1] + Y[,2] * N[,2] + N[,4]) / N[,3]
+
+  isna = is.na(z)
+  nnas = sum(isna)
+
+  if (nnas > 0 & k > 0)
+  {
+    z[isna] <- knnidw(points$X, points$Y, points$Z, coord$X[isna], coord$Y[isna], k)
+    warning(paste0(nnas, " points outside the convex hull of the triangulation were interpolated using the nearest neighbour."), call. = F)
+  }
 
   if (pitfree)
   {

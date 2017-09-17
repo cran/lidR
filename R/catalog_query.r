@@ -28,35 +28,50 @@
 
 #' Extract LiDAR data based on a set of coordinates
 #'
-#' When the user has a set of (x, y) coordinates corresponding to a region of interest (ROI),
-#' a ground inventory for example, they can automatically extract the lidar data associated
-#' with the ROIs from a \link[lidR:catalog]{Catalog}. The algorithm will do this even for ROIs
-#' falling on the edges of one or more tiles.\cr
-#' It works only for tiles that are arranged in gridlines.
+#' From a set of (x, y) coordinates corresponding to the centers of regions of interest (ROIs),
+#' for example a ground inventory, the function automatically extracts the lidar data associated
+#' with the ROIs from a \link{catalog}. The algorithm will do this even for ROIs falling on
+#' the edges of one or more tiles. The extracted lidar data can be buffered. In this case the
+#' function adds a buffer area around the ROIs, and the LAS object returned has an extra column
+#' named '\code{buffer}' which indicates, for each point, if the point is in the buffer or
+#' from the ROI (see more in the section Buffer).\cr\cr
+#' \code{lidR} support .lax file. You will speed-up the computation \emph{a lot} with a spatial
+#' index.
 #'
-#' @aliases catalog_queries
-#' @param obj A Catalog object
-
-#' @param x vector. A set of x coordinates corresponding to the center of the ROI
-#' @param y vector. A set of y coordinates corresponding to the center of the ROI
-#' @param r numeric or vector. A radius or a set of radii of the ROI. If only
+#' @section Buffer:
+#' If the ROIs are buffered then the LAS objects returned by the function have extra points.
+#' The LAS objects received by the user contain a special column called 'buffer', which indicates,
+#' for each point, if it comes from a buffered area or not. Points from non-buffered areas (i.e.
+#' the ROI) have a 'buffer' value of 0, while those from buffered areas have a 'buffer' value
+#' greater than 0.\cr\cr
+#' For a circular ROI, points in the buffered area have a buffer value of 1. For a rectangular
+#' ROI the points in the buffer area have a buffer value of 1, 2, 3 or 4, where 1 is the bottom
+#' buffer and 2, 3 and 4 are the left, top and right buffers, respectively.
+#'
+#' @section Multicore computation:
+#' The process is done using several cores. To change the settings of how a catalog is processed
+#' use \link{catalog_options}.
+#'
+#' @param obj A LAScatalog object
+#' @param x vector. A set of x coordinates corresponding to the centers of the ROIs
+#' @param y vector. A set of y coordinates corresponding to the centers of the ROIs
+#' @param r numeric or vector. A radius or a set of radii of the ROIs. If only
 #' r is provided (r2 = NULL) it will extract data falling onto a disc.
 #' @param r2 numeric or vector. A radius or a set of radii of plots. If r2
-#' is provided, the selection turns into a rectangular ROI. If r = r2 it is a square.
-#' @param roinames vector. A set of ROI names (the ID of the plots, for example)
-#' @param mc.cores numeric. The number of cores for parallel processing (see \link[parallel:makeCluster]{makeCluster})
+#' is provided, the selection turns into a rectangular ROI (if r = r2 it is a square).
+#' @param buffer numeric. Adds a buffer area around the ROI. See relevant sections.
+#' @param roinames vector. A set of ROI names (the plot IDs, for example) to label the
+#' returned list.
+#' @param ... Any argument available in \link{readLAS} to reduce the amount of data loaded.
 #' @return A list of LAS objects
 #' @seealso
-#' \link[lidR:readLAS]{readLAS}
-#' \link[lidR:catalog]{Catalog}
-#' \link[lidR:catalog_queries]{catalog_queries}
-#' @export catalog_queries
+#' \link{readLAS}
+#' \link{catalog}
+#' \link{catalog_options}
+#' @export
 #' @examples
 #' \dontrun{
-#' # Global option to display a progressbar
-#' lidr_option(progress = TRUE)
-#'
-#' # Build a Catalog
+#' # Build a LAScatalog
 #' catalog = catalog("<Path to a folder containing a set of .las or .laz files>")
 #'
 #' # Get coordinates from an external file
@@ -69,18 +84,29 @@
 #'
 #' # Return a List of 30 square LAS objects of 50x50 m
 #' catalog %>% catalog_queries(X, Y, R, R)
+#'
+#' # Return a List of 30 circular LAS objects of 30 m radius. 25 m being the ROI and 5 m
+#' # being a buffered area. The LAS objects have an extra column called 'buffer' to
+#' # differentiate the points.
+#' catalog %>% catalog_queries(X, Y, R, buffer = 5)
+#'
+#' # Return a List of 30 circular LAS objects of 25 m radius for which only the fields X, Y and
+#' # Z have been loaded and Z values < 0 were removed.
+#' catalog %>% catalog_queries(X, Y, R, XYZonly = TRUE, filter = "-drop_z_below 0")
 #' }
-catalog_queries = function(obj, x, y, r, r2 = NULL, roinames = NULL, mc.cores = parallel::detectCores())
+catalog_queries = function(obj, x, y, r, r2 = NULL, buffer = 0, roinames = NULL, ...)
 {
-  . <- tiles <- NULL
+  UseMethod("catalog_queries", obj)
+}
 
+#' @export
+catalog_queries.LAScatalog = function(obj, x, y, r, r2 = NULL, buffer = 0, roinames = NULL, ...)
+{
   objtxt = lazyeval::expr_text(obj)
   xtxt   = lazyeval::expr_text(x)
   ytxt   = lazyeval::expr_text(y)
   rtxt   = lazyeval::expr_text(r)
-
-  if (!is(obj, "Catalog"))
-    stop(paste0(objtxt, " is not a Catalog."), call. = FALSE)
+  btxt   = lazyeval::expr_text(buffer)
 
   if (length(x) != length(y))
     stop(paste0(xtxt, " is not same length as ", ytxt), call. = FALSE)
@@ -88,74 +114,124 @@ catalog_queries = function(obj, x, y, r, r2 = NULL, roinames = NULL, mc.cores = 
   if (length(r) > 1 & (length(x) != length(r)))
     stop(paste0(xtxt, " is not same length as ", rtxt), call. = FALSE)
 
-  nplot = length(x)
-  shape = if (is.null(r2)) 0 else 1
+  if (length(buffer) > 1 & (length(x) != length(buffer)))
+    stop(paste0(xtxt, " is not same length as ", btxt), call. = FALSE)
 
-  if (is.null(roinames)) roinames = paste0("ROI", 1:nplot)
+  if (any(buffer < 0))
+    stop("Buffer size must be a positive value", call. = FALSE)
 
-  verbose("Indexing files...")
+  ncores   = CATALOGOPTIONS("multicore")
+  progress = CATALOGOPTIONS("progress")
 
-  # Make an index of the file in which are each query
-  lasindex = obj %>% catalog_index(x, y, r, r2, roinames)
-
-  # Remove potential unproper queries (out of existing files)
-  keep = lasindex[, length(tiles[[1]]) > 0, by = roinames]$V1
-  lasindex = lasindex[keep]
-  roinames = roinames[keep]
-
-  # Transform as list
-  lasindex = apply(lasindex, 1, as.list)
-
-  # Recompute the number of queries
-  nplot = length(lasindex)
-
-  verbose("Extracting data...")
-
-  if (mc.cores == 1)
-  {
-    if (LIDROPTIONS("progress"))
-      p = utils::txtProgressBar(max = nplot, style = 3)
-    else
-      p = NULL
-
-    output = lapply(lasindex, .getQuery, shape, p)
-  }
-  else
-  {
-    cl = parallel::makeCluster(mc.cores, outfile = "")
-    parallel::clusterExport(cl, varlist = c(utils::lsf.str(envir = globalenv()), ls(envir = environment())), envir = environment())
-    output = parallel::parLapply(cl, lasindex, .getQuery, shape)
-    parallel::stopCluster(cl)
-  }
-
-  output = unlist(output)
-  output = output[match(roinames, names(output))]  # set back to the original order
-
-  cat("\n")
+  output = catalog_queries_internal(obj, x, y, r, r2, buffer, roinames, ncores, progress, ...)
 
   return(output)
 }
 
-.getQuery = function(query, shape, p = NULL, ...)
+catalog_queries_internal = function(obj, x, y, r, r2, buffer, roinames, ncores, progress, ...)
 {
-  x <- y <- r <- r2 <- NULL
+  nplots <- length(x)
+  tiles  <- pbar <- NULL
 
-  if (shape == 0)
-    filter = query %$% paste("-inside_circle", x, y, r)
-  else
-    filter = query %$% paste("-inside", x - r, y - r2, x + r, y + r2)
+  if (is.null(roinames))
+    roinames <- paste0("ROI", 1:nplots)
 
-  lidardata = list(readLAS(query$tiles, all = TRUE, filter = filter))
-  names(lidardata) = query$roinames
+  verbose("Indexing files...")
 
-  if (!is.null(p))
+  # Make an index of the files containing each query
+  queries = catalog_index(obj, x, y, r, r2, buffer, roinames)
+  nplots  = length(queries)
+
+  if (progress)
+    pbar  = txtProgressBarMulticore(min = 0, max = nplots, style = 3)
+
+  if (nplots <= ncores)
+    ncores = nplots
+
+  verbose("Extracting data...")
+
+  # Computation
+  if (ncores == 1)
   {
-    i = utils::getTxtProgressBar(p) + 1
-    utils::setTxtProgressBar(p, i)
+    output = sapply(queries, .get_query, pb = pbar, ..., simplify = FALSE, USE.NAMES = TRUE)
   }
   else
-    cat(sprintf("%s ", query$roinames))
+  {
+    cl = parallel::makeCluster(ncores, outfile = "")
+    parallel::clusterExport(cl, varlist = NULL, envir = NULL)
+    output = parallel::parSapply(cl, queries, .get_query, pb = pbar, ..., simplify = FALSE, USE.NAMES = TRUE)
+    parallel::stopCluster(cl)
 
-  return(lidardata)
+    # This patch solves issue #73 in a dirty way waiting for a better solution for issue
+    # 2333 in data.table
+    for (i in 1:length(output))
+      output[[i]]@data <- data.table::alloc.col(output[[i]]@data)
+  }
+
+  return(output)
+}
+
+.get_query = function(query, pb = NULL, ...)
+{
+  X <- Y <- buffer <- NULL
+
+  # Variables for readability
+  x       <- query$x
+  y       <- query$y
+  r       <- query$r
+  r2      <- query$r2
+  buff    <- query$buffer
+  tiles   <- query$tiles
+  shape   <- query$shape
+
+  xleft   <- x - r
+  xright  <- x + r
+  ybottom <- y - r2
+  ytop    <- y + r2
+
+  select  <- "*"
+  param   <- list(...)
+
+  if (shape == LIDRCIRCLE)
+    filter <- paste("-inside_circle", x, y, r)
+  else if (shape == LIDRRECTANGLE)
+    filter <- paste("-inside", xleft, ybottom, xright, ytop)
+  else
+    stop("Something went wrong internally in .get_query(). Process aborted.")
+
+  if (!is.null(pb))
+    addTxtProgressBarMulticore(pb, 1)
+
+  # Merge spatial filter with user's filters
+  if (!is.null(param$filter))
+    filter <- paste(filter, param$filter)
+
+  if (!is.null(param$select))
+    select <- param$select
+
+  las <- readLAS(tiles, filter = filter, select = select)
+
+  if (is.null(las))
+    return(NULL)
+
+  if (buff == 0)
+    return(las)
+
+  las@data[, buffer := 0]
+
+  if (shape == LIDRCIRCLE)
+  {
+    las@data[(X-x)^2 + (Y-y)^2 > (r-buff)^2, buffer := LIDRBUFFER]
+  }
+  else
+  {
+    las@data[Y < ybottom + buff, buffer := LIDRBOTTOMBUFFER]
+    las@data[X < xleft   + buff, buffer := LIDRLEFTBUFFER]
+    las@data[Y > ytop    - buff, buffer := LIDRTOPBUFFER]
+    las@data[X > xright  - buff, buffer := LIDRRIGHTBUFFER]
+    las@data[(X > xright - buff) & (Y < ybottom + buff), buffer := LIDRBOTTOMBUFFER]
+  }
+
+  return(las)
 }
 

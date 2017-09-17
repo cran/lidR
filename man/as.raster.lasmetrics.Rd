@@ -4,14 +4,19 @@
 \alias{as.raster.lasmetrics}
 \title{Transform a \code{lasmetrics} object into a spatial \code{RasterLayer} object}
 \usage{
-\method{as.raster}{lasmetrics}(x, z = NULL, ...)
+\method{as.raster}{lasmetrics}(x, z = NULL, fun.aggregate = mean, ...)
 }
 \arguments{
 \item{x}{a \code{lasmetrics} object}
 
-\item{z}{character. If 3 columns or more, the field to extract. If NULL return a RasterStack.}
+\item{z}{character. If 3 columns or more, the names of the field to extract. If NULL returns
+a RasterStack instead of a RasterLayer.}
 
-\item{\dots}{unused}
+\item{fun.aggregate}{Should the data be aggregated before casting? If the table does not
+contain a single observation for each cell, then aggregation defaults to mean value with
+a message.}
+
+\item{...}{Internal use only.}
 }
 \value{
 A \link[raster:RasterLayer-class]{RasterLayer} object from package \pkg{raster}
@@ -33,7 +38,6 @@ rmeanHeight = as.raster(meanHeight)
 \link[lidR:grid_canopy]{grid_canopy}
 \link[raster:raster]{raster}
 
-Other cast: \code{\link{as.SpatialPixelsDataFrame}},
-  \code{\link{as.SpatialPointsDataFrame}},
-  \code{\link{as.lasmetrics}}
+Other cast: \code{\link{as.lasmetrics}},
+  \code{\link{as.spatial}}
 }

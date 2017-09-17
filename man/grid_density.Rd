@@ -2,23 +2,38 @@
 % Please edit documentation in R/grid_density.r
 \name{grid_density}
 \alias{grid_density}
-\title{Pulse density surface model}
+\title{Map the pulse or point density}
 \usage{
-grid_density(.las, res = 4)
+grid_density(x, res = 4, filter = "")
 }
 \arguments{
-\item{.las}{An object of class \code{LAS}}
+\item{x}{An object of class \link{LAS} or a \link{catalog} (see section "Use with a LAScatalog")}
 
-\item{res}{numeric. The size of a grid cell in LiDAR data coordinates units. Default is 4 = 16 square meters.}
+\item{res}{numeric. The size of a grid cell in LiDAR data coordinates units. Default is 4 = 16
+square meters.}
+
+\item{filter}{character. Streaming filter while reading the files (see \link{readLAS}).
+If \code{x} is a \code{LAScatalog} the function \link{readLAS} is called internally. The
+user cannot manipulate the lidar data directly but can use streaming filters instead.}
 }
 \value{
-It returns a \code{data.table} of the class \code{lasmetrics} which enables easier plotting and
-RasterLayer casting.
+Returns a \code{data.table} of class \code{lasmetrics} which enables easier
+plotting and RasterLayer casting.
 }
 \description{
-Creates a pulse density map using a LiDAR cloud of points. This function is an alias
-for \code{grid_metrics(obj, f, res} with \code{f} = \code{length(unique(pulseID))/res^2)}
+Creates a pulse density map using a LiDAR point cloud. This function is an alias
+for \code{grid_metrics(obj, f, res)} with \code{f} = \code{length(unique(pulseID))/res^2)}
 }
+\section{Use with a \code{LAScatalog}}{
+
+When the parameter \code{x} is a \link[lidR:LAScatalog-class]{LAScatalog} the function processes
+the entire dataset in a continuous way using a multicore process. Parallel computing is set
+by default to the number of core available in the computer. The user can modify the global
+options using the function \link{catalog_options}.\cr\cr
+\code{lidR} support .lax files. Computation speed will be \emph{signifcantly} improved with a
+spatial index.
+}
+
 \examples{
 LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
 lidar = readLAS(LASfile)
@@ -28,6 +43,4 @@ lidar \%>\% grid_density(10) \%>\% plot
 }
 \seealso{
 \link[lidR:grid_metrics]{grid_metrics}
-
-Other grid_alias: \code{\link{grid_canopy}}
 }

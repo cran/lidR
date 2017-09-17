@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 
 #include <Rcpp.h>
+#include "QuadTree.h"
 using namespace Rcpp;
 
 // [[Rcpp::export]]
@@ -86,6 +87,50 @@ int fast_countover(NumericVector x, double t)
   return n;
 }
 
+// [[Rcpp::export]]
+NumericVector fast_extract(NumericMatrix r, NumericVector x, NumericVector y, double xmin, double ymin, double res)
+{
+  NumericVector z(x.length());
+  int h = r.nrow();
+  int w = r.ncol();
+  double xmax = xmin + w * res;
+  double ymax = ymin + h * res;
+
+  for (int k = 0 ; k < x.length() ; k++)
+  {
+    double yk = y[k];
+    double xk = x[k];
+
+    if (yk < ymin || yk > ymax) {
+      z(k) = NumericVector::get_na();
+      continue;
+    }
+
+    if (xk < xmin || xk > xmax) {
+      z(k) = NumericVector::get_na();
+      continue;
+    }
+
+    if (yk == (int)yk)
+      yk = yk-0.01*res;
+
+    double sx = xk - xmin;
+    double sy = yk - ymin;
+
+    int j = (int)(std::abs((xmin - xk) / res) + 1)-1;
+    int i = r.nrow() - (int)(std::abs((ymin - yk) / res))-1;
+
+    if (j == w)
+      j--;
+
+    //Rcpp::Rcout << i << " " << j << std::endl;
+
+    z(k) = r(i, j);
+  }
+
+  return(z);
+}
+
 IntegerMatrix which_equal(IntegerMatrix mtx, double val)
 {
   int l = mtx.nrow();
@@ -137,6 +182,23 @@ NumericVector sqdistance(NumericVector x1, NumericVector y1, double x2, double y
     double dx = *i1-x2;
     double dy = *i2-y2;
     *i3 = dx * dx + dy * dy;
+  }
+
+  return y;
+}
+
+std::vector<double> sqdistance(std::vector<Point*>& pts, Point u)
+{
+  int n = pts.size();
+  std::vector<double> y(n);
+  std::vector<double>::iterator iy, endy;
+  std::vector<Point*>::iterator ip, endp;
+
+  for(ip = pts.begin(), iy = y.begin(), endp = pts.end(), endy = y.end() ; iy< endy && ip < endp ; ++iy, ++ip)
+  {
+    double dx = (*ip)->x - u.x;
+    double dy = (*ip)->y - u.y;
+    *iy = dx * dx + dy * dy;
   }
 
   return y;

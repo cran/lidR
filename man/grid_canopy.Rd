@@ -4,40 +4,60 @@
 \alias{grid_canopy}
 \title{Canopy surface model}
 \usage{
-grid_canopy(.las, res = 2, subcircle = 0, na.fill = "none", ...)
+grid_canopy(x, res = 2, subcircle = 0, na.fill = "none", ...,
+  filter = "")
 }
 \arguments{
-\item{.las}{An object of class \code{LAS}}
+\item{x}{An object of class \link{LAS} or a \link{catalog} (see section "Use with a LAScatalog")}
 
 \item{res}{numeric. The size of a grid cell in LiDAR data coordinates units. Default is
 2 meters i.e. 4 square meters.}
 
-\item{subcircle}{numeric radius of the circles. To obtain fewer empty pixels the algorithm
-can replace each return with a circle composed of 8 points before computing the maximum elevation
-in each pixel.}
+\item{subcircle}{numeric. radius of the circles. To obtain fewer empty pixels the algorithm
+can replace each return with a circle composed of 8 points (see details).}
 
 \item{na.fill}{character. name of the algorithm used to interpolate the data and fill the empty pixels.
 Can be \code{"knnidw"}, \code{"delaunay"} or \code{"kriging"} (see details).}
 
 \item{...}{extra parameters for the algorithm used to interpolate the empty pixels (see details)}
+
+\item{filter}{character. Streaming filter while reading the files (see \link{readLAS}).
+If \code{x} is a \code{LAScatalog} the function \link{readLAS} is called internally. The
+user cannot manipulate the lidar data directly but can use streaming filters instead.}
 }
 \value{
-It returns a \code{data.table} with the class \code{lasmetrics}, which enables easier plotting and
-RasterLayer casting.
+Returns a \code{data.table} of class \code{lasmetrics}, which enables easier
+plotting and RasterLayer casting.
 }
 \description{
-Creates a canopy surface model using a LiDAR point cloud. For each pixel the
-function returns the highest point found. This basic method could be improved by replacing
-each LiDAR return with a small disk. An interpolation for empty pixels is also available.
+Creates a canopy surface model using a LiDAR point cloud. For each pixel the function
+returns the highest point found (point-to-raster). This basic method could be improved
+by replacing each LiDAR return with a small disk. An interpolation for empty pixels is
+also available.
 }
 \details{
-The algorithm relies on the 'local maximum'. For each pixel the function returns the highest
-point found. This method implies that the resulting surface model can contain empty pixels.
-Those 'holes' can be filled by interpolation. Internally, the interpolation is based on the same method
-used in the function \link[lidR:grid_terrain]{grid_terrain}. Therefore the
-documentation for \link[lidR:grid_terrain]{grid_terrain} is also applicable to this function.
-(see also examples)
+The algorithm relies on a point-to-raster approach. For each pixel the elevation of the
+highest point is found and attributed to this pixel. This method implies that the resulting
+surface model can contain empty pixels. Those 'holes' can be filled by interpolation.
+Internally, the interpolation is based on the same method used in the function
+\link[lidR:grid_terrain]{grid_terrain}. Therefore the documentation for
+\link[lidR:grid_terrain]{grid_terrain} is also applicable to this function (see also
+examples).\cr\cr
+The 'subcircle' tweak replaces each point with 8 points around the original one. This allows
+for virtual 'emulation' of the fact that a lidar point is not a point as such, but more
+realistically a disc. This tweak densifies the point cloud and the resulting canopy model is
+smoother and contains fewer 'pits' and empty pixels.
 }
+\section{Use with a \code{LAScatalog}}{
+
+When the parameter \code{x} is a \link[lidR:LAScatalog-class]{LAScatalog} the function processes
+the entire dataset in a continuous way using a multicore process. Parallel computing is set
+by default to the number of core available in the computer. The user can modify the global
+options using the function \link{catalog_options}.\cr\cr
+\code{lidR} support .lax file. Computation speed will be \emph{significantly} improved with a
+spatial index.
+}
+
 \examples{
 LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
 lidar = readLAS(LASfile)
@@ -62,6 +82,4 @@ grid_canopy(lidar, 1, subcircle = 0.1, na.fill = "delaunay") \%>\% plot
 \seealso{
 \link[lidR:grid_metrics]{grid_metrics}
 \link[lidR:as.raster.lasmetrics]{as.raster}
-
-Other grid_alias: \code{\link{grid_density}}
 }

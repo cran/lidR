@@ -30,6 +30,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 // [[Rcpp::depends(RcppProgress)]]
 #include <progress.hpp>
 #include <Rcpp.h>
+#include <algorithm>
+#include "QuadTree.h"
 
 using namespace Rcpp;
 

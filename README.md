@@ -1,10 +1,12 @@
 ![](https://raw.githubusercontent.com/Jean-Romain/lidR/gh-pages/images/lidr-ban.png)<br/>
 
+![CRAN](https://img.shields.io/badge/CRAN-1.2.1-brightgreen.svg)  ![Github](https://img.shields.io/badge/Github-1.3.0-green.svg) ![licence](https://img.shields.io/badge/Licence-GPL--3-blue.svg)  ![build](https://travis-ci.org/Jean-Romain/lidR.svg?branch=master)  [![coverage](http://codecov.io/github/Jean-Romain/lidR/coverage.svg?branch=devel)](https://codecov.io/gh/Jean-Romain/lidR/branch/devel)
+
 R package for Airborne LiDAR Data Manipulation and Visualization for Forestry Applications
 
 The lidR package provides functions to read and write `.las` and `.laz` files, plot a point cloud, compute metrics using an area-based approach, compute digital canopy models, thin lidar data, manage a catalog of datasets, automatically extract ground inventories, process a set of tiles in multicore, individual tree segmentation, classify data from geographic data, and provides other tools to manipulate LiDAR data.
 
-lidR provides an open-source and R-based implementation of several classical functions used in software dedicated to LiDAR data manipulation. lidR is flexible because it allows the user to program their own tools and manipulate their own objects in R rather than rely on a set of predefined tools.
+Development of the lidR package between 2015 and 2017 was made possible thanks to the financial support of the [AWARE project](http://aware.forestry.ubc.ca/); grantee [Prof Nicholas Coops](http://profiles.forestry.ubc.ca/person/nicholas-coops/).
 
 Please contact the author for bug reports or feature requests (on github, preferably). I enjoy implementing new features!
 

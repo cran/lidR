@@ -4,31 +4,34 @@
 \alias{grid_terrain}
 \title{Digital Terrain Model}
 \usage{
-grid_terrain(.las, res = 1, method, k = 10L, model = gstat::vgm(0.59,
-  "Sph", 874), keep_lowest = FALSE)
+grid_terrain(x, res = 1, method, k = 10L, model = gstat::vgm(0.59, "Sph",
+  874), keep_lowest = FALSE)
 }
 \arguments{
-\item{.las}{LAS object}
+\item{x}{An object of class \link{LAS} or a \link{catalog} (see section "Use with a LAScatalog")}
 
-\item{res}{numeric resolution.}
+\item{res}{numeric. resolution.}
 
-\item{method}{character can be \code{"knnidw"}, \code{"delaunay"} or \code{"kriging"} (see details)}
+\item{method}{character. can be \code{"knnidw"}, \code{"delaunay"} or \code{"kriging"} (see details)}
 
 \item{k}{numeric. number of k-nearest neighbours when the selected method is either \code{"knnidw"} or \code{"kriging"}}
 
 \item{model}{a variogram model computed with \link[gstat:vgm]{vgm} when the selected method
-is \code{"kriging"}. If null it performs an ordinary or weighted least squares prediction.}
+is \code{"kriging"}. If null, it performs an ordinary or weighted least squares prediction.}
 
-\item{keep_lowest}{logical. The function forces the original lowest ground point of each
+\item{keep_lowest}{logical. This function forces the original lowest ground point of each
 pixel (if it exists) to be chosen instead of the interpolated values.}
 }
 \value{
 A \code{lasmetrics} data.table.
 }
 \description{
-Interpolate ground points and create a rasterized digital terrain model. The interpolation
+Interpolates ground points and creates a rasterized digital terrain model. The interpolation
 can be done using 3 methods: \code{"knnidw"}, \code{"delaunay"} or \code{"kriging"} (see
-details). The algorithm uses the points classified as "ground" to compute the interpolation.
+details). The algorithm uses the points classified as "ground" to compute the interpolation.\cr
+Depending on the interpolation method, the edges of the dataset can be more, or less poorly
+interpolated. A buffer around the region of interest is always recommended to avoid edge
+effects.
 }
 \details{
 \describe{
@@ -36,14 +39,26 @@ details). The algorithm uses the points classified as "ground" to compute the in
 an inverse distance weighting (IDW). This is a fast but basic method for spatial
 data interpolation.}
 \item{\code{delaunay}}{Interpolation based on Delaunay triangulation. It makes a linear
-interpolation within each triangle. Note that with this method no extrapolation is done
-outside of the convex hull determined by the ground points.}
-\item{\code{kriging}}{Interpolation is done by universal kriging using the \link[gstat:krige]{krige}
-function. This method combines the KNN approach with the kriging approach. For each point of interest
-it kriges the terrain using the k-nearest neighbour ground points. This method is more difficult
-to manipulate but it is also the most advanced method for interpolating spatial data. }
+interpolation within each triangle. There are usually few cells outside the convex hull,
+determined by the ground points at the very edge of the dataset that cannot be interpolated
+with a triangulation. Extrapolation is done using knnidw.}
+\item{\code{kriging}}{Interpolation is done by universal kriging using the
+\link[gstat:krige]{krige} function. This method combines the KNN approach with the kriging
+approach. For each point of interest the terrain is kriged using the k-nearest neighbour ground
+points. This method is more difficult to manipulate but it is also the most advanced method for
+interpolating spatial data. }
 }
 }
+\section{Use with a \code{LAScatalog}}{
+
+When the parameter \code{x} is a \link[lidR:LAScatalog-class]{LAScatalog} the function processes
+the entire dataset in a continuous way using a multicore process. Parallel computing is set
+by default to the number of core available in the computer. A buffer is required to avoid
+edge artifacts. The user can modify the global options using the function \link{catalog_options}.\cr\cr
+\code{lidR} support .lax files. Computation speed will be \emph{significantly} improved with a
+spatial index.
+}
+
 \examples{
 LASfile <- system.file("extdata", "Topography.laz", package="lidR")
 lidar = readLAS(LASfile)
