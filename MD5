@@ -1,7 +1,7 @@
 8f0e2cd40e05189ec81232da84bd6e1a *COPYING
-9db7deb940595a25925b4af4850d9dd3 *DESCRIPTION
+b44a815a87855047302d2fb40d4bdc74 *DESCRIPTION
 c65ba09df8f990ae6178cc6931c60867 *NAMESPACE
-47ded8e53aeb9140d771aa2174d4b66b *NEWS.md
+7a9a92a654dc61d906b5715f6d3fcd8e *NEWS.md
 6b23478a8bab91d3f90af2b530694cf6 *R/RcppExports.R
 1d2c82bc7d7ddbbbcce2b4352158fb3d *R/catalog_apply.r
 ff77cb58604d122541cef14d3896dc1c *R/catalog_index.r
@@ -21,7 +21,7 @@ b7bc5f00721e268c8a3c3e6052ad1a54 *R/grid_hexametrics.r
 456ce9f69418b2a262e81ea98451b124 *R/grid_metrics.r
 0f200aa4d6e3e63d5e2c573d8f47f237 *R/grid_metrics3d.r
 469c1b0f79fe6c33a3a4d0b8ca16a6cb *R/grid_terrain.r
-6b1ff424c4cc1dfbc650dd10ccead2fc *R/grid_tincanopy.r
+2b996750a77b16df871249e75b636def *R/grid_tincanopy.r
 0d3a7833bc52f2294ddb4fa9da3a59a4 *R/lasaggreagte.r
 d891d8a6cbceb5a94926a2af69da72cc *R/lascheck.r
 b924104fb9c1943abea1909fc3250e32 *R/lasclassify.r
@@ -51,7 +51,7 @@ db065ecc0616df1c67ca9290e4be5561 *R/plot.lasmetrics3d.r
 02046b797edc1526e7d767bc561bee8d *R/tree_metrics.r
 9d5ffed46345a55f6babb624a18797cd *R/utils_colors.r
 b5c2702d5bc8eaaeed702ff50ff1c98a *R/utils_geometry.r
-59767fbe3e63bb06a2e8f88480b9bace *R/utils_interpolations.r
+8e6d8d2e50e472dd6f225e2d40eeaee7 *R/utils_interpolations.r
 00b204323b5baa50629e7fb1827286b8 *R/utils_misc.r
 a747e980f7ce1bd941788de6342e885c *R/utils_progress.r
 2004398e6b9d17cf64568927a051ae16 *R/utils_projection.r
@@ -59,7 +59,7 @@ a747e980f7ce1bd941788de6342e885c *R/utils_progress.r
 cacfb64baba211a9d3330bec0c4e903a *R/utils_typecast.r
 6b6fb6dbabd28823f1ee4a091fce2883 *R/writeLAS.r
 53a34d74946ce4008d5ee3864d2a9009 *R/zzz.r
-50134cd92e645dafeda3570738417347 *README.md
+3111d90d913169e091b6e7ce942e3801 *README.md
 7ae0300dea70dd5e45b126e9e5b6139a *inst/extdata/Megaplot.lax
 666a97239fadf99d35b086261a9d4991 *inst/extdata/Megaplot.laz
 ee87a0ae4beaf7f2f98af28e304afa68 *inst/extdata/Topography.lax
@@ -128,7 +128,7 @@ a8885afd8747b6445ac018f0675ff2c3 *man/set.colors.Rd
 e039a4f9b5945341238a4962181f2b05 *man/summary.LAS.Rd
 450c790afce616b68be79ec6317a5ca1 *man/tree_metrics.Rd
 eb7a5cc1301075faf7843868dc112073 *man/writeLAS.Rd
-89842a2ea71875339fa5277fc6d5b88c *src/QuadTree.cpp
+fa9c4407fa80828effbb1f82b2fb16c2 *src/QuadTree.cpp
 14e7315b8f9d053f1b9e39d61ee6e255 *src/QuadTree.h
 e4fe85568c5f75f3e6bdd11801c7be7a *src/RcppExports.cpp
 62a7f89b47dfa2f12dc445eb2fac1684 *src/algo_dalponte2012.cpp
