@@ -1,12 +1,12 @@
 8f0e2cd40e05189ec81232da84bd6e1a *COPYING
-94db08540d5135c7415cbe2520fe967d *DESCRIPTION
+13412204871bb4b86787245139bde4b4 *DESCRIPTION
 25296ada9a808c6b146f8298b57a7546 *NAMESPACE
-0600f7472f8a7281b966fd5fc44396c9 *NEWS.md
+b1ce233b06addb3ff058ad12f7398583 *NEWS.md
 565a1dafaa9ff5e477688a02e157d955 *R/RcppExports.R
 fc49404199e818b698b85402f4493fd6 *R/catalog_apply.r
 0abb91d2051af863b017e0181b236638 *R/catalog_clip.r
 e10707f3856c5a0acfa3005725bb816b *R/catalog_index.r
-faa4972bc5885fd50b2e041f8d1315d8 *R/catalog_makecluster.r
+16dd26ba62514cff56700fcf7b384ca5 *R/catalog_makecluster.r
 454be8042397fb9faa66e0d6919c0319 *R/catalog_query.r
 ed8ad2b61eec4b8a556361e073f3a8e1 *R/catalog_reshape.r
 627ef9c090d51a71d2feda2d0150e573 *R/catalog_select.r
@@ -17,10 +17,10 @@ ce67534ab0f1545a8c20c16bd20a2824 *R/class-lascatalog.r
 1404c31d253d4c8188c086765c5fc46a *R/constant.R
 c002671efbb39b70538fd86612d32c04 *R/deprecated.r
 0c372025c6be927d4d19de99700860f1 *R/grid_canopy.r
-c54e2497092c201e8bea34206db6510e *R/grid_catalog.r
+e1e92cf6121058884807411e68605941 *R/grid_catalog.r
 3f89932f9f98c95cfcd2fb66fccbb1a2 *R/grid_density.r
 b7bc5f00721e268c8a3c3e6052ad1a54 *R/grid_hexametrics.r
-456ce9f69418b2a262e81ea98451b124 *R/grid_metrics.r
+1bcd6f7a8b1524d2093064eca05ebbfb *R/grid_metrics.r
 0f200aa4d6e3e63d5e2c573d8f47f237 *R/grid_metrics3d.r
 a81aad3e2cf1e9c191777536fb06c2f2 *R/grid_terrain.r
 77c25d1cafd75407b488068e9770801c *R/grid_tincanopy.r
@@ -37,7 +37,7 @@ b760215f51fd91d46cf2c4163ac4ddab *R/lasindentify.r
 4676bbb50c1c94aa569265f37110b743 *R/lasnormalize.r
 1ca430f90392363332bf30e2741c1f2c *R/lasroi.r
 b4a273357ff1503096ed3c27b5518fba *R/lassnags.r
-11a5499caee634527f67b0fcdb8d242a *R/lastrees.r
+f1014d9c07c8d12dca91a6102df81eb6 *R/lastrees.r
 21f3a4626636ad7a11f482f0f5df37a7 *R/lidRError.r
 8c7e36952f38f31e2c0b48ab08331cee *R/metrics.r
 0ff15736e00a327cfa06c32a003da1d9 *R/metrics_canopy_roughness.r
@@ -62,7 +62,7 @@ cd25fa9fe09c10c559c8d46dfe45c674 *R/utils_misc.r
 1b17a3095026ac8aaa863ccbd8073985 *R/utils_typecast.r
 6b6fb6dbabd28823f1ee4a091fce2883 *R/writeLAS.r
 53a34d74946ce4008d5ee3864d2a9009 *R/zzz.r
-536229278ed0f473f490efa9eed32b47 *README.md
+51751bbdd979d132e8399ae22939f157 *README.md
 7ae0300dea70dd5e45b126e9e5b6139a *inst/extdata/Megaplot.lax
 666a97239fadf99d35b086261a9d4991 *inst/extdata/Megaplot.laz
 355cf37d213d0529daf5046098ed91e7 *inst/extdata/MixedConifer.laz
@@ -116,7 +116,7 @@ bd43e430db95055d26016d3ff129d1da *man/lasnormalize.Rd
 4d0415b2900d31f2ddac0b422ab29c34 *man/lasroi.Rd
 be218aaf603a026ea150633624b54296 *man/lasscanline.Rd
 d86a2e924126407ae8a6f7af6cd8f419 *man/lassnags.Rd
-5460b8fe74fa2f8918e191abb5cef290 *man/lastrees.Rd
+469438da742c5ab871e9ca36dcd98e2a *man/lastrees.Rd
 79cf1a7f269739c74524665aac0bb7a2 *man/lidR-deprecated.Rd
 dbef09f128833bae0a67b9de67b7037c *man/lidr_options.Rd
 e83df720d2aef501743436d79d5decc4 *man/lidrpalettes.Rd
@@ -156,7 +156,7 @@ b2efb1c26dccf2e20668004655d63925 *src/local_maxima.cpp
 be8e9df49361fa789b64282fe3c10ca7 *src/tsearch.cpp
 bf4fc859fd90a3b975ff55eb839d87df *src/update_list_by_ref.cpp
 a9df0c56cc57ac160771ab74f06af8ad *tests/testthat.R
-550af5550304e9b64f416b4551b96836 *tests/testthat/Rplots.pdf
+666e205b5bcd035c5ea075e065145cae *tests/testthat/Rplots.pdf
 9ea5984f852703da330cf46f76769185 *tests/testthat/test-canopy.R
 f148f86a7f3d308f49bdae4d255b389a *tests/testthat/test-casting.R
 afc29906b37b4a3e06275f9b64d99946 *tests/testthat/test-catalog.R
@@ -173,7 +173,7 @@ c157506ca88c7c1bab77d44dc27b20f8 *tests/testthat/test-lasclassify.R
 1f26ec6b02420ec5cfdb1cad22419d94 *tests/testthat/test-lasground.R
 ececb2ba53e0f3cf977674222ad1acff *tests/testthat/test-lasnormalize.R
 4acea2d2150d66658b6ce7db2b473ecd *tests/testthat/test-lassnags.R
-61780fda8e333b9bf9a1f3d13ca16c55 *tests/testthat/test-lastrees.R
+27ce6afbeb8b6d5f504b0fad2284a055 *tests/testthat/test-lastrees.R
 efc87ebdb818cf78883bc8b7d68e4cdc *tests/testthat/test-makecluster.R
 3cb3bc9e503d79d1e4c95447ff8c8d8a *tests/testthat/test-metrics.R
 31bca810d12fe63f89add562ec19a2c4 *tests/testthat/test-readLAS.R

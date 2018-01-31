@@ -1,3 +1,13 @@
+## lidR v1.4.1 (2018-02-01)
+
+####  OTHER CHANGES
+
+* Removed examples and unit tests that imply the watershed segmentation to make CRAN check happy with the new rules relative to bioconductor packages.
+
+#### NEW FEATURES
+
+* Parameter `start` has been enabled in `grid_metrics` with `catalogs`.
+
 ## lidR v1.4.0 (2018-01-24)
 
 #### NEW FEATURES
