@@ -27,19 +27,18 @@
  ===============================================================================
  */
 
-// [[Rcpp::depends(RcppProgress)]]
-#include <progress.hpp>
 #include <Rcpp.h>
 #include "QuadTree.h"
+#include "Progress.h"
 
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-IntegerVector tsearch(NumericVector x,  NumericVector y, IntegerMatrix elem, NumericVector xi, NumericVector yi, bool diplaybar = false)
+IntegerVector C_tsearch(NumericVector x, NumericVector y, IntegerMatrix elem, NumericVector xi, NumericVector yi, bool diplaybar = false)
 {
   // Algorithm
 
-  QuadTree *tree = QuadTree::create(as< std::vector<double> >(xi), as< std::vector<double> >(yi));
+  QuadTree *tree = QuadTreeCreate(xi,yi);
 
   int nelem = elem.nrow();
   int np = xi.size();
@@ -52,11 +51,6 @@ IntegerVector tsearch(NumericVector x,  NumericVector y, IntegerMatrix elem, Num
   // Loop over each triangle
   for (int k = 0; k < nelem; k++)
   {
-    if (Progress::check_abort() )
-      return output;
-    else
-      p.update(k);
-
     // Retrieve triangle A B C coordinates
 
     int iA = elem(k, 0) - 1;
@@ -77,9 +71,16 @@ IntegerVector tsearch(NumericVector x,  NumericVector y, IntegerMatrix elem, Num
         int id = (*it)->id;
         output(id) = k + 1;
     }
+
+    if (p.check_abort())
+    {
+      delete tree;
+      p.exit();
+    }
+
+    p.update(k);
   }
 
   delete tree;
-
   return(output);
 }

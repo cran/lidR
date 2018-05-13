@@ -27,10 +27,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 ===============================================================================
 */
 
-// [[Rcpp::depends(RcppProgress)]]
-#include <progress.hpp>
 #include <Rcpp.h>
 #include "QuadTree.h"
+#include "Progress.h"
+
 using namespace Rcpp;
 
 // [[Rcpp::plugins("cpp0x")]]
@@ -47,15 +47,27 @@ using namespace Rcpp;
 // @references Adaptation of the C function written by W. Randolph Franklin
 // @export
 // [[Rcpp::export]]
-bool point_in_polygon(NumericVector vertx, NumericVector verty, double pointx, double pointy)
+bool C_point_in_polygon(NumericVector vertx, NumericVector verty, double pointx, double pointy)
 {
   bool c = false;
   int nvert = vertx.length();
 
   for (int i = 0, j = nvert-1 ; i < nvert ; j = i++)
   {
-    if( ((verty[i] > pointy) != (verty[j] > pointy)) && (pointx < (vertx[j]-vertx[i]) * (pointy-verty[i]) / (verty[j]-verty[i]) + vertx[i]) )
+    if( ((verty[i] >= pointy) != (verty[j] >= pointy)) && (pointx <= (vertx[j]-vertx[i]) * (pointy-verty[i]) / (verty[j]-verty[i]) + vertx[i]) )
       c = !c;
+  }
+
+  if (!c)
+  {
+    for (int i = 0 ; i < nvert ; i++)
+    {
+      if ((verty[i] == pointy) && (vertx[i] == pointx))
+      {
+        c = true;
+        break;
+      }
+    }
   }
 
   return c;
@@ -72,14 +84,14 @@ bool point_in_polygon(NumericVector vertx, NumericVector verty, double pointx, d
 // @return Logical array. FALSE, points are outside the polygon, TRUE, points are outside the polygon
 // @export
 // [[Rcpp::export]]
-LogicalVector points_in_polygon(NumericVector vertx, NumericVector verty, NumericVector pointx, NumericVector pointy)
+LogicalVector C_points_in_polygon(NumericVector vertx, NumericVector verty, NumericVector pointx, NumericVector pointy)
 {
   int i;
   int npoints = pointx.length();
   LogicalVector c(npoints);
 
   for (i = 0 ; i < npoints ; i++)
-    c[i] = point_in_polygon(vertx, verty, pointx[i], pointy[i]);
+    c[i] = C_point_in_polygon(vertx, verty, pointx[i], pointy[i]);
 
   return c;
 }
@@ -95,13 +107,15 @@ LogicalVector points_in_polygon(NumericVector vertx, NumericVector verty, Numeri
 // @return numerical array. 0 if the points are in any polygon or the number of the polygon if points fall in a given polygon
 // @export
 // [[Rcpp::export]]
-IntegerVector points_in_polygons(Rcpp::List vertx, Rcpp::List verty, NumericVector pointx, NumericVector pointy, bool displaybar = false)
+IntegerVector C_points_in_polygons(Rcpp::List vertx, Rcpp::List verty, NumericVector pointx, NumericVector pointy, bool displaybar = false)
 {
   int npoints = pointx.length();
   int nvert   = vertx.length();
   IntegerVector id(npoints);
 
-  QuadTree *tree = QuadTree::create(as< std::vector<double> >(pointx),as< std::vector<double> >(pointy));
+  QuadTree *tree = QuadTreeCreate(pointx, pointy);
+
+  Progress p(nvert, displaybar);
 
   for(int i = 0 ; i < nvert ; i ++)
   {
@@ -124,14 +138,21 @@ IntegerVector points_in_polygons(Rcpp::List vertx, Rcpp::List verty, NumericVect
 
     for (it = pts.begin() ; it != pts.end() ; ++it)
     {
-      if (point_in_polygon(xpoly, ypoly, (*it)->x, (*it)->y))
+      if (C_point_in_polygon(xpoly, ypoly, (*it)->x, (*it)->y))
       {
         id[(*it)->id] = i+1;
       }
     }
+
+    if (p.check_abort())
+    {
+      delete tree;
+      p.exit();
+    }
+
+    p.update(i);
   }
 
   delete tree;
-
   return id;
 }

@@ -7,7 +7,7 @@
 
  COPYRIGHT:
 
- Copyright 2016 Jean-Romain Roussel
+ Copyright 2016-2018 Jean-Romain Roussel
 
  This file is part of lidR R package.
 
@@ -27,29 +27,27 @@
  ===============================================================================
  */
 
-
-// [[Rcpp::depends(RcppProgress)]]
-#include <progress.hpp>
 #include <Rcpp.h>
 #include "QuadTree.h"
+#include "Progress.h"
 
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-Rcpp::List knn(NumericVector X, NumericVector Y, NumericVector x, NumericVector y, int k)
+Rcpp::List C_knn(NumericVector X, NumericVector Y, NumericVector x, NumericVector y, int k)
 {
-  int n = x.length();
+  unsigned int n = x.length();
   IntegerMatrix knn_idx(n, k);
   NumericMatrix knn_dist(n, k);
 
-  QuadTree *tree = QuadTree::create(as< std::vector<double> >(X),as< std::vector<double> >(Y));
+  QuadTree *tree = QuadTreeCreate(X,Y);
 
-  for( int i = 0 ; i < n ; i++)
+  for(unsigned int i = 0 ; i < n ; i++)
   {
     std::vector<Point*> pts;
     tree->knn_lookup(x[i], y[i], k, pts);
 
-    for (int j = 0 ; j < pts.size() ; j++)
+    for (unsigned int j = 0 ; j < pts.size() ; j++)
     {
       knn_idx(i, j)  = pts[j]->id + 1;
 
@@ -62,37 +60,28 @@ Rcpp::List knn(NumericVector X, NumericVector Y, NumericVector x, NumericVector 
 
   delete tree;
 
-  return Rcpp::List::create(Rcpp::Named("nn.idx") = knn_idx,
-                            Rcpp::Named("nn.dist") = knn_dist);
+  return Rcpp::List::create(Rcpp::Named("nn.idx") = knn_idx, Rcpp::Named("nn.dist") = knn_dist);
 }
 
 // [[Rcpp::export]]
-NumericVector knnidw(NumericVector X, NumericVector Y, NumericVector Z, NumericVector x, NumericVector y, int k, double p)
+NumericVector C_knnidw(NumericVector X, NumericVector Y, NumericVector Z, NumericVector x, NumericVector y, int k, double p)
 {
-  int n = x.length();
+  unsigned int n = x.length();
   NumericVector iZ(n);
 
-  QuadTree *tree = QuadTree::create(as< std::vector<double> >(X),as< std::vector<double> >(Y));
+  QuadTree *tree = QuadTreeCreate(X,Y);
 
   Progress pbar(n, false);
 
-  for( int i = 0 ; i < n ; i++)
+  for(unsigned int i = 0 ; i < n ; i++)
   {
-    if (Progress::check_abort() )
-    {
-      delete tree;
-      return iZ;
-    }
-    else
-      pbar.update(i);
-
     std::vector<Point*> pts;
     tree->knn_lookup(x[i], y[i], k, pts);
 
     double sum_zw = 0;
     double sum_w  = 0;
 
-    for (int j = 0 ; j < pts.size() ; j++)
+    for (unsigned int j = 0 ; j < pts.size() ; j++)
     {
       double dx = pts[j]->x - x[i];
       double dy = pts[j]->y - y[i];
@@ -115,9 +104,16 @@ NumericVector knnidw(NumericVector X, NumericVector Y, NumericVector Z, NumericV
     }
 
     iZ(i) = sum_zw/sum_w;
+
+    if (pbar.check_abort())
+    {
+      delete tree;
+      pbar.exit();
+    }
+
+    pbar.update(i);
   }
 
   delete tree;
-
   return iZ;
 }

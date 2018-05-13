@@ -27,41 +27,35 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 ===============================================================================
 */
 
-// [[Rcpp::depends(RcppProgress)]]
-#include <progress.hpp>
 #include <Rcpp.h>
 #include <limits>
 #include "QuadTree.h"
+#include "Progress.h"
 
 using namespace Rcpp;
 
 // [[Rcpp::export]]
-NumericVector MorphologicalOpening(NumericVector X, NumericVector Y, NumericVector Z, double resolution, bool displaybar = false)
+NumericVector C_MorphologicalOpening(NumericVector X, NumericVector Y, NumericVector Z, double resolution, bool displaybar = false)
 {
-  long n = X.length();
+  unsigned int n = X.length();
   double half_res = resolution / 2;
 
   NumericVector Z_temp = clone(Z);
   NumericVector Z_out  = clone(Z);
 
-  QuadTree *tree = QuadTree::create(as< std::vector<double> >(X),as< std::vector<double> >(Y));
+  QuadTree *tree = QuadTreeCreate(X,Y);
 
   Progress p(2*n, displaybar);
 
   // Dilate
-  for (long i = 0 ; i < n ; i++)
+  for (unsigned int i = 0 ; i < n ; i++)
   {
-    if (Progress::check_abort() )
-      return Z_out;
-    else
-      p.update(i);
-
     std::vector<Point*> pts;
     tree->rect_lookup(X[i], Y[i], half_res, half_res, pts);
 
     double min_pt(std::numeric_limits<double>::max());
 
-    for(long j = 0 ; j < pts.size() ; j++)
+    for(unsigned  int j = 0 ; j < pts.size() ; j++)
     {
       double z = Z_temp[pts[j]->id];
 
@@ -70,24 +64,27 @@ NumericVector MorphologicalOpening(NumericVector X, NumericVector Y, NumericVect
     }
 
     Z_out[i] = min_pt;
+
+    if (p.check_abort())
+    {
+      delete tree;
+      p.exit();
+    }
+
+    p.update(i);
   }
 
   Z_temp = clone(Z_out);
 
   // erode
-  for (long i = 0 ; i < n ; i++)
+  for (unsigned int i = 0 ; i < n ; i++)
   {
-    if (Progress::check_abort() )
-      return Z_out;
-    else
-      p.update(i+n);
-
     std::vector<Point*> pts;
     tree->rect_lookup(X[i], Y[i], half_res, half_res, pts);
 
     double max_pt(std::numeric_limits<double>::min());
 
-    for(long j = 0 ; j < pts.size() ; j++)
+    for(unsigned int j = 0 ; j < pts.size() ; j++)
     {
       double z = Z_temp[pts[j]->id];
 
@@ -96,9 +93,16 @@ NumericVector MorphologicalOpening(NumericVector X, NumericVector Y, NumericVect
     }
 
     Z_out[i] = max_pt;
+
+    if (p.check_abort())
+    {
+      delete tree;
+      p.exit();
+    }
+
+    p.update(i+n);
   }
 
   delete tree;
-
   return Z_out;
 }

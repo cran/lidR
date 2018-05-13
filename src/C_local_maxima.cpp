@@ -27,8 +27,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 ===============================================================================
 */
 
-// [[Rcpp::depends(RcppProgress)]]
-#include <progress.hpp>
 #include <Rcpp.h>
 #include <limits>
 #include "QuadTree.h"
@@ -80,7 +78,7 @@ IntegerMatrix C_LocalMaximaMatrix(NumericMatrix image, int ws, double th)
 }
 
 // [[Rcpp::export]]
-LogicalVector C_LocalMaximaPoints(S4 las, double ws, double min_height, bool displaybar = false)
+LogicalVector C_LocalMaximaPoints(S4 las, double ws, double min_height)
 {
   // DataFrame data = las.slot("data");
   DataFrame data = as<Rcpp::DataFrame>(las.slot("data"));
@@ -89,23 +87,16 @@ LogicalVector C_LocalMaximaPoints(S4 las, double ws, double min_height, bool dis
   NumericVector Y = data["Y"];
   NumericVector Z = data["Z"];
 
-  int n = X.length();
+  unsigned int n = X.length();
   double hws = ws/2;
 
   LogicalVector is_maxima(n);
   LogicalVector isnot_maxima(n);
 
-  QuadTree *tree = QuadTree::create(as< std::vector<double> >(X),as< std::vector<double> >(Y));
+  QuadTree *tree = QuadTreeCreate(X,Y);
 
-  Progress p(n, displaybar);
-
-  for (long i = 0 ; i < n ; i++)
+  for (unsigned int i = 0 ; i < n ; i++)
   {
-    if (Progress::check_abort() )
-      return is_maxima;
-    else
-      p.update(i);
-
     std::vector<Point*> pts;
     tree->rect_lookup(X[i], Y[i], hws, hws, pts);
 
@@ -113,7 +104,7 @@ LogicalVector C_LocalMaximaPoints(S4 las, double ws, double min_height, bool dis
     long id_old_max = -1;
     double max(std::numeric_limits<double>::min());
 
-    for(int j = 0 ; j < pts.size() ; j++)
+    for(unsigned int j = 0 ; j < pts.size() ; j++)
     {
       long pid = pts[j]->id;
 
@@ -131,7 +122,7 @@ LogicalVector C_LocalMaximaPoints(S4 las, double ws, double min_height, bool dis
       }
     }
 
-    for(int j = 0 ; j < pts.size() ; j++)
+    for(unsigned int j = 0 ; j < pts.size() ; j++)
     {
       long pid = pts[j]->id;
 
@@ -147,7 +138,6 @@ LogicalVector C_LocalMaximaPoints(S4 las, double ws, double min_height, bool dis
   }
 
   delete tree;
-
   return is_maxima;
 }
 

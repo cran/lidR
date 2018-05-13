@@ -3,9 +3,14 @@
 \docType{class}
 \name{LAScatalog-class}
 \alias{LAScatalog-class}
-\title{An S4 class to represent a set of a .las or .laz files}
+\title{An S4 class to represent a set of .las or .laz files}
 \description{
-A LAScatalog object is a representation of a set of las/laz files
+A \code{LAScatalog} object is a representation of a set of las/laz files, since a computer cannot load
+all the data at once. A \code{LAScatalog} is a simple way to manage the entire file by reading only
+the headers. A \code{LAScatalog} enables the user to process a large area or to selectively clip data
+from a large area without loading the large area itself. A \code{LAScatalog} can be built with the
+function \link{catalog}. Also a \code{LAScatalog} contains extra information that enables users to
+control how the catalog is processed.
 }
 \section{Slots}{
 
@@ -13,10 +18,30 @@ A LAScatalog object is a representation of a set of las/laz files
 \item{\code{data}}{data.table. A table representing the header of each file.}
 
 \item{\code{crs}}{A \link[sp:CRS]{CRS} object.}
+
+\item{\code{cores}}{integer. Numer of cores used to make parallel computations in compatible functions that
+support a \code{LAScatalog} as input. Default is 1.}
+
+\item{\code{buffer}}{numeric. When applying a function to an entire catalog by sequentially processing
+sub-areas (clusters) some algorithms (such as \link{grid_terrain}) require a buffer around the area
+to avoid edge effects. Default is 15 m.}
+
+\item{\code{progress}}{logical. Display an estimation of progress while processing. Default is TRUE.}
+
+\item{\code{by_file}}{logical. This option overwrites the option \code{tiling_size}. Instead of processing
+the catalog by arbitrary split areas, it forces processing by file. Buffering is still available.
+Default is FALSE.}
+
+\item{\code{tiling_size}}{numeric. To process an entire catalog, the algorithm splits the dataset into
+several square sub-areas (clusters) to process them sequentially. This is the size of each square
+cluster. Default is 1000 (1 km^2).}
+
+\item{\code{vrt}}{character. Path to a folder. In \code{grid_*} functions, for large outputs, the functions
+can return a lightweight virtual raster mosaic (VRT).}
+
+\item{\code{opt_changed}}{Internal use only for compatibility with older deprecated code.}
 }}
 
 \seealso{
-\link[lidR:LAS-class]{LAS}
-\link[lidR:LAS]{LAS}
-\link[lidR:readLAS]{readLAS}
+\link[lidR:catalog]{catalog}
 }

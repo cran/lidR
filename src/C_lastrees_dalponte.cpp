@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 using namespace Rcpp;
 
 //[[Rcpp::export]]
-IntegerMatrix C_algo_dalponte(NumericMatrix Image, IntegerMatrix Seeds, double th_seed, double th_crown, double th_tree, double DIST)
+IntegerMatrix C_lastrees_dalponte(NumericMatrix Image, IntegerMatrix Seeds, double th_seed, double th_crown, double th_tree, double DIST)
 {
   bool grown = true;
   bool expend;
@@ -62,7 +62,6 @@ IntegerMatrix C_algo_dalponte(NumericMatrix Image, IntegerMatrix Seeds, double t
     }
   }
 
-  int step = 0;
   while (grown)
   {
     grown = false;
@@ -85,7 +84,7 @@ IntegerMatrix C_algo_dalponte(NumericMatrix Image, IntegerMatrix Seeds, double t
           neighbours[2] = Pixel<double>(r, k+1, Image(r, k+1));
           neighbours[3] = Pixel<double>(r+1, k, Image(r+1, k));
 
-          for(int i = 0 ; i < neighbours.size() ; i++)                  // For each neighboring pixel
+          for(unsigned int i = 0 ; i < neighbours.size() ; i++)                  // For each neighboring pixel
           {
             Pixel<double> px = neighbours[i];
 
@@ -117,4 +116,3 @@ IntegerMatrix C_algo_dalponte(NumericMatrix Image, IntegerMatrix Seeds, double t
 
   return(Region);
 }
-

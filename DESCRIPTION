@@ -2,8 +2,8 @@ Package: lidR
 Type: Package
 Title: Airborne LiDAR Data Manipulation and Visualization for Forestry
         Applications
-Version: 1.4.2
-Date: 2018-04-19
+Version: 1.5.0
+Date: 2018-05-12
 Authors@R: c(
     person("Jean-Romain", "Roussel", email = "jean-romain.roussel.1@ulaval.ca", role = c("aut", "cre", "cph")),
     person("David", "Auty", email = "", role = c("aut", "ctb"), comment = "Reviews the documentation"),
@@ -17,41 +17,45 @@ Description: Airborne LiDAR (Light Detection and Ranging) interface for data
 URL: https://github.com/Jean-Romain/lidR
 BugReports: https://github.com/Jean-Romain/lidR/issues
 License: GPL-3
-Depends: R (>= 3.1.0),magrittr,methods
-Imports: rlas (>= 1.1.6),rgl,stats,utils,grDevices,tools,raster,rgeos,
-        data.table,Rcpp,lazyeval,geometry,gstat,sp,settings,gdalUtils,stringr,
-        memoise,mapview,mapedit,RANN,future
-Suggests: rgdal,testthat,EBImage,hexbin
+Depends: R (>= 3.1.0),methods
+Imports: data.table, future, gdalUtils, geometry, grDevices, gstat,
+        lazyeval, mapview, mapedit, memoise, RANN, raster, Rcpp, rgeos,
+        rgl, rlas (>= 1.1.10), settings, sp, stats, tools, utils
+Suggests: rgdal, testthat, EBImage, hexbin
 LazyData: true
 RoxygenNote: 6.0.1
-LinkingTo: Rcpp,RcppProgress
+LinkingTo: Rcpp
 Encoding: UTF-8
 ByteCompile: true
 biocViews:
 Collate: 'RcppExports.R' 'catalog_apply.r' 'catalog_clip.r'
-        'catalog_index.r' 'catalog_makecluster.r' 'catalog_query.r'
-        'catalog_reshape.r' 'catalog_select.r' 'class-lasheader.r'
-        'class-las.r' 'class-lascatalog.r' 'class-lascluster.r'
-        'constant.R' 'deprecated.r' 'grid_canopy.r' 'grid_catalog.r'
-        'grid_density.r' 'grid_hexametrics.r' 'grid_metrics.r'
-        'grid_metrics3d.r' 'grid_terrain.r' 'grid_tincanopy.r'
-        'lasaggreagte.r' 'lascheck.r' 'lasclassify.r' 'lasclip.r'
-        'lascolor.r' 'lasdecimate.r' 'lasfilter.r' 'lasground.r'
-        'lasindentify.r' 'lasmetrics.r' 'lasnormalize.r' 'lasroi.r'
-        'lassnags.r' 'lastrees.r' 'lidRError.r' 'metrics.r'
-        'metrics_canopy_roughness.r' 'mutatebyref.r' 'options.r'
-        'plot.catalog.r' 'plot.las.r' 'plot.lashexametrics.r'
-        'plot.lasmetrics.r' 'plot.lasmetrics3d.r' 'plot3d.r'
-        'readLAS.r' 'subcircled.r' 'tree_detection.r' 'tree_metrics.r'
-        'utils_colors.r' 'utils_geometry.r' 'utils_interpolations.r'
-        'utils_misc.r' 'utils_projection.r' 'utils_spatial.r'
-        'utils_typecast.r' 'writeLAS.r' 'zzz.r'
+        'catalog_index.r' 'catalog_laxindex.r' 'catalog_makecluster.r'
+        'catalog_query.r' 'catalog_reshape.r' 'catalog_select.r'
+        'class-lasheader.r' 'class-las.r' 'class-lascatalog.r'
+        'class-lascluster.r' 'constant.R' 'deprecated.r'
+        'grid_canopy.r' 'grid_catalog.r' 'grid_density.r'
+        'grid_hexametrics.r' 'grid_metrics.r' 'grid_metrics3d.r'
+        'grid_terrain.r' 'grid_tincanopy.r' 'lasaggreagte.r'
+        'lascheck.r' 'lasclassify.r' 'lasclip.r' 'lascolor.r'
+        'lasfilter.r' 'lasfilterdecimate.r' 'lasfiltersurfacepoints.r'
+        'lasground.r' 'lasindentify.r' 'lasmetrics.r' 'lasnormalize.r'
+        'lasroi.r' 'lassmooth.r' 'lassnags.r' 'lastrees.r'
+        'lastrees_dalponte.r' 'lastrees_li.r' 'lastrees_li2.r'
+        'lastrees_silva.r' 'lastrees_watershed.r' 'lasupdateheader.r'
+        'lidRError.r' 'metrics.r' 'metrics_canopy_roughness.r'
+        'mutatebyref.r' 'options.r' 'plot.catalog.r' 'plot.las.r'
+        'plot.lashexametrics.r' 'plot.lasmetrics.r'
+        'plot.lasmetrics3d.r' 'plot3d.r' 'readLAS.r' 'subcircled.r'
+        'tree_detection.r' 'tree_metrics.r' 'utils_colors.r'
+        'utils_geometry.r' 'utils_interpolations.r' 'utils_misc.r'
+        'utils_projection.r' 'utils_spatial.r' 'utils_typecast.r'
+        'writeLAS.r' 'zzz.r'
 NeedsCompilation: yes
-Packaged: 2018-04-19 15:51:26 UTC; jr
+Packaged: 2018-05-13 22:07:48 UTC; jr
 Author: Jean-Romain Roussel [aut, cre, cph],
   David Auty [aut, ctb] (Reviews the documentation),
   Florian De Boissieu [ctb] (Fixed bugs and improved catalog features),
   Andrew Sánchez Meador [ctb] (Implemented lassnags)
 Maintainer: Jean-Romain Roussel <jean-romain.roussel.1@ulaval.ca>
 Repository: CRAN
-Date/Publication: 2018-04-19 23:01:15 UTC
+Date/Publication: 2018-05-13 22:25:15 UTC

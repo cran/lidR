@@ -168,20 +168,20 @@ classify_from_shapefile = function(.las, shapefile, field = NULL)
     # for multi-part polygon. Here we need to retrieve the real IDs of each polygon
     # before reducing to 1 level of depth
     i = 0
-    lengths = lapply(xcoords, length)  %>%  unlist
-    idpolys = lapply(lengths, function(x){i <<- i + 1 ; rep.int(i,x)}) %>% unlist
+    lengths = unlist(lapply(xcoords, length))
+    idpolys = unlist(lapply(lengths, function(x){i <<- i + 1 ; rep.int(i,x)}))
 
     # Make the lists 1 level depth
-    xcoords %<>% unlist(recursive = FALSE)
-    ycoords %<>% unlist(recursive = FALSE)
+    xcoords = unlist(xcoords, recursive = FALSE)
+    ycoords = unlist(ycoords, recursive = FALSE)
 
-    is_hole %<>% unlist()
+    is_hole = unlist(is_hole)
     is_hole = c(FALSE, is_hole)
 
     # Return the id of each polygon
     verbose("Testing whether points fall in a given polygon...")
 
-    ids = points_in_polygons(xcoords, ycoords, .las@data$X, .las@data$Y, LIDROPTIONS("progress"))
+    ids = C_points_in_polygons(xcoords, ycoords, .las@data$X, .las@data$Y, LIDROPTIONS("progress"))
 
     if (method == 1)
     {
@@ -222,11 +222,12 @@ classify_from_rasterlayer = function(.las, raster, field = NULL)
   if (is.null(field))
     field = lazyeval::expr_label(raster)
 
-  xres = raster::res(raster)[1]
-  xmin = raster@extent@xmin
-  ymin = raster@extent@ymin
-  m  = raster::as.matrix(raster)
-  values = fast_extract(m, .las@data$X, .las@data$Y, xmin, ymin, xres) # 15 times faster than raster::extract + much memory effcient
+  #xres = raster::res(raster)[1]
+  #xmin = raster@extent@xmin
+  #ymin = raster@extent@ymin
+  #m  = raster::as.matrix(raster)
+  #v = fast_extract(m, .las@data$X, .las@data$Y, xmin, ymin, xres) # 15 times faster than raster::extract + much memory effcient
+  values = raster::extract(raster, .las@data[,.(X,Y)])
   return(values)
 }
 

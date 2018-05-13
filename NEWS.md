@@ -1,3 +1,37 @@
+## lidR v1.5.0 (2018-05-13)
+
+#### SIGNIFICANT CHANGES
+
+* `catalog_options()` is formally deprecated. Use `LAScatalog` properties instead (see `?catalog`).
+* The package `magrittr` is no longer loaded with `lidR`. Thus, piping operators are no longer usable by default. To use piping operators use `library(magrittr)`.
+
+#### NEW FEATURES
+
+* New `lassmooth` function. A point cloud-based smoothing function.
+* New `lasfiltersurfacepoints` function to filter surface points.
+* New `grid_catalog` function is a simplified and more powerful function like `catalog_apply` but specifically dedicated to `grid_*` outputs.
+* New functions `lasadddata`, `lasaddextrabyte` and `lasaddextrabyte_manual` to add new data in a `LAS` object.
+* `lasclip` can clip a `SpatialPolygonsDataFrame`
+* `lasclipRectangle` and `lasclipCircle` can clip multiple selections (non-documented feature).
+* The `treeID` computed with `lastrees_*` functions can now be written in a `las/laz` file by default.
+
+#### OTHER CHANGES
+
+* `LAScatalog` objects are processed with a single core by default.
+* `lasdecimate` is formally deprecated. Use `lasfilterdecimate`
+* `grid_density` now returns both the point and the pulse density, where possible.
+* The option `P` is no longer set by default in `readLAS`.
+* The documentation of `lastrees` has been split into several pages.
+* When a catalog is processed using several cores, if an error is raised the process triggers an early signal to stop the loop. In previous releases the entire process was run and the error was raised at the end when the futures were evaluated.
+
+#### BUG FIXES
+
+* `grid_metrics(lidar, stdmetrics_i(Intensity))` returned and empty `data.table`
+* [[#128](https://github.com/Jean-Romain/lidR/issues/128)] Fix raster data extraction using the slower and memory-greedy, but safer `raster::extract` function.
+* [[#126](https://github.com/Jean-Romain/lidR/issues/126)] propagate the CRS in filter functions.
+* [[#116](https://github.com/Jean-Romain/lidR/issues/116)] Fix clash between function `area` from `lidR` and from `raster`.
+* [[#110](https://github.com/Jean-Romain/lidR/issues/110)] Fix out-of-bounds rasterization.
+
 ## lidR v1.4.2 (2018-04-19)
 
 #### BUG FIXES
@@ -33,7 +67,7 @@
 * `lastrees` with the Li et al. (2012) algorithm gains a new parameter to prevent over-segmentation.
 * new function `lassnags` for classifying points as snag points or for segmenting snags.
 * new function `tree_detection` to detect individual trees. This feature has been extracted from `lastrees`'s algorithms and it is now up to the users to use `lidR`'s algos or other input sources.
-* `plot` supports natively the `PointCloudViewer` package avaible on github.
+* `plot` supports natively the `PointCloudViewer` package available on github.
 
 #### BUG FIXES
 
@@ -102,7 +136,7 @@ Major changes are:
 * S3 `Catalog` class is now a S4 `LAScatalog` class
 * `LAS` and `LAScatalog` class gain a slot `crs` automatically filled with a proj4 string
 * `plot.LAScatalog` display a google map background if the catalog has a CRS.
-* `plot.LAScatalog` gains an argument `y` to display a either a terrain, raod, satellite map.
+* `plot.LAScatalog` gains an argument `y` to display a either a terrain, road, satellite map.
 * `lasarea` is deprecated. Use the more generic function `area`
 
 #### BUG FIXES
@@ -134,7 +168,7 @@ Major changes are:
 * Memory leak in QuadTree algorithm. Memory is now free after QuadTree deletion.
 * Dalponte's algorithm had a bug due to the use of std::abs which works with integers. Replaced by std::fabs which works with doubles.
 * In `grid_tincanopy` `x > 0` was replaced by `x >= 0` to avoid errors in the canopy height models
-* Triangle boudaries are now taken into account in the rasterization of the Delaunay triangulation
+* Triangle boundaries are now taken into account in the rasterization of the Delaunay triangulation
 
 #### OTHER CHANGES
 
@@ -162,7 +196,7 @@ Major changes are:
 * [[#49](https://github.com/Jean-Romain/lidR/pull/49)] typo error leading to the wrong metric in `stdmetric_i` 
 * [[#50](https://github.com/Jean-Romain/lidR/pull/50)] typo error leading to the wrong metric in `stdmetric` 
 * Fix bug in `stdmetric_z` when `max(Z) = 0`
-* [[#54](https://github.com/Jean-Romain/lidR/pull/54)] better recomputation of the header of LAS objects.
+* [[#54](https://github.com/Jean-Romain/lidR/pull/54)] better re-computation of the header of LAS objects.
 
 #### OTHER CHANGES
 
