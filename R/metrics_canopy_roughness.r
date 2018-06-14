@@ -115,13 +115,26 @@ rumple_index.numeric <- function(x, y = NULL, z = NULL, ...)
   if (length(x) != length(y) | length(x) != length(z))
     stop("Different lengths for x,y,z", call. = FALSE)
 
-  X = cbind(x,y,z)
-  dn = suppressMessages(geometry::delaunayn(X[,1:2], options = "QbB"))
-  N = C_tinfo(dn, X)
+  if (length(x) <= 3)
+    return (NA_real_)
 
-  area  = sum(N[,5])
-  parea = sum(N[,6])
-  rumple = area/parea
+  rumple = tryCatch(
+  {
+    X = cbind(x,y,z)
+    dn = suppressMessages(geometry::delaunayn(X[,1:2], options = "QbB"))
+    N = C_tinfo(dn, X)
+
+    area  = sum(N[,5])
+    parea = sum(N[,6])
+    return(area/parea)
+  },
+  error = function(e)
+  {
+    message(paste0(e, "\n'rumple_index' returned NA."))
+    if (LIDROPTIONS("debug")) print(dput(X[,1:2]))
+    return(NA_real_)
+  })
+
   return(rumple)
 }
 

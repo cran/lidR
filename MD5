@@ -1,7 +1,7 @@
 8f0e2cd40e05189ec81232da84bd6e1a *COPYING
-f8541d0303ab2e45a6a34e178547f5bb *DESCRIPTION
+0f172aff81dc9383adbab0b73769e2e3 *DESCRIPTION
 cf80edb007c7ef186cbc84e7e21fceda *NAMESPACE
-58e93252704f58e247809572cc41f88b *NEWS.md
+b9a535fe9a7039363a845844b03aa478 *NEWS.md
 d24479e071d5a878dd247b5abbe201a8 *R/RcppExports.R
 fae8023bd306762238b07fff33f42dcf *R/catalog_apply.r
 c715f7ebf8d4fd5756c271ba5640d421 *R/catalog_clip.r
@@ -18,7 +18,7 @@ bfe485f64abb4a7cdd34fa3d4f099dbb *R/class-lasheader.r
 978d235401b90a5ed4e210cfd6b9683d *R/constant.R
 c9b444cd7dace04c24928f1108297e1b *R/deprecated.r
 108fcfcca4be26538b91e78fa3a555b6 *R/grid_canopy.r
-c28c70543b68f41c03819a9fc935256b *R/grid_catalog.r
+72b85ed6fa28c9a5f6e11084492f0981 *R/grid_catalog.r
 9568581786198f9070e40f6bcff0df5b *R/grid_density.r
 03ff85818a2664f95a987c64e17b2a9c *R/grid_hexametrics.r
 877daa876c4605ae4cd0d7160429d9fe *R/grid_metrics.r
@@ -49,7 +49,7 @@ ef0b936ba1cae7992860beb44653a4c4 *R/lastrees_silva.r
 79008e2a7ad3145432d8579c13061199 *R/lasupdateheader.r
 21f3a4626636ad7a11f482f0f5df37a7 *R/lidRError.r
 3569c91e2d878f7b7b9d896dfec3f684 *R/metrics.r
-bce8e8c8ec1e77af2cad3b16700edac8 *R/metrics_canopy_roughness.r
+10578b745f539d63cef15bbdf3e4d53e *R/metrics_canopy_roughness.r
 8d95d4d2472ea39e2fafe62730734bc3 *R/mutatebyref.r
 b39ba7e8384b86d31f779e623aea0969 *R/options.r
 0644e36ece552ee7cd2fe58ad25ff5a5 *R/plot.catalog.r
@@ -67,11 +67,11 @@ f99af24f30bb62fb4255c155f3f39840 *R/utils_colors.r
 ec25f296f073febc3db28d37dc6d8850 *R/utils_interpolations.r
 959b3468b058a4c13038b0c5145378da *R/utils_misc.r
 2004398e6b9d17cf64568927a051ae16 *R/utils_projection.r
-3de6a48672e9b52fd9b3f22133a844b6 *R/utils_spatial.r
+737e6fc877c95c14ac3bcaa76edc814d *R/utils_spatial.r
 724095c832fb856199f6d8e4d5878d01 *R/utils_typecast.r
 db712ba290c478ef591e79424c9d0e76 *R/writeLAS.r
 299d296b625aa84abbd0a8cbfd1fa4c1 *R/zzz.r
-424090d8e92bd16452aa77f65dfe0747 *README.md
+e5a6f7fd3e1c9e6dfa28bffd144231ae *README.md
 7ae0300dea70dd5e45b126e9e5b6139a *inst/extdata/Megaplot.lax
 666a97239fadf99d35b086261a9d4991 *inst/extdata/Megaplot.laz
 355cf37d213d0529daf5046098ed91e7 *inst/extdata/MixedConifer.laz
@@ -178,7 +178,7 @@ d1091769c71a6af57fe29e8afe09bdb7 *src/RasterProcessors.cpp
 84431b0cb6236c557e983c4992a0ac2d *src/RasterProcessors.h
 48e14e11a1dc97b8bc4980250ad5051b *src/RcppExports.cpp
 a9df0c56cc57ac160771ab74f06af8ad *tests/testthat.R
-401ca13e0d690212ebdd50f5610e0713 *tests/testthat/Rplots.pdf
+6d7a1d885580d28c8c63451bc0681500 *tests/testthat/Rplots.pdf
 059a0550ee5c05cea79f5cfb49f3b0aa *tests/testthat/test-canopy.R
 f148f86a7f3d308f49bdae4d255b389a *tests/testthat/test-casting.R
 0043d5c0e880882d6abc0ba72731ec36 *tests/testthat/test-catalog.R
@@ -201,7 +201,7 @@ b0e8b2aaf8a971710bc26fa258a7f827 *tests/testthat/test-lastrees.R
 266db05d4d0cf530bf650404e04f395a *tests/testthat/test-makecluster.R
 3cb3bc9e503d79d1e4c95447ff8c8d8a *tests/testthat/test-metrics.R
 31bca810d12fe63f89add562ec19a2c4 *tests/testthat/test-readLAS.R
-f4e69ee266fc3ff7d1b47b4baf4dce4e *tests/testthat/test-roughness.R
+516b7150e226c07425244d29df4e1b87 *tests/testthat/test-roughness.R
 53fbd2d32bafa5e68476df34ae88d14c *tests/testthat/test-stdmetric.R
 e048a0bb4cfa3cd29bb9c48b5a99c380 *tests/testthat/test-terrain.R
 38be0b3a90e27bc431da831c76bf7c65 *tests/testthat/test-utils_geometry.R
