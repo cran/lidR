@@ -1,3 +1,36 @@
+## lidR v1.6.0 (2018-07-20)
+
+#### NEW FEATURE
+
+* New function `tree_hulls` that computes a convex or concave hull for each segmented tree.
+* New option `stop_early` that enables processing of an entire catolog or stops if an error occurs.
+* New function `catalog_retile` supersedes the function `catalog_reshape` and performs the same task while adding much more functionality.
+
+#### ENHANCEMENTS
+
+* When processing a `LAScatalog`, error handling has been seriouly improved. A process can now run until the end even with errors. In this case clusters with errors are skipped.
+* When processing  a `LAScatalog`, the graphical progress now uses 3 colors. green: ok, red: error, gray: null.
+* `as.spatial()` for `LAS` object preserves the CRS.
+* All the functions now have strong assertions to check user inputs.
+* `plot.LAScatalog` always displays the catalog with `mapview` by default even if the CRS is empty.
+* In `lastrees_dalponte` the matching between the seeds and the canopy is more tolerant. Rasters can have different resolution and/or extent.
+* `lasground` uses (as an option) only the last and single returns to perform the segmentation.
+
+#### OTHER CHANGES
+
+* `catalog()` displays a message when finding overlaps between files.
+* The LAScatalog class is more thoroughly documented.
+* Clusters now align on (0,0) by default when processing a `LAScatalog` by cluster.
+
+#### BUG FIXES
+
+* `lasscanline()` did not compute the scanline because the conditional statement that checked if the field was properly populated was incorrect.
+* [[#146](https://github.com/Jean-Romain/lidR/issues/146)] Fix matching between tree tops, raster and canopy raster.
+* `tree_detection` when used with a point cloud was not properly coded and tended to miss some trees.
+* In `lasclip*` if `ofile` was non empty, the function wrote properly the file but returned a non-expected error.
+* [[#155](https://github.com/Jean-Romain/lidR/issues/155)] user supplied function was being analysed by `future` and some function were missing. User supplied function is now manually analysed.
+* [[#156](https://github.com/Jean-Romain/lidR/pull/156)] Fix error when `lasclip` was used with a `SpatialPolygonDataFrame`.
+
 ## lidR v1.5.1 (2018-06-14)
 
 #### BUG FIXES

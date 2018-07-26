@@ -109,15 +109,15 @@ setMethod("initialize", "LAS", function(.Object, data, header, crs, check)
   else
     stop("Wrong header object provided.", call. = FALSE)
 
+  header = rlas::header_update(header, data)
+
   if(check)
   {
-    #lascheck(data, header, hard = F)
     rlas::check_header(header)
     rlas::check_data(data)
     rlas::check_data_vs_header(header, data, hard = F)
   }
 
-  header = rlas::header_update(header, data)
   header = LASheader(header)
 
   .Object@data   <- data

@@ -1,5 +1,7 @@
 context("roughness")
 
+lidr_options(debug = FALSE)
+
 test_that("Flat surfaces have a rumple index of 1. Delaunay method", {
   n = sample(10:20, 1)
   x = runif(n, 0, 100)
@@ -35,15 +37,16 @@ test_that("Rought surfaces have the good rumple index. Delaunay", {
 })
 
 test_that("Error handling. Delaunay", {
+
   x = runif(3, 0, 100)
   y = runif(3, 0, 100)
   z = x
 
   expect_equal(rumple_index(x, y, z), NA_real_)
 
-  x = runif(4, 0, 100)
-  y = x
-  z = x
-
-  #expect_equal(rumple_index(x, y, z), NA_real_)
+  # x = runif(4, 0, 100)
+  # y = x
+  # z = x
+  #
+  # expect_equal(suppressMessages(rumple_index(x, y, z)), NA_real_)
 })

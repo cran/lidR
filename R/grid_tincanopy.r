@@ -50,7 +50,7 @@
 #' the pit-free algorithm (see reference) and to trim dummy interpolation on non-convex areas.
 #' The first number is the value for the classical triangulation (threshold = 0), the second number
 #' is the value for the pit-free algorithm (for thresholds > 0). If \code{max_edge = 0} no trimming
-#' will be done.
+#' is done.
 #' @param subcircle numeric. Radius of the circles. To obtain fewer pits the algorithm
 #' can replace each return with a circle consisting of 8 points before computing the triangulation
 #' (see also \link{grid_canopy}).
@@ -83,6 +83,13 @@ grid_tincanopy = function(x, res = 0.5, thresholds =  c(0,2,5,10,15), max_edge =
 #' @export
 grid_tincanopy.LAS = function(x, res = 0.5, thresholds =  c(0,2,5,10,15), max_edge = c(0,1), subcircle = 0, filter = "-keep_first")
 {
+  assertive::assert_is_numeric(thresholds)
+  assertive::assert_all_are_non_negative(thresholds)
+  assertive::assert_is_numeric(max_edge)
+  assertive::assert_all_are_non_negative(max_edge)
+  assertive::assert_is_a_number(subcircle)
+  assertive::assert_all_are_non_negative(subcircle)
+
   . <- X <- Y <- Z <- ReturnNumber <- Xgrid <- Ygrid <- NULL
 
   if (length(thresholds) > 1 & length(max_edge) < 2)
@@ -127,11 +134,11 @@ grid_tincanopy.LAS = function(x, res = 0.5, thresholds =  c(0,2,5,10,15), max_ed
   by = group_grid(cloud$X, cloud$Y, res)
   cloud = cloud[cloud[, .I[which.max(Z)], by = by]$V1]
 
-  # Perform the triangulation and the rasterization (1 loop for classical triangulation, several for Khosravipour)
+  # Perform the triangulation and the rasterization (1 loop for classical triangulation, several for Khosravipour et al.)
   i = 1
   for (th in thresholds)
   {
-    verbose(paste0("Triangulation pass ", i, " of ", length(thresholds), "..."))
+    verbose(glue("Triangulation pass {i} of {length(thresholds)}..."))
     i =  i+ 1
 
     if (th == 0)
@@ -162,8 +169,7 @@ grid_tincanopy.LAS = function(x, res = 0.5, thresholds =  c(0,2,5,10,15), max_ed
 grid_tincanopy.LAScatalog = function(x, res = 0.5, thresholds =  c(0,2,5,10,15), max_edge = c(0,1), subcircle = 0, filter = "-keep_first")
 {
   x = catalog_old_compatibility(x)
-
-  buffer(x) <- res/2 + subcircle
+  buffer(x) <- buffer(x) + subcircle
   canopy = grid_catalog(x, grid_tincanopy, res, "xyzr", filter, thresholds = thresholds, max_edge = max_edge, subcircle = subcircle)
   return(canopy)
 }

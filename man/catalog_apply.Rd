@@ -47,6 +47,7 @@ left, top and right buffers, respectively (see example).
 }
 
 \examples{
+\dontrun{
 # Visit http://jean-romain.github.io/lidR/wiki for an illustrated and commented
 # version of this example.
 # This is a dummy example. It is more efficient to load the entire file than
@@ -87,7 +88,11 @@ tree_area = function(las, lake)
 
   # segment trees (in this example the low point density does not enable
   # accurate segmentation of trees. This is just a proof-of-concept)
-  lastrees(las, algorithm = "li2012-2")
+  chm = grid_canopy(las, 1, subcircle = 0.3)
+  chm = as.raster(chm)
+  kernel = matrix(1,3,3)
+  chm = raster::focal(chm, w = kernel, fun = mean, na.rm = TRUE)
+  lastrees(las, algorithm = "watershed", chm = chm)
 
   # Here we used the function tree_metric to compute some metrics for each tree. This
   # function is defined later in the global environment.
@@ -144,4 +149,5 @@ output = catalog_apply(project, tree_area, fargs, select = "xyz")
 output = data.table::rbindlist(output)
 
 with(output, plot(x,y, cex = sqrt(area/pi)/5, asp = 1))
+}
 }

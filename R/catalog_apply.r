@@ -63,6 +63,7 @@
 #' @param func_args A list of extra arguments to pass in the function 'func'.
 #' @param ... Any argument available in \link{readLAS} to reduce the amount of data loaded.
 #' @examples
+#' \dontrun{
 #' # Visit http://jean-romain.github.io/lidR/wiki for an illustrated and commented
 #' # version of this example.
 #' # This is a dummy example. It is more efficient to load the entire file than
@@ -103,7 +104,11 @@
 #'
 #'   # segment trees (in this example the low point density does not enable
 #'   # accurate segmentation of trees. This is just a proof-of-concept)
-#'   lastrees(las, algorithm = "li2012-2")
+#'   chm = grid_canopy(las, 1, subcircle = 0.3)
+#'   chm = as.raster(chm)
+#'   kernel = matrix(1,3,3)
+#'   chm = raster::focal(chm, w = kernel, fun = mean, na.rm = TRUE)
+#'   lastrees(las, algorithm = "watershed", chm = chm)
 #'
 #'   # Here we used the function tree_metric to compute some metrics for each tree. This
 #'   # function is defined later in the global environment.
@@ -160,46 +165,24 @@
 #' output = data.table::rbindlist(output)
 #'
 #' with(output, plot(x,y, cex = sqrt(area/pi)/5, asp = 1))
+#' }
 #' @export
 catalog_apply <- function(ctg, func, func_args = NULL, ...)
 {
-  res       <- 1
+  assertive::assert_is_all_of(ctg, "LAScatalog")
+  assertive::assert_is_function(func)
+
   progress  <- progress(ctg)
   ncores    <- cores(ctg)
-
-  clusters <- catalog_makecluster(ctg, res)
-  nclust   <- length(clusters)
-
-  if (nclust < ncores)
-    ncores <- nclust
-
-  future::plan(future::multiprocess, workers = ncores)
-
-  output = list()
-  for(i in seq_along(clusters))
-  {
-    cluster = clusters[[i]]
-
-    output[[i]] <- future::future({cluster_apply_func(cluster, func, ctg, func_args, ...) }, earlySignal = TRUE)
-
-    if(progress)
-    {
-      cat(sprintf("\rProgress: %g%%", round(i/nclust*100)), file = stderr())
-      graphics::rect(cluster@bbox$xmin, cluster@bbox$ymin, cluster@bbox$xmax, cluster@bbox$ymax, border = "black", col = "forestgreen")
-    }
-  }
-
-  cat("\n")
-
-  return(future::values(output))
+  stopearly <- stop_early(ctg)
+  clusters  <- catalog_makecluster(ctg, 1)
+  output    <- cluster_apply(clusters, cluster_apply_func, ncores, progress, stopearly, func = func, ctg = ctg, func_args = func_args, ...)
+  return(output)
 }
 
 cluster_apply_func <- function(cluster, func, ctg, func_args, ...)
 {
   las = readLAS(cluster, ...)
-
-  if (is.null(las))
-    return(NULL)
-
+  if (is.null(las)) return(NULL)
   return(do.call(func, c(las, func_args)))
 }
