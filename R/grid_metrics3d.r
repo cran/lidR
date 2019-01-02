@@ -29,34 +29,34 @@
 
 #' Voxelize the space and compute metrics for each voxel
 #'
-#' Voxelize the cloud of points and compute a series of descriptive statistics for
-#' each voxel.
+#' This is a 3D version of \link{grid_metrics}. It creates a 3D matrix of voxels with a given resolution.
+#' It creates a voxel from the cloud of points if there is at least one point in the voxel. For each voxel
+#' the function allows computation of one or several derived metrics in the same way as the \link{grid_metrics}
+#' functions. The function will dispatch the LiDAR data for each voxel in the user's function (see \link{grid_metrics}).
 #'
-#' Voxelize creates a 3D matrix of voxels with a given resolution. It creates a voxel
-#' from the cloud of points if there is at least one point in the voxel. For each voxel
-#' the function allows computation of one or several derived metrics in the same way as
-#' the \link[lidR:grid_metrics]{grid_metrics} functions.
-#' Basically there are no predefined metrics. Users must write their own function to create metrics.
-#' Voxelize will dispatch the LiDAR data for each voxel in the user's function. The user writes their
-#' function without considering voxels, only a cloud of points (see example).
+#' @param las An object of class \code{LAS}.
 #'
-#' @param .las An object of class \code{LAS}
-#' @param func the function to be apply to each voxel.
-#' @param res numeric. The size of the voxels
-#' @param debug logical. If you encounter a non trivial error try \code{debug = TRUE}.
+#' @param func expression. The function to be applied to each voxel (see also \link{grid_metrics}).
+#'
+#' @param res numeric. The resolution of the voxels. \code{res = 1} for a 1x1x1 cubic voxels. Optionally
+#' \code{res = c(1,2)} for non-cubic voxels (1x1x2 cuboid voxel).
+#'
 #' @return It returns a \code{data.table} containing the metrics for each voxel. The table
 #' has the class \code{lasmetrics3d} enabling easier plotting.
+#'
+#' @export
+#'
 #' @examples
 #' LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
-#' lidar = readLAS(LASfile)
+#' las = readLAS(LASfile)
 #'
 #' # Cloud of points is voxelized with a 3-meter resolution and in each voxel
 #' # the number of points is computed.
-#' grid_metrics3d(lidar, length(Z), 3)
+#' grid_metrics3d(las, length(Z), 3)
 #'
 #' # Cloud of points is voxelized with a 3-meter resolution and in each voxel
 #' # the mean scan angle of points is computed.
-#' grid_metrics3d(lidar, mean(ScanAngle), 3)
+#' grid_metrics3d(las, mean(ScanAngle), 3)
 #'
 #' \dontrun{
 #' # Define your own metric function
@@ -71,22 +71,32 @@
 #'    return(ret)
 #' }
 #'
-#' voxels = grid_metrics3d(lidar, myMetrics(Intensity, ScanAngle), 3)
+#' voxels = grid_metrics3d(las, myMetrics(Intensity, ScanAngle), 3)
 #'
 #' plot(voxels, color = "angle")
 #' plot(voxels, color = "imean")
 #' #etc.
 #' }
-#' @seealso
-#' \link[lidR:grid_metrics]{grid_metrics}
-#' @export
-grid_metrics3d = function(.las, func, res = 1, debug = FALSE)
+grid_metrics3d = function(las, func, res = 1)
 {
-  stopifnotlas(.las)
-  assertive::assert_is_a_number(res)
-  assertive::assert_all_are_non_negative(res)
+  stopifnotlas(las)
+  assert_all_are_non_negative(res)
 
-  call <- substitute(func)
-  stat <- lasaggregate(.las, by = "XYZ", call, res, c(0,0,0), c("X", "Y", "Z"), FALSE, debug)
+  if (length(res) == 1L)
+    res <- c(res,res)
+  else if (length(res) > 2L)
+    stop("Wrong resolution provided.")
+
+  is_formula <- tryCatch(lazyeval::is_formula(func), error = function(e) FALSE)
+  if (!is_formula) func <- lazyeval::f_capture(func)
+
+  call <- lazyeval::as_call(func)
+  by   <- group_grid_3d(las@data$X, las@data$Y, las@data$Z, res, c(0,0,0.5*res[2]))
+  stat <- las@data[, if (!anyNA(.BY)) c(eval(call)), by = by]
+  data.table::setnames(stat, c("Xgrid", "Ygrid", "Zgrid"), c("X", "Y", "Z"))
+  data.table::setattr(stat, "class", c("lasmetrics3d", attr(stat, "class")))
+  data.table::setattr(stat, "res", res)
   return(stat)
 }
+
+
