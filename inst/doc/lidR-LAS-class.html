@@ -102,12 +102,12 @@ las &lt;-<span class="st"> </span><span class="kw">readLAS</span>(LASfile)
 <span class="co">#&gt; class        : LAS (LASF v1.2)</span>
 <span class="co">#&gt; point format : 1</span>
 <span class="co">#&gt; memory       : 6.2 Mb </span>
-<span class="co">#&gt; extent       : 684766.4 , 684993.3 , 5017773 , 5018007 (xmin, xmax, ymin, ymax)</span>
+<span class="co">#&gt; extent       :684766.4, 684993.3, 5017773, 5018007 (xmin, xmax, ymin, ymax)</span>
 <span class="co">#&gt; coord. ref.  : +init=epsg:26917 +proj=utm +zone=17 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0 </span>
 <span class="co">#&gt; area         : 53112.69 m² (convex hull)</span>
 <span class="co">#&gt; points       : 81590 points</span>
 <span class="co">#&gt; density      : 1.54 points/m²</span>
-<span class="co">#&gt; names        : X Y Z gpstime Intensity ReturnNumber NumberOfReturns ScanDirectionFlag EdgeOfFlightline Classification Synthetic_flag Keypoint_flag Withheld_flag ScanAngle UserData PointSourceID</span></code></pre></div>
+<span class="co">#&gt; names        : X Y Z gpstime Intensity ReturnNumber NumberOfReturns ScanDirectionFlag EdgeOfFlightline Classification Synthetic_flag Keypoint_flag Withheld_flag ScanAngleRank UserData PointSourceID</span></code></pre></div>
 </div>
 <div id="basic-structure-of-a-las-object" class="section level2">
 <h2>Basic structure of a LAS object</h2>
@@ -141,7 +141,6 @@ las &lt;-<span class="st"> </span><span class="kw">readLAS</span>(LASfile)
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(las<span class="op">@</span>header)
 <span class="co">#&gt; File signature:           LASF </span>
 <span class="co">#&gt; File source ID:           0 </span>
-<span class="co">#&gt; Global encoding:          0 </span>
 <span class="co">#&gt; Project ID - GUID:        00000000-0000-0000-0000-000000000000 </span>
 <span class="co">#&gt; Version:                  1.2</span>
 <span class="co">#&gt; System identifier:        LAStools (c) by rapidlasso GmbH </span>
@@ -153,7 +152,7 @@ las &lt;-<span class="st"> </span><span class="kw">readLAS</span>(LASfile)
 <span class="co">#&gt; Point data format:        1 </span>
 <span class="co">#&gt; Point data record length: 28 </span>
 <span class="co">#&gt; Num. of point records:    81590 </span>
-<span class="co">#&gt; Num. of points by return: 55756 21493 3999 342 0 </span>
+<span class="co">#&gt; Num. of points by return: </span>
 <span class="co">#&gt; Scale factor X Y Z:       0.01 0.01 0.01 </span>
 <span class="co">#&gt; Offset X Y Z:             0 0 0 </span>
 <span class="co">#&gt; min X Y Z:                684766.4 5017773 0 </span>
