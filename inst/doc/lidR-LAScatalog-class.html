@@ -166,7 +166,7 @@ ctg &lt;-<span class="st"> </span><span class="kw">catalog</span>(<span class="s
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">output &lt;-<span class="st"> </span><span class="kw">lasnormalize</span>(ctg, <span class="kw">tin</span>())
 <span class="co">#&gt; Error in check_and_fix_options(ctg, need_buffer, check_alignment, need_output_file, : This function requires that the LAScatalog provides an output file template.</span></code></pre></div>
 <p>Instead, one can use the processing option <code>opt_output_files</code>. Processing options drive how the big files are split in small chunks and how the outputs are either returned into R or written on disk into files.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">opt_output_file</span>(ctg) &lt;-<span class="st"> &quot;folder/where/to/store/outputs/{ORIGINALFILENAME}_normalized&quot;</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">opt_output_files</span>(ctg) &lt;-<span class="st"> &quot;folder/where/to/store/outputs/{ORIGINALFILENAME}_normalized&quot;</span>
 output &lt;-<span class="st"> </span><span class="kw">lasnormalize</span>(ctg, <span class="kw">tin</span>())</code></pre></div>
 <p>Here the output is not a point cloud but a LAScatalog pointing to the newly created files. The user can check how the catalog will be processed by calling <code>summary</code></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(ctg)
