@@ -2,8 +2,8 @@ Package: lidR
 Type: Package
 Title: Airborne LiDAR Data Manipulation and Visualization for Forestry
         Applications
-Version: 2.0.2
-Date: 2019-02-15
+Version: 2.0.3
+Date: 2019-05-02
 Authors@R: c(
     person("Jean-Romain", "Roussel", email = "jean-romain.roussel.1@ulaval.ca", role = c("aut", "cre", "cph")),
     person("David", "Auty", email = "", role = c("aut", "ctb"), comment = "Reviews the documentation"),
@@ -49,17 +49,18 @@ Collate: 'LASmethods-generic.r' 'Class-LASheader.r' 'Class-LAS.r'
         'lasmergelas.r' 'lasmergespatial.r' 'lasmetrics.r'
         'lasnormalize.r' 'lasroi.r' 'lassmooth.r' 'lassnags.r'
         'lastransform.r' 'lastrees.r' 'lasupdateheader.r'
-        'lasvoxelize.r' 'plot.s3.r' 'tree_detection.r' 'tree_hulls.r'
-        'tree_metrics.r' 'utils_assertive.r' 'utils_catalog_options.r'
-        'utils_colors.r' 'utils_define_constant.R' 'utils_geometry.r'
-        'utils_is.r' 'utils_match_chm_and_seeds.r' 'utils_metrics.r'
-        'utils_misc.r' 'utils_typecast.r' 'zzz.r'
+        'lasvoxelize.r' 'lidR-package.r' 'plot.s3.r' 'tree_detection.r'
+        'tree_hulls.r' 'tree_metrics.r' 'utils_assertive.r'
+        'utils_catalog_options.r' 'utils_colors.r'
+        'utils_define_constant.R' 'utils_geometry.r' 'utils_is.r'
+        'utils_match_chm_and_seeds.r' 'utils_metrics.r' 'utils_misc.r'
+        'utils_typecast.r' 'zzz.r'
 NeedsCompilation: yes
-Packaged: 2019-03-01 08:29:30 UTC; jr
+Packaged: 2019-05-09 17:16:52 UTC; jr
 Author: Jean-Romain Roussel [aut, cre, cph],
   David Auty [aut, ctb] (Reviews the documentation),
   Florian De Boissieu [ctb] (Fixed bugs and improved catalog features),
   Andrew Sánchez Meador [ctb] (Implemented lassnags)
 Maintainer: Jean-Romain Roussel <jean-romain.roussel.1@ulaval.ca>
 Repository: CRAN
-Date/Publication: 2019-03-03 20:30:03 UTC
+Date/Publication: 2019-05-09 18:30:07 UTC
