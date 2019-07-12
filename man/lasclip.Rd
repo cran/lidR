@@ -97,7 +97,6 @@ Supported processing options for a \code{LAScatalog} (in bold). For more details
 \item chunk_size: Does not make sense here.
 \item buffer: Not supported yet.
 \item alignment: Does not makes sense here.
-\item \strong{cores}: How many cores are used.
 \item \strong{progress}: Displays a progress estimation.
 \item \strong{stop_early}: Leave this 'as-is' unless you are an advanced user.
 \item \strong{output_files}: If 'output_files' is set in the catalog, the ROIs will not be returned in R.
@@ -121,7 +120,7 @@ las = readLAS(LASfile)
 subset1 = lasclipRectangle(las, 684850, 5017850, 684900, 5017900)
 
 # Do not load the file(s), extract only the region of interest from a bigger dataset
-ctg = catalog(LASfile)
+ctg = readLAScatalog(LASfile)
 subset2 = lasclipRectangle(ctg, 684850, 5017850, 684900, 5017900)
 
 # Extract all the polygons from a shapefile

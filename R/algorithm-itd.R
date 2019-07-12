@@ -6,7 +6,7 @@
 #
 # COPYRIGHT:
 #
-# Copyright 2017 Jean-Romain Roussel
+# Copyright 2019 Jean-Romain Roussel
 #
 # This file is part of lidR R package.
 #
@@ -32,18 +32,16 @@
 #' This function is made to be used in \link{tree_detection}. It implements an algorithm for tree
 #' detection based on a local maximum filter. The windows size can be fixed or variable and its
 #' shape can be square or circular. The internal algorithm works either with a raster or a point cloud.
-#' It is deeply inspired from Popescu & Wynne (2004) (see references).
+#' It is deeply inspired by Popescu & Wynne (2004) (see references).
 #'
-#' @param ws numeric or function. Length or diameter of the moving window used to the detect the local
-#' maxima in the unit of the input data (usually meters). If it is numeric a fixed window size is used.
+#' @param ws numeric or function. Length or diameter of the moving window used to detect the local
+#' maxima in the units of the input data (usually meters). If it is numeric a fixed window size is used.
 #' If it is a function, the function determines the size of the window at any given location on the canopy.
-#' The function should take the height of a given pixel or points as its only argument and return the
+#' The function should take the height of a given pixel or point as its only argument and return the
 #' desired size of the search window when centered on that pixel/point.
-#'
 #' @param hmin numeric. Minimum height of a tree. Threshold below which a pixel or a point
 #' cannot be a local maxima. Default is 2.
-#'
-#' @param shape character. Shape of the moving windows used to find the local maxima. Can be "square"
+#' @param shape character. Shape of the moving window used to find the local maxima. Can be "square"
 #' or "circular".
 #'
 #' @references
@@ -57,43 +55,43 @@
 #'
 #' @examples
 #' LASfile <- system.file("extdata", "MixedConifer.laz", package="lidR")
-#' las = readLAS(LASfile, select = "xyz", filter = "-drop_z_below 0")
+#' las <- readLAS(LASfile, select = "xyz", filter = "-drop_z_below 0")
 #'
 #' # point-cloud-based
 #' # =================
 #'
-#' # 5x5 m fixed windows size
-#' ttops = tree_detection(las, lmf(5))
+#' # 5x5 m fixed window size
+#' ttops <- tree_detection(las, lmf(5))
 #'
-#' x = plot(las)
+#' x <- plot(las)
 #' add_treetops3d(x, ttops)
 #'
 #' # variable windows size
-#' f = function(x) { x * 0.07 + 3}
-#' ttops = tree_detection(las, lmf(f))
+#' f <- function(x) { x * 0.07 + 3}
+#' ttops <- tree_detection(las, lmf(f))
 #'
-#' x = plot(las)
+#' x <- plot(las)
 #' add_treetops3d(x, ttops)
 #'
 #' # raster-based
 #' # ============
 #'
-#' # 5x5 m fixed windows size
-#' chm = grid_canopy(las, res = 1, p2r(0.15))
-#' kernel = matrix(1,3,3)
-#' chm = raster::focal(chm, w = kernel, fun = median, na.rm = TRUE)
+#' # 5x5 m fixed window size
+#' chm <- grid_canopy(las, res = 1, p2r(0.15))
+#' kernel <- matrix(1,3,3)
+#' chm <- raster::focal(chm, w = kernel, fun = median, na.rm = TRUE)
 #'
-#' ttops = tree_detection(chm, lmf(5))
+#' ttops <- tree_detection(chm, lmf(5))
 #'
-#' raster::plot(chm, col = height.colors(30))
-#' sp::plot(ttops, add = TRUE)
+#' plot(chm, col = height.colors(30))
+#' plot(ttops, add = TRUE)
 #'
-#' # variable windows size
-#' f = function(x) { x * 0.07 + 3 }
-#' ttops = tree_detection(chm, lmf(f))
+#' # variable window size
+#' f <- function(x) { x * 0.07 + 3 }
+#' ttops <- tree_detection(chm, lmf(f))
 #'
-#' raster::plot(chm, col = height.colors(30))
-#' sp::plot(ttops, add = TRUE)
+#' plot(chm, col = height.colors(30))
+#' plot(ttops, add = TRUE)
 lmf = function(ws, hmin = 2, shape = c("circular", "square"))
 {
   shape <- match.arg(shape)
@@ -106,37 +104,27 @@ lmf = function(ws, hmin = 2, shape = c("circular", "square"))
     context <- tryCatch({get("lidR.context", envir = parent.frame())}, error = function(e) {return(NULL)})
     stopif_wrong_context(context, "tree_detection", "lmf")
 
-    n = nrow(las@data)
-
-    if (is.numeric(ws))
+    if (is.function(ws))
     {
-      # nothing to do
-    }
-    else if (is.function(ws))
-    {
-      ws = ws(las@data$Z)
-      ws[las@data$Z < hmin] = ws(hmin)
+      n     <- nrow(las@data)
+      ws    <- ws(las@data$Z)
+      b     <- las$Z < hmin
+      ws[b] <- ws(hmin)
 
       if (!is.numeric(ws)) stop("The function 'ws' did not return a correct output. ", call. = FALSE)
       if (any(ws <= 0))    stop("The function 'ws' returned negative or null values.", call. = FALSE)
-      if (anyNA(ws))       stop("The function 'ws' returned NA values.", call. = FALSE)
-      if (length(ws) != n) stop("The function 'ws' did not return a correct output.", call. = FALSE)
+      if (anyNA(ws))       stop("The function 'ws' returned NA values.",               call. = FALSE)
+      if (length(ws) != n) stop("The function 'ws' did not return a correct output.",  call. = FALSE)
     }
-    else
+    else if (!is.numeric(ws))
+    {
       stop("'ws' must be a number or a function", call. = FALSE)
+    }
 
-    . <- X <- Y <- Z <- treeID <- NULL
-    is_maxima = C_lmf(las@data, ws, hmin, circ)
-    maxima = las@data[is_maxima, .(X,Y,Z)]
-    maxima[, treeID := 1:.N]
-
-    output = sp::SpatialPointsDataFrame(maxima[, .(X,Y)], maxima[, .(treeID, Z)])
-    output@proj4string = las@proj4string
-    output@bbox = sp::bbox(las)
-    return(output)
+    return(C_lmf(las@data, ws, hmin, circ, getThread()))
   }
 
-  class(f) <- c("PointCloudBased", "IndividualTreeDetection", "Algorithm", "lidR")
+  class(f) <- c("PointCloudBased", "IndividualTreeDetection", "OpenMP", "Algorithm", "lidR")
   return(f)
 }
 
@@ -148,13 +136,13 @@ lmf = function(ws, hmin = 2, shape = c("circular", "square"))
 #' tree detection. Users can pinpoint the tree top positions manually and interactively using the mouse.
 #' This is only suitable for small-sized plots. First the point cloud is displayed, then the user is
 #' invited to select a rectangular region of interest in the scene using the right mouse button.
-#' Within the selected points the highest one will be flagged as 'tree top' in the scene. Once all the trees
+#' Within the selected region the highest point will be flagged as 'tree top' in the scene. Once all the trees
 #' are labeled the user can exit the tool by selecting an empty region. Points can also be unflagged.
 #' The goal of this tool is mainly for minor correction of automatically-detected tree outputs.
 #'
-#' @param detected \code{SpatialPointsDataFrame} of already found tree tops that need manual corrections.
-#' @param radius numeric. Radius of the spheres displayed on the point cloud (aesthetic purpose only).
-#' @param color character. Color of the spheres displayed on the point cloud (aesthetic purpose only).
+#' @param detected \code{SpatialPointsDataFrame} of already found tree tops that need manual correction.
+#' @param radius numeric. Radius of the spheres displayed on the point cloud (aesthetic purposes only).
+#' @param color character. Color of the spheres displayed on the point cloud (aesthetic purposes only).
 #' @param ... supplementary parameters to be passed to \link{plot}.
 #'
 #' @family individual tree detection algorithms
@@ -165,10 +153,10 @@ lmf = function(ws, hmin = 2, shape = c("circular", "square"))
 #' LASfile <- system.file("extdata", "MixedConifer.laz", package="lidR")
 #' las = readLAS(LASfile)
 #'
-#' # Full manual tree finding
+#' # Full manual tree detection
 #' ttops = tree_detection(las, manual())
 #'
-#' # Automatic finding with manual correction
+#' # Automatic detection with manual correction
 #' ttops = tree_detection(las, lmf(5))
 #' ttops = tree_detection(las, manual(ttops))
 #' }
@@ -200,7 +188,7 @@ manual = function(detected = NULL, radius = 0.5, color = "red", ...)
     }
     else
     {
-      stop("Input is not of the good type.")
+      stop("Input is not of the correct type.")
     }
 
     minx <- min(las$X)
@@ -223,26 +211,32 @@ manual = function(detected = NULL, radius = 0.5, color = "red", ...)
 
     repeat
     {
+      # Select a region
       f <- rgl::select3d(button = c("right"))
 
+      # Get the apices in the selected region
       i <- f(apice)
 
+      # There are some apices in the selected region: remove them
       if (sum(i) > 0)
       {
         ii <- which(i == TRUE)[1]
         rgl::rgl.pop(id = apice[ii]$id)
         apice <- apice[-ii]
       }
+      # There is no apex in the selected region: find an apex
       else
       {
+        # Get the points in the selected region
         i <- f(las@data)
 
+        # There are points is the region: exit the function
         if (sum(i) == 0)
           break;
 
+        # There are some points: find the highest one and add it to the list of apices
         pts     <- las@data[i, .(X,Y,Z)]
         apex    <- unique(pts[pts$Z == max(pts$Z)])[1]
-        ii      <- which(apice$X == apex$X & apice$Y == apex$Y & apice$Z == apex$Z)
         apex$id <- as.numeric(rgl::spheres3d(apex$X, apex$Y, apex$Z, radius = radius, color = color))
         apice   <- rbind(apice, apex)
       }
@@ -257,7 +251,113 @@ manual = function(detected = NULL, radius = 0.5, color = "red", ...)
     return(output)
   }
 
-
   class(f) <- c("function", "PointCloudBased", "IndividualTreeDetection", "Algorithm", "lidR")
   return(f)
+}
+
+# ===== LMFAUTO ======
+
+#' Individual Tree Detection Algorithm
+#'
+#' This function is made to be used in \link{tree_detection}. It implements a fast and parameter-free
+#' algorithm for individual tree detection with wide coverage. It is based on two local maximum filters
+#' (LMF). The first pass performs a very rough estimation of the number of trees with a fixed window
+#' size. Based on this rough estimate it automatically computes a variable windows size LMF with workable
+#' parameters. This algorithm is made to process wide areas rather than small plots. See references
+#' for more details.
+#'
+#' @param plot logical set it to \code{TRUE} if processing a plot instead of a large area. What changes
+#' is the estimation of the local number of trees. It should be based on the local neighborhood for the general
+#' case but this does not make sense for a plot.
+#' @param hmin numeric. Minimum height of a tree. Threshold below which a point cannot be a local
+#' maxima. Default is 2.
+#'
+#' @references Roussel Jean-Romain, Development of a parameter-free algorithm for automatic tree
+#' detection on wide territories (in prep.)
+#'
+# @family individual tree detection algorithms
+#'
+#' @examples
+#' \dontrun{
+#' #' LASfile <- system.file("extdata", "MixedConifer.laz", package="lidR")
+#' las <- readLAS(LASfile)
+#' ttops <- tree_detection(las, lmfauto())
+#' }
+lmfauto = function(plot = FALSE, hmin = 2)
+{
+  f = function(las)
+  {
+    context <- tryCatch({get("lidR.context", envir = parent.frame())}, error = function(e) {return(NULL)})
+    stopif_wrong_context(context, "tree_detection", "lmfauto")
+
+    # Step 1: detection with a fixed 5 m windows size
+
+    ttop5 <- tree_detection(las, lmf(5))
+
+    # Step 2: raw/rough/poor estimate of number of trees per ha in
+    # the local neighourhood
+
+    if (plot)
+    {
+      # Limit case if we are not processing a wide area
+      A     <- area(las)
+      d     <- nrow(las@data)/A
+      Aha   <- 10000/A
+      ntop5 <- nrow(ttop5)*Aha
+    }
+    else
+    {
+      # The real algorithm
+      A     <- 400
+      Aha   <- 10000/A
+      x     <- ttop5@coords[,1]
+      y     <- ttop5@coords[,2]
+      ntop5 <- C_count_in_disc(x, y, las@data$X, las@data$Y, sqrt(A/pi), getThread())
+      ntop5 <- ntop5*Aha
+    }
+
+    # Step 3: estimate the window size of a variable window size LMF as a function
+    # of the number of trees in the local neighborhood.
+    . <- X <- Y <- Z <- treeID <- NULL
+
+    ws <- lmfauto_ws(las@data$Z, ntop5)
+    lm <- C_lmf(las@data, ws, hmin, TRUE, getThread())
+    return(lm)
+  }
+
+  class(f) <- c("PointCloudBased", "IndividualTreeDetection", "Algorithm", "lidR")
+  return(f)
+}
+
+lmfauto_ws = function(x, n, d = 10)
+{
+  s <- length(n)
+  above200 <- n > 200
+  above300 <- n > 300
+
+  a <- rep(3.5, s)
+  b <- rep(4, s)
+  a[above200] <- 2.5
+  b[above200] <- 3.5
+  a[above300] <- 1.5
+  b[above300] <- 2.5
+
+  if (d < 4)
+  {
+    a <- a + 1.25
+    b <- b + 1.25
+    a[above200] <- a[above200] - 0.5
+    b[above200] <- b[above200] - 0.5
+    a[above300] <- a[above300] - 0.25
+    b[above300] <- b[above300] - 0.25
+  }
+
+  llim  <- 2
+  ulim  <- 20
+  slope <- (b - a)/(ulim - llim)
+  intercept <- a - 2*slope
+  ws <- slope*x + intercept
+  ws[x < llim] <- a[x < llim]
+  ws[x < llim] <- b[x < llim]
+  return(ws)
 }

@@ -30,7 +30,7 @@
 #' A \code{LAScatalog} object is a representation of a set of las/laz files. A \code{LAScatalog} is
 #' a way to manage and process an entire dataset. It allows the user to process a large area, or to
 #' selectively clip data from a large area without loading all the data into computer memory.
-#' A \code{LAScatalog} can be built with the function \link{catalog} and is formally an extension of
+#' A \code{LAScatalog} can be built with the function \link{readLAScatalog} and is formally an extension of
 #' a \code{SpatialPolygonsDataFrame} containing extra data to allow users greater control over
 #' how the dataset is processed (see details).
 #'
@@ -72,10 +72,6 @@
 #' The slot \code{@processing_options} contains a \code{list} of options that determine how chunks
 #' (the sub-areas that are sequentially processed) are processed.
 #' \itemize{
-#' \item \strong{core}: integer. The number of cores used. Default is 1. In \code{lidR} algorithms are
-#' all single core algorithms. What is parallelized is the number of chunks processed together. Thus
-#' by using 4 cores, 4 chunks of point cloud are loaded at once using 4 times more memory. Thus it is
-#' not always pertinent to set \code{core > 1}.
 #' \item \strong{progress}: boolean. Display a progress bar and a chart of progress. Default is TRUE.
 #' Progress estimation can be enhanced by installing the package \code{progress}.
 #' \item \strong{stop_early}: boolean. Stop the processing if an error occurs in a chunk. If \code{FALSE}
@@ -126,7 +122,8 @@
 #' This option will generate as many filenames as needed with custom names for each file. The list of
 #' allowed templates is described in the documentation for each function.
 #' \item \strong{drivers}: list. This contains all the drivers required to seamlessly write Raster*,
-#' Spatial*, LAS objects. It is recommended that only advanced users change this option.
+#' Spatial*, LAS objects. It is recommended that only advanced users change this option. A dedicated
+#' page describes the drivers in \link{lidR-LAScatalog-drivers}.
 #' }
 #'
 #' @section Input options:
@@ -152,10 +149,9 @@
 #' @examples
 #' \dontrun{
 #' # Build a catalog
-#' ctg <- catalog("filder/to/las/files/")
+#' ctg <- readLAScatalog("filder/to/las/files/")
 #'
 #' # Set some options
-#' opt_cores(ctg) <- 2
 #' opt_filter(ctg) <- "-keep_first"
 #'
 #' # Summary gives a summary of how the catalog will be processed
@@ -167,7 +163,6 @@
 #'
 #' # For low memory config it is probably advisable not to load entire files
 #' # and process chunks instead
-#' opt_cores(ctg) <- 1
 #' opt_chunk_size(ctg) <- 500
 #'
 #' # Outputs are expected to be strictly identical
@@ -259,8 +254,6 @@ setMethod("initialize", "LAScatalog", function(.Object)
   )
 
   .Object@processing_options <- list(
-    cores = 1L,
-    plan = "future::multiprocess",
     progress = TRUE,
     stop_early = TRUE,
     wall_to_wall = TRUE

@@ -190,7 +190,7 @@ lasnormalize.LAScatalog = function(las, algorithm, na.rm = FALSE)
   options <- list(need_buffer = TRUE, drop_null = TRUE, need_output_file = TRUE)
   output  <- catalog_apply(las, lasnormalize, algorithm = algorithm, na.rm = na.rm, .options = options)
   output  <- unlist(output)
-  ctg     <- catalog(output)
+  ctg     <- readLAScatalog(output)
 
   opt_copy(ctg) <- las
   return(ctg)
@@ -242,10 +242,10 @@ check_degenerated_points = function(points)
   ndup_xy  = sum(dup_xy & !dup_xyz)
 
   if (ndup_xyz > 0)
-    warning(glue::glue("There were {ndup_xyz} degenerated ground points. Some X Y Z coordinates were repeated. They were removed."))
+    warning(glue::glue("There were {ndup_xyz} degenerated ground points. Some X Y Z coordinates were repeated. They were removed."), call. = FALSE)
 
   if (ndup_xy > 0)
-    warning(glue::glue("There were {ndup_xy} degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates. min Z were retained."))
+    warning(glue::glue("There were {ndup_xy} degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates. min Z were retained."), call. = FALSE)
 
   if (ndup_xy > 0 | ndup_xyz > 0)
     points = points[, .(Z = min(Z)), by = .(X,Y)]

@@ -39,7 +39,6 @@
 #' @param ws numeric. Sequence of windows sizes to be used in filtering ground returns.
 #' The values must be positive and in the same units as the point cloud (usually meters, occasionally
 #' feet).
-#'
 #' @param th numeric. Sequence of threshold heights above the parameterized ground surface to be
 #' considered a ground return. The values must be positive and in the same units as the point cloud.
 #'
@@ -103,19 +102,14 @@ pmf = function(ws, th)
 #'
 #' @param sloop_smooth logical. When steep slopes exist, set this parameter to TRUE to reduce
 #' errors during post-processing.
-#'
 #' @param class_threshold scalar. The distance to the simulated cloth to classify a point cloud into ground
 #' and non-ground. The default is 0.5.
-#'
 #' @param cloth_resolution scalar. The distance between particles in the cloth. This is usually set to the
 #' average distance of the points in the point cloud. The default value is 0.5.
-#'
 #' @param rigidness integer. The rigidness of the cloth. 1 stands for very soft (to fit rugged
 #' terrain), 2 stands for medium, and 3 stands for hard cloth (for flat terrain). The default is 1.
-#'
 #' @param iterations integer. Maximum iterations for simulating cloth. The default value is 500. Usually,
 #' there is no need to change this value.
-#'
 #' @param time_step scalar. Time step when simulating the cloth under gravity. The default value
 #' is 0.65. Usually, there is no need to change this value. It is suitable for most cases.
 #'

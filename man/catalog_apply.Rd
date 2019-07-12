@@ -13,12 +13,15 @@ catalog_apply(ctg, FUN, ..., .options = NULL)
 
 \item{...}{Optional arguments to FUN.}
 
-\item{.options}{See dedicated section and example.}
+\item{.options}{See dedicated section and examples.}
 }
 \description{
 This function gives users access to the \link[lidR:LAScatalog-class]{LAScatalog} processing engine.
 It allows the application of a user-defined routine over an entire catalog. The LAScatalog
 processing engine tool is explained in the \link[lidR:LAScatalog-class]{LAScatalog class}\cr\cr
+This function is the core of the lidR package. It drives every single function that can process a
+\code{LAScatalog}. It is flexible and powerful but also complex and reserved to users that are
+confortable with the lidR package.\cr\cr.
 \strong{Warning:} the LAScatalog processing engine has a mechanism to load buffered data to avoid
 edge artifacts, but no mechanism to remove the buffer after applying user-defined functions, since
 this task is specific to each process. In other \code{lidR} functions this task is performed
@@ -77,16 +80,17 @@ function by returning \code{NULL} indicates to the internal engine that the clus
 
 \section{.options}{
 
-User may have noticed that some lidR functions throw an errors when the processing options are inappropriate.
-For example, some functions need a buffer and thus \code{buffer = 0} is forbidden. User can add the same
-constrains to protect against inappropriate options. The \code{.options} argument can be a \code{list} of
-options.
+User may have noticed that some lidR functions throw an errors when the processing options are
+inappropriate. For example, some functions need a buffer and thus \code{buffer = 0} is forbidden.
+User can add the same constrains to protect against inappropriate options. The \code{.options}
+argument is a \code{list} that allows to tune the behavior of the function.
 \itemize{
 \item \code{need_buffer = TRUE} the function complains if the buffer is 0
 \item \code{need_output_file = TRUE} the function complains if no output file template is provided
-\item \code{drop_null = FALSE} the NULL outputs are not automatically removed (useful in very
-specific internal cases)
-\item \code{raster_alignment = ...} very important option, see below.
+\item \code{raster_alignment = ...} the function checks the aligmnent of the chunks. This option is
+important if the output is a raster. See below for more details.
+\item \code{drop_null = FALSE} Not intended to be used by regular users. The function doed not
+remove the NULL outputs.
 }
 
 When the function \code{FUN} returns a raster it is important to ensure that the chunks are aligned
@@ -114,7 +118,6 @@ Supported processing options for a \code{LAScatalog} (in bold). For more details
 \item \strong{chunk_size}: How much data is loaded at once.
 \item \strong{chunk_buffer}: Load chunks with a buffer.
 \item \strong{chunk_alignment}: Align the chunks.
-\item \strong{cores}: How many chunks are loaded and processed at once.
 \item \strong{progress}: Displays a progress estimate.
 \item \strong{output_files}: The user-defined function outputs will be written to files instead of being
 returned into R.
@@ -159,13 +162,12 @@ my_tree_detection_method <- function(cluster, ws)
 
 # 2. Build a project (here, a single file catalog for the purposes of this dummmy example).
 LASfile <- system.file("extdata", "MixedConifer.laz", package="lidR")
-project <- catalog(LASfile)
+project <- readLAScatalog(LASfile)
 plot(project)
 
 # 3. Set some catalog options.
-# For this dummy example, the chunk size is 80 m and the buffer is 10 m using a single core.
+# For this dummy example, the chunk size is 80 m and the buffer is 10 m
 opt_chunk_buffer(project) <- 10
-opt_cores(project)        <- 1L
 opt_chunk_size(project)   <- 80            # small because this is a dummy example.
 opt_select(project)       <- "xyz"         # read only the coordinates.
 opt_filter(project)       <- "-keep_first" # read only first returns.
@@ -197,15 +199,14 @@ rumple_index_surface = function(cluster, res)
 }
 
 LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
-project <- catalog(LASfile)
+project <- readLAScatalog(LASfile)
 
 opt_chunk_buffer(project) <- 1
-opt_cores(project)        <- 1L
 opt_chunk_size(project)   <- 120     # small because this is a dummy example.
 opt_select(project)       <- "xyz"   # read only the coordinates.
 
 opt     <- list(raster_alignment = 20)  # catalog_apply will adjust the chunks if required
-output  <-  catalog_apply(project, rumple_index_surface, res = 20, .options = opt)
+output  <- catalog_apply(project, rumple_index_surface, res = 20, .options = opt)
 output  <- do.call(raster::merge, output)
 plot(output, col = height.colors(50))
 }

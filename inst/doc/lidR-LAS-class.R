@@ -15,8 +15,20 @@ print(las)
 print(las@header)
 
 ## ------------------------------------------------------------------------
-epsg(las) = 2567
+projection(las) <- sp::CRS("+init=epsg:26917")
 projection(las)
+
+# Header has been updated but users do not need to take care of that
+las@header@VLR[["GeoKeyDirectoryTag"]][["tags"]][[2]][["value offset"]]
+
+## ------------------------------------------------------------------------
+las@header@PHB[["Global Encoding"]][["WKT"]] = TRUE
+
+projection(las) <- sp::CRS("+init=epsg:26917")
+projection(las)
+
+# Header has been updated but users do not need to take care of that
+las@header@VLR[["WKT OGC CS"]][["WKT OGC COORDINATE SYSTEM"]]
 
 ## ------------------------------------------------------------------------
 las$Classification <- 0L

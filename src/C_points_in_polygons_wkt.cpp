@@ -31,6 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <Rcpp.h>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/geometries.hpp>
+#include "myomp.h"
 
 using namespace Rcpp;
 
@@ -40,7 +41,7 @@ typedef boost::geometry::model::multi_polygon<Polygon> MultiPolygon;
 typedef boost::geometry::model::box<Point> Bbox;
 
 // [[Rcpp::export]]
-LogicalVector C_points_in_polygon_wkt(NumericVector x, NumericVector y, std::string wkt)
+LogicalVector C_points_in_polygon_wkt(NumericVector x, NumericVector y, std::string wkt, int ncpu)
 {
   if (x.length() != y.length())
     throw std::runtime_error("Unexpected error in point in polygon: x and y are not the same length.");
@@ -57,15 +58,24 @@ LogicalVector C_points_in_polygon_wkt(NumericVector x, NumericVector y, std::str
     boost::geometry::read_wkt(wkt, polygons);
     boost::geometry::envelope(polygons, bbox);
 
+    #pragma omp parallel for num_threads(ncpu)
     for(int i = 0 ; i < npoints ; i++)
     {
+      Point p;
       p.set<0>(x[i]);
       p.set<1>(y[i]);
+
+      bool isin = false;
 
       if (boost::geometry::covered_by(p, bbox))
       {
         if (boost::geometry::covered_by(p, polygons))
-          in_poly[i] = true;
+          isin = true;
+      }
+
+      #pragma omp critical
+      {
+        in_poly[i] = isin;
       }
     }
   }
@@ -78,15 +88,24 @@ LogicalVector C_points_in_polygon_wkt(NumericVector x, NumericVector y, std::str
     boost::geometry::read_wkt(wkt, polygon);
     boost::geometry::envelope(polygon, bbox);
 
+    #pragma omp parallel for num_threads(ncpu)
     for(int i = 0 ; i < npoints ; i++)
     {
+      Point p;
       p.set<0>(x[i]);
       p.set<1>(y[i]);
+
+      bool isin = false;
 
       if (boost::geometry::covered_by(p, bbox))
       {
         if (boost::geometry::covered_by(p, polygon))
-          in_poly[i] = true;
+          isin = true;
+      }
+
+      #pragma omp critical
+      {
+        in_poly[i] = isin;
       }
     }
   }

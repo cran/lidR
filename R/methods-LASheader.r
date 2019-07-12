@@ -25,25 +25,25 @@
 #
 # ===============================================================================
 
-Cluster <- function(center, width, height, buffer, shape, files, name)
+#' Create a \code{LASheader} object
+#'
+#' @param data a list containing the data from the header of a las file.
+#' @return An object of class \code{LASheader}
+#' @export
+LASheader <- function(data = list()) {return(new("LASheader", data))}
+
+
+#' Transform to a list
+#'
+#' Functions to construct, coerce and check for both kinds of R lists.
+#'
+#' @param x A LASheader object
+#' @param ... unused
+#' @method as.list LASheader
+#' @export
+as.list.LASheader <- function(x, ...)
 {
-  return(new("LAScluster", center, width, height, buffer, shape, files, name, ""))
+  PHB = x@PHB
+  VLR = list(`Variable Length Records` = x@VLR)
+  return(c(PHB, VLR))
 }
-
-LAScluster <- function(center, width, height, buffer, shape, files, name, proj4string = sp::CRS())
-{
-  return(new("LAScluster", center, width, height, buffer, shape, files, name, "", proj4string))
-}
-
-
-setMethod("show", "LAScluster", function(object)
-{
-  cat("class   : LAScluster\n")
-  cat("name    :", object@name, "\n")
-  cat("center  :", object@center$x, ",", object@center$y, "\n")
-  cat("extent  :", object@bbox[1], ",", object@bbox[3], ",", object@bbox[2], ",", object@bbox[4], "(xmin, xmax, ymin, ymax)\n")
-  cat("extent+ :", object@bbbox[1], ",", object@bbbox[3], ",", object@bbbox[2], ",", object@bbbox[4], "(xmin, xmax, ymin, ymax)\n")
-  cat("size    :", object@width, "x", object@height, "\n")
-  cat("files   :", basename(object@files), "\n")
-  cat("filter  :", object@filter, "\n")
-})

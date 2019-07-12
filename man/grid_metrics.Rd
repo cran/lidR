@@ -4,18 +4,21 @@
 \alias{grid_metrics}
 \title{Area-Based Approach}
 \usage{
-grid_metrics(las, func, res = 20, start = c(0, 0))
+grid_metrics(las, func, res = 20, start = c(0, 0), filter = NULL)
 }
 \arguments{
 \item{las}{An object of class \link[lidR:LAS-class]{LAS} or \link[lidR:LAScatalog-class]{LAScatalog}.}
 
-\item{func}{expression. The function to be applied to each cell (see section "Parameter func").}
+\item{func}{formula. An expression to be applied to each cell (see section "Parameter func").}
 
 \item{res}{numeric. The resolution of the output \code{Raster}. Can optionally be a \code{RasterLayer}.
 In that case the \code{RasterLayer} is used as the layout.}
 
-\item{start}{vector x and y coordinates for the reference raster. Default is (0,0) meaning that the
+\item{start}{vector of x and y coordinates for the reference raster. Default is (0,0) meaning that the
 grid aligns on (0,0).}
+
+\item{filter}{formula of logical predicates. Enables the function to run only on points of interest
+in an optimized way. See examples.}
 }
 \value{
 A \code{RasterLayer} or a \code{RasterBrick} containing a numeric value in each cell. If the
@@ -38,11 +41,11 @@ returns a labeled list of metrics. For example, the following function \code{f} 
 \preformatted{
 f = function(x) {list(mean = mean(x), max = max(x))}
 }
-And could be applied either on the \code{Z} coordinates or the intensities. These two
+And could be applied either on the \code{Z} coordinates or on the intensities. These two
 statements are valid:
 \preformatted{
-grid_metrics(las, f(Z), res = 20)
-grid_metrics(las, f(Intensity), res = 20)
+grid_metrics(las, ~f(Z), res = 20)
+grid_metrics(las, ~f(Intensity), res = 20)
 }
 The following existing functions allow the user to
 compute some predefined metrics:
@@ -89,12 +92,10 @@ by file).
 option is not considered.
 \item \strong{chunk alignment}: Align the processed chunks. The alignment may be slightly modified
 internally to ensure a strict continuous wall-to-wall output.
-\item \strong{cores}: How many cores are used.
 \item \strong{progress}: Displays a progress estimate.
 \item \strong{output_files}: Return the output in R or write each cluster's output in a file. Supported
 templates are \code{XLEFT}, \code{XRIGHT}, \code{YBOTTOM}, \code{YTOP}, \code{XCENTER}, \code{YCENTER}
 \code{ID} and, if chunk size is equal to 0 (processing by file), \code{ORIGINALFILENAME}.
-\item laz_compression: is not supported because this function will never write \code{las/laz} files.
 \item \strong{\emph{select}}: The \code{grid_*} functions usually 'know' what should be loaded
 and this option is not considered. In \link{grid_metrics} this option is respected.
 \item \strong{filter}: Read only the points of interest.
@@ -104,32 +105,46 @@ and this option is not considered. In \link{grid_metrics} this option is respect
 \examples{
 LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
 las = readLAS(LASfile)
-colors = height.colors(50)
+col = height.colors(50)
+
+# === Using all points ===
 
 # Canopy surface model with 4 m^2 cells
-metrics = grid_metrics(las, max(Z), 2)
-plot(metrics, col = colors)
+metrics = grid_metrics(las, ~max(Z), 2)
+plot(metrics, col = col)
 
-# Mean height with 400-m^2 cells
-metrics = grid_metrics(las, mean(Z), 20)
-plot(metrics, col = colors)
+# Mean height with 400 m^2 cells
+metrics = grid_metrics(las, ~mean(Z), 20)
+plot(metrics, col = col)
 
 # Define your own new metrics
-myMetrics = function(z, i)
-{
+myMetrics = function(z, i) {
   metrics = list(
      zwimean = sum(z*i)/sum(i), # Mean elevation weighted by intensities
      zimean  = mean(z*i),       # Mean products of z by intensity
-     zsqmean = sqrt(mean(z^2))  # Quadratic mean
-   )
+     zsqmean = sqrt(mean(z^2))) # Quadratic mean
 
    return(metrics)
 }
 
-metrics = grid_metrics(las, myMetrics(Z, Intensity))
+metrics = grid_metrics(las, ~myMetrics(Z, Intensity))
 
-plot(metrics, col = colors)
-plot(metrics, "zwimean", col = colors)
-plot(metrics, "zimean", col = colors)
-plot(metrics, "zsqmean", col = colors)
+plot(metrics, col = col)
+plot(metrics, "zwimean", col = col)
+plot(metrics, "zimean", col = col)
+
+# === With point filters ===
+
+# Compute using only some points: basic
+first = lasfilter(las, ReturnNumber == 1)
+metrics = grid_metrics(first, ~mean(Z), 20)
+
+# Compute using only some points: optimized
+# faster and uses less memory. No intermediate object
+metrics = grid_metrics(las, ~mean(Z), 20, filter = ~ReturnNumber == 1)
+
+# Compute using only some points: best
+# ~50\% faster and uses ~10x less memory
+las = readLAS(LASfile, filter = "-keep_first")
+metrics = grid_metrics(las, ~mean(Z), 20)
 }

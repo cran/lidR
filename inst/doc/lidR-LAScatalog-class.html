@@ -98,18 +98,18 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>A LAScatalog class is a representation in R of a file or a set of las files not loaded in memory. Indeed, a regular computer cannot load the entire point cloud in R if it covers a wide area. For very high density datasets it can even fail loading a single file (see also the “LAS formal class”&quot; vignette). In lidR, we use a LAScatalog to process datasets that cannot fit in memory.</p>
 <div id="build-a-lascatalog-object-reading-a-folder-of-las-files" class="section level2">
 <h2>Build a LAScatalog object reading a folder of las files</h2>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ctg &lt;-<span class="st"> </span><span class="kw">catalog</span>(<span class="st">&quot;path/to/las/files/&quot;</span>)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ctg &lt;-<span class="st"> </span><span class="kw">readLAScatalog</span>(<span class="st">&quot;path/to/las/files/&quot;</span>)
 <span class="co"># or</span>
-ctg &lt;-<span class="st"> </span><span class="kw">catalog</span>(<span class="st">&quot;path/to/las/files/big_file.las&quot;</span>)</code></pre></div>
+ctg &lt;-<span class="st"> </span><span class="kw">readLAScatalog</span>(<span class="st">&quot;path/to/las/files/big_file.las&quot;</span>)</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(ctg)
 <span class="co">#&gt; class       : LAScatalog </span>
 <span class="co">#&gt; features    : 62 </span>
 <span class="co">#&gt; extent      : 883166.1, 895250.2, 625793.6, 639938.4  (xmin, xmax, ymin, ymax)</span>
-<span class="co">#&gt; coord. ref. : +init=epsg:3005 +proj=aea +lat_1=50 +lat_2=58.5 +lat_0=45 +lon_0=-126 +x_0=1000000 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0 </span>
+<span class="co">#&gt; crs         : +init=epsg:3005 +proj=aea +lat_1=50 +lat_2=58.5 +lat_0=45 +lon_0=-126 +x_0=1000000 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0 </span>
 <span class="co">#&gt; variables   : 7</span>
-<span class="co">#&gt; names       :    Max.X,    Min.X,    Max.Y,    Min.Y,  Min.Z,   Max.Z,                    filename </span>
-<span class="co">#&gt; min values  : 883657.8, 883166.1, 625882.9, 625793.6,   0.61,  109.26, path/to/las/files/file1.las </span>
-<span class="co">#&gt; max values  : 895250.2, 894233.1, 639938.4, 638602.1, 338.86, 1021.87, path/to/las/files/file9.las</span></code></pre></div>
+<span class="co">#&gt; names       :     Max.X,     Min.X,     Max.Y,     Min.Y,  Min.Z,   Max.Z,                    filename </span>
+<span class="co">#&gt; min values  : 883657.85, 883166.09, 625882.94,  625793.6,  -7.58,  109.26, path/to/las/files/file1.las </span>
+<span class="co">#&gt; max values  : 895250.23, 894233.07, 639938.36, 638602.13, 338.86, 1021.87, path/to/las/files/file9.las</span></code></pre></div>
 </div>
 <div id="basic-structure-of-a-lascatalog-object" class="section level2">
 <h2>Basic structure of a LAScatalog object</h2>
@@ -121,7 +121,7 @@ ctg &lt;-<span class="st"> </span><span class="kw">catalog</span>(<span class="s
 <h2>Allowed and non-allowed manipulation of a LAScatalog object</h2>
 <p>A LAScatalog is formally a SpatialPolygonsDataFrame although its purpose is not to manipulate spatial data in R. The purpose of a LAScatalog is to represent a set of existing las/laz files. Thus a LAScatalog cannot be modified because it must be related to the actual content of the files. The following throws an error:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ctg<span class="op">$</span>Min.Z &lt;-<span class="st"> </span><span class="dv">0</span>
-<span class="co">#&gt; Error in `$&lt;-`(`*tmp*`, Min.Z, value = 0): LAScatalog data are read from standard files and cannot be modified</span></code></pre></div>
+<span class="co">#&gt; Error: LAScatalog data are read from standard files and cannot be modified</span></code></pre></div>
 <p>Obviously it is always possible to modify an R object by bypassing such simple restrictions. In this case the user will break something internally and a correct output is not guaranteed.</p>
 </div>
 <div id="validation-of-lascatalog-object" class="section level2">
@@ -167,7 +167,7 @@ ctg &lt;-<span class="st"> </span><span class="kw">catalog</span>(<span class="s
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">hmean &lt;-<span class="st"> </span><span class="kw">grid_metrics</span>(ctg, <span class="kw">mean</span>(Z), <span class="dv">20</span>)</code></pre></div>
 <p>However, processing a LAScatalog usually requires some tuning of the processing options to get better control of the computation. Indeed, if the catalog is huge the output is likely to be huge as well, and maybe the output cannot fit in the R memory. For example, <code>lasnormalize</code> throws an error if used ‘as is’ without tuning the processing options. Using <code>lasnormalize</code> like in the following example the expected <code>output</code> would be a huge point cloud loaded in memory. The lidR package forbids such a call:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">output &lt;-<span class="st"> </span><span class="kw">lasnormalize</span>(ctg, <span class="kw">tin</span>())
-<span class="co">#&gt; Error in check_and_fix_options(ctg, need_buffer, check_alignment, need_output_file, : This function requires that the LAScatalog provides an output file template.</span></code></pre></div>
+<span class="co">#&gt; Error: This function requires that the LAScatalog provides an output file template.</span></code></pre></div>
 <p>Instead, one can use the processing option <code>opt_output_files</code>. Processing options drive how the big files are split in small chunks and how the outputs are either returned into R or written on disk into files.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">opt_output_files</span>(ctg) &lt;-<span class="st"> &quot;folder/where/to/store/outputs/{ORIGINALFILENAME}_normalized&quot;</span>
 output &lt;-<span class="st"> </span><span class="kw">lasnormalize</span>(ctg, <span class="kw">tin</span>())</code></pre></div>
@@ -182,7 +182,6 @@ output &lt;-<span class="st"> </span><span class="kw">lasnormalize</span>(ctg, <
 <span class="co">#&gt; num. files  : 62 </span>
 <span class="co">#&gt; Summary of the processing options:</span>
 <span class="co">#&gt;   - Catalog will be processed by file respecting the original tiling pattern</span>
-<span class="co">#&gt;   - Catalog will be processed using 1 core(s).</span>
 <span class="co">#&gt; Summary of the output options:</span>
 <span class="co">#&gt;   - Outputs will be returned in R objects.</span>
 <span class="co">#&gt; Summary of the input options:</span>

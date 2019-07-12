@@ -1,18 +1,16 @@
 #' @importFrom data.table :=
-.onAttach <- function(libname, pkgname) {
+.onAttach <- function(libname, pkgname)
+{
   # Runs when attached to search() path such as by library() or require()
   if (interactive())
   {
     v = utils::packageVersion("lidR")
-    packageStartupMessage("
-WARNING: lidR version ", v, " is a major reengineering of former lidR versions 1.x.y.
-It comes with many new features and internals improvements but is also *incompatible* with previous versions.
-If you were a user of lidR versions 1.x.y please read the NEWS file at <https://github.com/Jean-Romain/lidR/blob/master/NEWS.md> before using this new version.
-Ask for help on <https://gis.stackexchange.com/>. Report bugs on <https://github.com/Jean-Romain/lidR>.")
+    packageStartupMessage("lidR ", v, " using ", getThreads(), " threads. Help on <gis.stackexchange.com>. Bug report on <github.com/Jean-Romain/lidR>.")
   }
 }
 
-.onLoad <- function(libname, pkgname) {
+.onLoad <- function(libname, pkgname)
+{
   op <- options()
   op.lidR <- list(
     lidR.progress = TRUE,
@@ -20,16 +18,20 @@ Ask for help on <https://gis.stackexchange.com/>. Report bugs on <https://github
     lidR.verbose = FALSE,
     lidR.interactive = TRUE,
     lidR.debug = FALSE,
-    lidR.buildVRT = TRUE
-  )
+    lidR.buildVRT = TRUE,
+    lidR.threads.manual = FALSE)
+
+  max <- R_omp_get_max_threads()
+  if (max > 0) LIDRTHREADS$n <- as.integer(max/2)
 
   toset <- !(names(op.lidR) %in% names(op))
-  if(any(toset)) options(op.lidR[toset])
+  if (any(toset)) options(op.lidR[toset])
 
   invisible()
 }
 
-.onUnload <- function(libpath) {
+.onUnload <- function(libpath)
+{
   library.dynam.unload("lidR", libpath)
 }
 

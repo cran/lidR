@@ -112,7 +112,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>A laz file is a strongly compressed las file. Reading a laz file is thus slower than reading a las file because it must be un-compressed on the fly at reading time. The following graph shows a benchmark of read time for a single file.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">system.time</span>(<span class="kw">readLAS</span>(file.las))
 <span class="kw">system.time</span>(<span class="kw">readLAS</span>(file.laz))</code></pre></div>
-<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
 <p>So let’s assume that the total computation time is 1 unit of time divided into 0.25 units of actual processing time and 0.75 units of read time (which is a fairly reasonable ratio). We can divide the read time by 3, and thus have 0.25 units of read time and 0.25 units of computing time, which gives a computation time of 0.5 instead of 1. We can therefore speed-up the computation time by a factor of 2 by using the las format instead of laz. Obviously the gain is less significant for more computationally demanding processes.</p>
 <p>So for faster computation users can opt for las files instead of laz files. Obviously, there are good reasons to use laz files instead of las files. The strong compression brought by the laz format has a lot of advantages for storing data. It is up to the user to choose a format by considering the trade-offs between space and computation time. This section explains how it works only to help users make a decision that best suits their needs.</p>
 </div>
@@ -130,11 +130,6 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <h2>Changing the hardware</h2>
 <p>We demonstrated the importance of decreasing the time taken to read files to improve the overall computation time. The faster you read the files the faster you perform the computation because the read time is non-negligible. Opting for a fast SSD disk instead of a slow HDD disk may significantly speed-up the computation time independently of the power of your processor. Hardware matters!</p>
 </div>
-<div id="use-more-cores" class="section level2">
-<h2>Use more cores</h2>
-<p>This section comes at the end for a reason. lidR allows you to gain speed using multicore processing. However, users will not necessarily have a significant gain with multicore processing. Multicore is not a magic trick. Processing a LAScatalog implies reading a file on disk, a task that is not really parallelizable. As a consequence, multicore is not necessarily faster than single core. The multicore engine implemented in lidR reads several files at a time to process them in parallel. It uses more memory (four cores means four chunks read at one time) and the overhead of reading four files at a time may be more penalizing than the gain.</p>
-<p>In conclusion, multicore processing may or may not speed-up the computation time and it has a significant memory cost.</p>
-</div>
 <div id="benchmarks" class="section level2">
 <h2>Benchmarks</h2>
 <p>The following are benchmarks for some functions</p>
@@ -146,44 +141,29 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <thead>
 <tr class="header">
 <th align="left">Format</th>
-<th align="right">Cores</th>
 <th align="left">Runtime</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td align="left">laz</td>
-<td align="right">1</td>
 <td align="left">40 sec</td>
 </tr>
 <tr class="even">
 <td align="left">laz + lax</td>
-<td align="right">1</td>
 <td align="left">20 sec</td>
 </tr>
 <tr class="odd">
 <td align="left">las</td>
-<td align="right">1</td>
 <td align="left">10 sec</td>
 </tr>
 <tr class="even">
 <td align="left">las + lax</td>
-<td align="right">1</td>
 <td align="left">7 sec</td>
-</tr>
-<tr class="odd">
-<td align="left">laz + lax</td>
-<td align="right">2</td>
-<td align="left">20 sec</td>
-</tr>
-<tr class="even">
-<td align="left">las + lax</td>
-<td align="right">2</td>
-<td align="left">5 sec</td>
 </tr>
 </tbody>
 </table>
-<p>Here we found an almost 8-fold increase in speed simply by changing the file types. With 2 cores we gained an additional 30%, reaching an actual 8-fold speed-up compared to the basic use of laz files. One can try laz files only + 32 cores on a supercomputer with a lot of RAM, but the gain will probably not reach an 8-fold speed-up!</p>
+<p>Here we found an almost 8-fold increase in speed simply by changing the file types.</p>
 </div>
 <div id="area-based-approach" class="section level4">
 <h4>Area-based Approach</h4>
@@ -193,106 +173,48 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <thead>
 <tr class="header">
 <th align="left">Format</th>
-<th align="right">Cores</th>
 <th align="left">Runtime</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td align="left">laz</td>
-<td align="right">1</td>
 <td align="left">45 min</td>
 </tr>
 <tr class="even">
 <td align="left">las</td>
-<td align="right">1</td>
 <td align="left">15 min</td>
 </tr>
 <tr class="odd">
 <td align="left">las + lax</td>
-<td align="right">1</td>
 <td align="left">8 min</td>
-</tr>
-<tr class="even">
-<td align="left">las + lax</td>
-<td align="right">4</td>
-<td align="left">7 min</td>
 </tr>
 </tbody>
 </table>
-<p>Here we found an almost 6-fold speed-up by changing only the file types. With 4 cores we gained an additional 20%, reaching almost a 7-fold speed-up compared to the basic use of laz files. Using 2 cores instead of 4 is likely to be faster. Again, one can try laz files only + 32 cores on a supercomputer with a lot of RAM, but the gain will probably not reach an 8-fold speed-up!</p>
+<p>Here we found an almost 6-fold speed-up by changing only the file types.</p>
 </div>
 <div id="clip-ground-inventories" class="section level4">
 <h4>Clip ground inventories</h4>
 <p>Extraction of 140 plots of 12 m radius from 1 x 1 km files with 3 pts/m² on a laptop with an SSD and an intel core i7 processor.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Streaming way</span>
-<span class="kw">opt_output_files</span>(ctg) &lt;-<span class="st"> &quot;/path/to/output/file_{ID}&quot;</span>
-new_ctg &lt;-<span class="st"> </span><span class="kw">lasclip</span>(ctg, shapefile, <span class="dt">radius =</span> <span class="dv">12</span>)
-
-<span class="co"># Load in memory</span>
-<span class="kw">opt_output_files</span>(ctg)  &lt;-<span class="st"> &quot;&quot;</span>
-new_ctg &lt;-<span class="st"> </span><span class="kw">lasclip</span>(ctg, shapefile, <span class="dt">radius =</span> <span class="dv">12</span>)</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">plots &lt;-<span class="st"> </span><span class="kw">lasclip</span>(ctg, shapefile, <span class="dt">radius =</span> <span class="dv">12</span>)</code></pre></div>
 <table>
 <thead>
 <tr class="header">
 <th align="left">Format</th>
-<th align="left">Method</th>
-<th align="right">Cores</th>
 <th align="left">Runtime</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td align="left">las</td>
-<td align="left">Streaming</td>
-<td align="right">1</td>
 <td align="left">45 sec</td>
 </tr>
 <tr class="even">
-<td align="left">las</td>
-<td align="left">Streaming</td>
-<td align="right">4</td>
-<td align="left">35 sec</td>
-</tr>
-<tr class="odd">
 <td align="left">las + lax</td>
-<td align="left">Streaming</td>
-<td align="right">1</td>
 <td align="left">4 sec</td>
-</tr>
-<tr class="even">
-<td align="left">las + lax</td>
-<td align="left">Streaming</td>
-<td align="right">4</td>
-<td align="left">6 sec</td>
-</tr>
-<tr class="odd">
-<td align="left">las</td>
-<td align="left">Memory</td>
-<td align="right">1</td>
-<td align="left">45 sec</td>
-</tr>
-<tr class="even">
-<td align="left">las</td>
-<td align="left">Memory</td>
-<td align="right">4</td>
-<td align="left">35 sec</td>
-</tr>
-<tr class="odd">
-<td align="left">las + lax</td>
-<td align="left">Memory</td>
-<td align="right">1</td>
-<td align="left">4 sec</td>
-</tr>
-<tr class="even">
-<td align="left">las + lax</td>
-<td align="left">Memory</td>
-<td align="right">4</td>
-<td align="left">17 sec</td>
 </tr>
 </tbody>
 </table>
-<p>Here using 4 cores instead of 1 considerably increases the computation time. Indeed the runtime is very small and the overhead of the parallelization does not compensate for the potential gain.</p>
 </div>
 </div>
 

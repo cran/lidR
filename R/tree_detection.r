@@ -59,25 +59,34 @@ tree_detection = function(las, algorithm)
 #' @export
 tree_detection.LAS = function(las, algorithm)
 {
-  if (!is(algorithm, "lidR") | !is(algorithm, "Algorithm"))
-    stop("Invalid function provided as algorithm.")
+  assert_is_algorithm(algorithm)
+  assert_is_algorithm_itd(algorithm)
+  lidR.context <- "tree_detection"
+  res <- algorithm(las)
 
-  if (!is(algorithm, "IndividualTreeDetection"))
-    stop("The algorithm used is not an algorithm for individual tree detection.")
+  if (is(res, "SpatialPointsDataFrame"))
+    return(res)
 
-  lidR.context = "tree_detection"
-  return(algorithm(las))
+  if (is.logical(res))
+  {
+    maxima <- las@data[res, c("X", "Y", "Z")]
+    coords <- cbind(maxima[["X"]], maxima[["Y"]])
+    data   <- data.frame(treeID = 1:nrow(maxima), Z = maxima[["Z"]])
+    output <- sp::SpatialPointsDataFrame(coords, data, proj4string = las@proj4string)
+    output@bbox <- sp::bbox(las)
+    return(output)
+  }
+
+  stop("The output of the algorithm is incorrect")
 }
 
 #' @export
 tree_detection.RasterLayer = function(las, algorithm)
 {
-  lidR.context <- "tree_detection"
-  y = raster::as.data.frame(las, xy = TRUE, na.rm = TRUE)
-  data.table::setDT(y)
-  data.table::setnames(y, names(y), c("X", "Y", "Z"))
-  las = LAS(y, proj4string = las@crs)
-  return(algorithm(las))
+  data <- raster::as.data.frame(las, xy = TRUE, na.rm = TRUE)
+  names(data) <- c("X", "Y", "Z")
+  las <- LAS(data, proj4string = las@crs, check = FALSE)
+  return(tree_detection(las, algorithm))
 }
 
 #' @export
@@ -85,6 +94,7 @@ tree_detection.LAScluster = function(las, algorithm)
 {
   x <- readLAS(las)
   if (is.empty(x)) return(NULL)
+
   ttops <- tree_detection(x, algorithm)
   bbox  <- raster::extent(las)
   ttops <- raster::crop(ttops, bbox)
@@ -95,15 +105,13 @@ tree_detection.LAScluster = function(las, algorithm)
 tree_detection.LAScatalog = function(las, algorithm)
 {
   opt_select(las) <- "xyz"
-
-  options <- list(need_buffer = TRUE, drop_null = TRUE, need_output_file = FALSE)
+  options <- list(need_buffer = TRUE)
   output  <- catalog_apply(las, tree_detection, algorithm = algorithm, .options = options)
 
   if (opt_output_files(las) == "")
   {
     output  <- do.call(rbind, output)
     output@proj4string <- las@proj4string
-    output@data$treeID <- 1:length(output@data$treeID)
   }
   else
   {
@@ -112,4 +120,5 @@ tree_detection.LAScatalog = function(las, algorithm)
 
   return(output)
 }
+
 

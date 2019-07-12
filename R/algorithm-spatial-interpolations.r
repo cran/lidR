@@ -59,12 +59,12 @@ tin = function()
     nnas <- sum(isna)
 
     if (nnas > 0)
-      z[isna] <- C_knnidw(where$X[!isna], where$Y[!isna], z[!isna], where$X[isna], where$Y[isna], 1, 1)
+      z[isna] <- C_knnidw(where$X[!isna], where$Y[!isna], z[!isna], where$X[isna], where$Y[isna], 1, 1, getThread())
 
     return(z)
   }
 
-  class(f) <- c("function", "SpatialInterpolation", "Algorithm", "lidR")
+  class(f) <- c("function", "SpatialInterpolation", "OpenMP",  "Algorithm", "lidR")
   return(f)
 }
 
@@ -103,7 +103,7 @@ knnidw = function(k = 10, p = 2)
     return(z)
   }
 
-  class(f) <- c("SpatialInterpolation", "Algorithm", "lidR", "function")
+  class(f) <- c("SpatialInterpolation", "Algorithm", "OpenMP", "lidR", "function")
   return(f)
 }
 
@@ -151,7 +151,7 @@ kriging = function(model = gstat::vgm(.59, "Sph", 874), k = 10L)
 
 interpolate_knnidw = function(points, coord, k, p)
 {
-  z <- C_knnidw(points$X, points$Y, points$Z, coord$X, coord$Y, k, p)
+  z <- C_knnidw(points$X, points$Y, points$Z, coord$X, coord$Y, k, p, getThread())
   return(z)
 }
 
@@ -184,7 +184,7 @@ interpolate_delaunay <- function(points, coord, th = 0)
 
   verbose("Searching for the enclosing Delaunay convex hull...")
 
-  idx  <- C_tsearch(points$X, points$Y, dn, coord$X, coord$Y)
+  idx  <- C_tsearch(points$X, points$Y, dn, coord$X, coord$Y, getThread())
 
   #uidx <- unique(idx)
   #uidx <- uidx[!is.na(uidx)]

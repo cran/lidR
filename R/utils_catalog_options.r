@@ -40,7 +40,7 @@
 #'
 #' @examples
 #' LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
-#' ctg = catalog(LASfile)
+#' ctg = readLAScatalog(LASfile)
 #'
 #' plot(ctg, chunk_pattern = TRUE)
 #'
@@ -115,36 +115,24 @@ opt_chunk_is_file = function(ctg)
   return(ctg@chunk_options$size == 0)
 }
 
-
 # ========= Processing Options ===============
 
 #' @rdname catalog_options_tools
 #' @export
 opt_cores = function(ctg)
 {
-  return(ctg@processing_options$cores)
+  warning("Option no longer supported. See ?`lidR-parallelism`.", call. = FALSE)
+  return(NULL)
 }
 
 #' @rdname catalog_options_tools
 #' @export
 `opt_cores<-` = function(ctg, value)
 {
-  sys.cores = future::availableCores()
-  value = as.integer(value)
-
-  if (value > sys.cores) {
-    message(glue::glue("Available cores: {sys.cores}. Number of cores set to {sys.cores}."))
-    value = sys.cores
-  }
-
-  if (value < 1) {
-    message("Number of cores must be positive. Number of cores set to 1.")
-    value = 1L
-  }
-
-  ctg@processing_options$cores <- value
+  warning("Option no longer supported. See ?`lidR-parallelism`.", call. = FALSE)
   return(ctg)
 }
+
 
 #' @rdname catalog_options_tools
 #' @export

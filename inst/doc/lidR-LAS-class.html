@@ -106,9 +106,9 @@ las &lt;-<span class="st"> </span><span class="kw">readLAS</span>(LASfile)
 <span class="co">#&gt; point format : 1</span>
 <span class="co">#&gt; memory       : 6.2 Mb </span>
 <span class="co">#&gt; extent       :684766.4, 684993.3, 5017773, 5018007 (xmin, xmax, ymin, ymax)</span>
-<span class="co">#&gt; coord. ref.  : +init=epsg:26917 +proj=utm +zone=17 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0 </span>
-<span class="co">#&gt; area         : 53112.69 m² (convex hull)</span>
-<span class="co">#&gt; points       : 81590 points</span>
+<span class="co">#&gt; coord. ref.  : +proj=utm +zone=17 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0 </span>
+<span class="co">#&gt; area         : 53112.69 m²</span>
+<span class="co">#&gt; points       : 81.6 thoushand points</span>
 <span class="co">#&gt; density      : 1.54 points/m²</span>
 <span class="co">#&gt; names        : X Y Z gpstime Intensity ReturnNumber NumberOfReturns ScanDirectionFlag EdgeOfFlightline Classification Synthetic_flag Keypoint_flag Withheld_flag ScanAngleRank UserData PointSourceID</span></code></pre></div>
 </div>
@@ -127,10 +127,13 @@ las &lt;-<span class="st"> </span><span class="kw">readLAS</span>(LASfile)
 <li><code>ScanDirectionFlag</code> (int)</li>
 <li><code>EdgeOfFlightline</code>(int)</li>
 <li><code>Classification</code> (int)</li>
+<li><code>ScannerChannel</code> (int) (point format &gt;= 6)</li>
 <li><code>Synthetic_flag</code> (bool)</li>
 <li><code>Withheld_flag</code> (bool)</li>
 <li><code>Keypoint_flag</code> (bool)</li>
-<li><code>ScanAngle</code> (int)</li>
+<li><code>Overlap_flag</code> (bool) (point format &gt;= 6)</li>
+<li><code>ScanAngleRank</code> (int) (point format &lt; 6)</li>
+<li><code>ScanAngle</code> (dbl) (point format &gt;= 6)</li>
 <li><code>UserData</code> (int)</li>
 <li><code>PointSourceID</code> (int)</li>
 <li><code>R</code> <code>G</code> <code>B</code> (int)</li>
@@ -144,6 +147,11 @@ las &lt;-<span class="st"> </span><span class="kw">readLAS</span>(LASfile)
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(las<span class="op">@</span>header)
 <span class="co">#&gt; File signature:           LASF </span>
 <span class="co">#&gt; File source ID:           0 </span>
+<span class="co">#&gt; Global encoding:</span>
+<span class="co">#&gt;  - GPS Time Type: GPS Week Time </span>
+<span class="co">#&gt;  - Synthetic Return Numbers: no </span>
+<span class="co">#&gt;  - Well Know Text: CRS is GeoTIFF </span>
+<span class="co">#&gt;  - Aggregate Model: false </span>
 <span class="co">#&gt; Project ID - GUID:        00000000-0000-0000-0000-000000000000 </span>
 <span class="co">#&gt; Version:                  1.2</span>
 <span class="co">#&gt; System identifier:        LAStools (c) by rapidlasso GmbH </span>
@@ -155,26 +163,40 @@ las &lt;-<span class="st"> </span><span class="kw">readLAS</span>(LASfile)
 <span class="co">#&gt; Point data format:        1 </span>
 <span class="co">#&gt; Point data record length: 28 </span>
 <span class="co">#&gt; Num. of point records:    81590 </span>
-<span class="co">#&gt; Num. of points by return: </span>
+<span class="co">#&gt; Num. of points by return: 55756 21493 3999 342 0 </span>
 <span class="co">#&gt; Scale factor X Y Z:       0.01 0.01 0.01 </span>
 <span class="co">#&gt; Offset X Y Z:             0 0 0 </span>
 <span class="co">#&gt; min X Y Z:                684766.4 5017773 0 </span>
 <span class="co">#&gt; max X Y Z:                684993.3 5018007 29.97 </span>
 <span class="co">#&gt; Variable length records: </span>
 <span class="co">#&gt;    Variable length record 1 of 1 </span>
-<span class="co">#&gt;        Description:  by LAStools of rapidlasso GmbH </span>
+<span class="co">#&gt;        Description: by LAStools of rapidlasso GmbH </span>
 <span class="co">#&gt;        Tags:</span>
-<span class="co">#&gt;           Key 1024 tiff_tag_location 0 count 1 value offset 1 </span>
-<span class="co">#&gt;           Key 3072 tiff_tag_location 0 count 1 value offset 26917 </span>
-<span class="co">#&gt;           Key 3076 tiff_tag_location 0 count 1 value offset 9001 </span>
-<span class="co">#&gt;           Key 4099 tiff_tag_location 0 count 1 value offset 9001</span></code></pre></div>
+<span class="co">#&gt;           Key 1024 value 1 </span>
+<span class="co">#&gt;           Key 3072 value 26917 </span>
+<span class="co">#&gt;           Key 3076 value 9001 </span>
+<span class="co">#&gt;           Key 4099 value 9001</span></code></pre></div>
 </div>
 <div id="proj4string-the-crs" class="section level3">
 <h3><span class="citation">@proj4string</span>: the CRS</h3>
-<p>The slot <code>@proj4string</code> is inherited from the <code>Spatial</code> class from the <code>sp</code> package. It is a <code>CRS</code> object that stores the coordinate reference system (CRS) of the las file. In the official las specifications the CRS is stored in the header. In a LAS object the CRS is stored in the header using the EPSG code of the CRS, but it is also stored in the slot <code>@proj4string</code>. This is to ensure it meets R standards and is in accordance with other spatial data packages in the R ecosystem. Consequently, to get a valid LAS object properly written into a las file it is important to set the CRS using the function <code>epsg()</code>. This function updates the header of the LAS object <strong>and</strong> the proj4string, while functions such as <code>raster::projection()</code> or <code>sp::proj4string</code> only update the slot <code>@proj4string</code>.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">epsg</span>(las) =<span class="st"> </span><span class="dv">2567</span>
+<p>The slot <code>@proj4string</code> is inherited from the <code>Spatial</code> class from the <code>sp</code> package. It is a <code>CRS</code> object that stores the coordinate reference system (CRS) of the las file. In the official las specifications the CRS is stored in the header. In a LAS object the CRS is stored in the header using the EPSG code of the CRS or a WKT string (depending how it has been recorded in the file), but it is also stored in the slot <code>@proj4string</code>. This is to ensure it meets R standards and is in accordance with other spatial data packages in the R ecosystem. Consequently, to get a valid LAS object properly written into a las file it is important to set the CRS using the function <code>projection()</code>. This function updates the header of the LAS object <strong>and</strong> the proj4string.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">projection</span>(las) &lt;-<span class="st"> </span>sp<span class="op">::</span><span class="kw">CRS</span>(<span class="st">&quot;+init=epsg:26917&quot;</span>)
 <span class="kw">projection</span>(las)
-<span class="co">#&gt; [1] &quot;+init=epsg:2567 +proj=tmerc +lat_0=0 +lon_0=150 +k=1 +x_0=50500000 +y_0=0 +ellps=krass +towgs84=23.92,-141.27,-80.9,0,0.35,0.82,-0.12 +units=m +no_defs&quot;</span></code></pre></div>
+<span class="co">#&gt; [1] &quot;+proj=utm +zone=17 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0&quot;</span>
+
+<span class="co"># Header has been updated but users do not need to take care of that</span>
+las<span class="op">@</span>header<span class="op">@</span>VLR[[<span class="st">&quot;GeoKeyDirectoryTag&quot;</span>]][[<span class="st">&quot;tags&quot;</span>]][[<span class="dv">2</span>]][[<span class="st">&quot;value offset&quot;</span>]]
+<span class="co">#&gt; [1] 26917</span></code></pre></div>
+<p>According to LAS specification the CRS system can also be a WKT string when the WKT bit flag is set to <code>TRUE</code>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">las<span class="op">@</span>header<span class="op">@</span>PHB[[<span class="st">&quot;Global Encoding&quot;</span>]][[<span class="st">&quot;WKT&quot;</span>]] =<span class="st"> </span><span class="ot">TRUE</span>
+
+<span class="kw">projection</span>(las) &lt;-<span class="st"> </span>sp<span class="op">::</span><span class="kw">CRS</span>(<span class="st">&quot;+init=epsg:26917&quot;</span>)
+<span class="kw">projection</span>(las)
+<span class="co">#&gt; [1] &quot;+proj=utm +zone=17 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0&quot;</span>
+
+<span class="co"># Header has been updated but users do not need to take care of that</span>
+las<span class="op">@</span>header<span class="op">@</span>VLR[[<span class="st">&quot;WKT OGC CS&quot;</span>]][[<span class="st">&quot;WKT OGC COORDINATE SYSTEM&quot;</span>]]
+<span class="co">#&gt; [1] &quot;PROJCS[\&quot;NAD_1983_UTM_Zone_17N\&quot;,GEOGCS[\&quot;GCS_North_American_1983\&quot;,DATUM[\&quot;D_North_American_1983\&quot;,SPHEROID[\&quot;GRS_1980\&quot;,6378137,298.257222101]],PRIMEM[\&quot;Greenwich\&quot;,0],UNIT[\&quot;Degree\&quot;,0.017453292519943295]],PROJECTION[\&quot;Transverse_Mercator\&quot;],PARAMETER[\&quot;latitude_of_origin\&quot;,0],PARAMETER[\&quot;central_meridian\&quot;,-81],PARAMETER[\&quot;scale_factor\&quot;,0.9996],PARAMETER[\&quot;false_easting\&quot;,500000],PARAMETER[\&quot;false_northing\&quot;,0],UNIT[\&quot;Meter\&quot;,1]]&quot;</span></code></pre></div>
 </div>
 <div id="bbox-the-bounding-box" class="section level3">
 <h3><span class="citation">@bbox</span>: the bounding box</h3>
@@ -186,13 +208,13 @@ las &lt;-<span class="st"> </span><span class="kw">readLAS</span>(LASfile)
 <p>R users who are used to manipulating spatial data are likely to be very familiar with the <code>sp</code> package and all the classes used to store spatial data, such as <code>SpatialPointsDataFrame</code>, <code>SpatialPolygonsDataFrame</code>, and so on. The data contained in these classes are freely modifiable by the user because they can be of any type. A <code>LAS</code> object is not freely modifiable because it is a strongly standardized representation of a las file.</p>
 <p>For example, users cannot replace the <code>Classification</code> attribute with the value <code>0</code> because <code>0</code> is a decimal number in R and the ‘Classification’ attribute is an integer. The following throws an error:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">las<span class="op">$</span>Classification &lt;-<span class="st"> </span><span class="dv">0</span>
-<span class="co">#&gt; Error in `$&lt;-`(`*tmp*`, Classification, value = 0): Trying to replace data of type integer by data of type double: this action is not allowed</span></code></pre></div>
+<span class="co">#&gt; Error: Trying to replace data of type integer by data of type double: this action is not allowed</span></code></pre></div>
 <p>In R <code>0L</code> is an integer and thus the following is allowed:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">las<span class="op">$</span>Classification &lt;-<span class="st"> </span>0L</code></pre></div>
 <p>It would be possible to automatically cast the input into the correct type without throwing an error. But for the lidR package we chose to be very pedantic on this point to avoid any potential problems and because we would prefer users to be careful about the content of their data.</p>
 <p>The addition of a new column is also restricted. For example, one may want to add an attribute <code>R</code> corresponding to the red channel.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">las<span class="op">$</span>R &lt;-<span class="st"> </span><span class="dv">0</span>
-<span class="co">#&gt; Error in `$&lt;-`(`*tmp*`, R, value = 0): Addition of a new column using $ is forbidden for LAS objects. See ?lasadddata</span></code></pre></div>
+<span class="co">#&gt; Error: Addition of a new column using $ is forbidden for LAS objects. See ?lasadddata</span></code></pre></div>
 <p>This is not allowed because a LAS object should always be valid. By allowing the user to add an R column the LAS object would no longer be valid for two reasons:</p>
 <ol style="list-style-type: decimal">
 <li><code>R</code> is a reserved name of the core attributes and must be an integer. In the example above it is a decimal number.</li>
@@ -200,7 +222,7 @@ las &lt;-<span class="st"> </span><span class="kw">readLAS</span>(LASfile)
 </ol>
 <p>In consequence, adding a column must be done via the functions <code>lasadddata</code> or <code>lasaddextrabytes</code>. This way users are forced to read the documentation of these two functions. And yet some restrictions are still in place. For example, the following is not allowed for the same reasons as above:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">las &lt;-<span class="st"> </span><span class="kw">lasadddata</span>(las, <span class="dv">0</span>, <span class="st">&quot;R&quot;</span>)
-<span class="co">#&gt; Error in stopif_forbidden_name(name): R is part of the core attributes and is a forbidden name.</span></code></pre></div>
+<span class="co">#&gt; Error: R is part of the core attributes and is a forbidden name.</span></code></pre></div>
 <p>But anyway, R being R there is no way to completely restrict editing of objects. Users can always by-pass the restrictions to make LAS objects that are not strictly valid:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">las<span class="op">@</span>data<span class="op">$</span>R &lt;-<span class="st"> </span><span class="dv">0</span></code></pre></div>
 <p>In conclusion, a LAS object is not actually immutable but at least there are some restrictions to ensure that the user is aware that not everything is authorized.</p>
@@ -234,16 +256,16 @@ las  &lt;-<span class="st"> </span><span class="kw">lasaddextrabytes</span>(las,
 <span class="co">#&gt;   - Checking coordinates... ok</span>
 <span class="co">#&gt;   - Checking coordinates type... ok</span>
 <span class="co">#&gt;   - Checking attributes type... ok</span>
-<span class="co">#&gt;   - Checking attributes type... ok</span>
-<span class="co">#&gt;   - Checking attributes type... ok</span>
 <span class="co">#&gt;   - Checking ReturnNumber validity... ok</span>
 <span class="co">#&gt;   - Checking NumberOfReturns validity... ok</span>
 <span class="co">#&gt;   - Checking ReturnNumber vs. NumberOfReturns... ok</span>
-<span class="co">#&gt;   - Checking Classification validity... ok</span>
-<span class="co">#&gt;   - Checking RGB validity... skipped</span>
+<span class="co">#&gt;   - Checking RGB validity... ok</span>
 <span class="co">#&gt;   - Checking absence of NAs... ok</span>
 <span class="co">#&gt;   - Checking duplicated points... ok</span>
 <span class="co">#&gt;   - Checking degenerated ground points... skipped</span>
+<span class="co">#&gt;   - Checking attribute population...</span>
+<span class="co">#&gt;     'PointSourceID' attribute is not populated.</span>
+<span class="co">#&gt;     'EdgeOfFlightline' attribute is not populated.</span>
 <span class="co">#&gt;  Checking the header</span>
 <span class="co">#&gt;   - Checking header completeness... ok</span>
 <span class="co">#&gt;   - Checking scale factor validity... ok</span>

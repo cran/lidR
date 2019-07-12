@@ -52,6 +52,12 @@
 #' LASfile <- system.file("extdata", "Topography.laz", package="lidR")
 #' las <- readLAS(LASfile, select = "xyzrn")
 #'
+#' # Using the Cloth Simulation Filter
+#' # --------------------------------------
+#'
+#' las <- lasground(las, csf())
+#' plot(las, color = "Classification")
+#'
 #' # Using the Progressive Morphological Filter
 #' # --------------------------------------
 #'
@@ -60,11 +66,6 @@
 #'
 #' las <- lasground(las, pmf(ws, th))
 #' plot(las, color = "Classification")
-#'
-#' # Using the Cloth Simulation Filter
-#' # --------------------------------------
-#'
-#' las <- lasground(las, csf())
 lasground = function(las, algorithm, last_returns = TRUE)
 {
   UseMethod("lasground", las)
@@ -79,27 +80,20 @@ lasground.LAS = function(las, algorithm, last_returns = TRUE)
   if (!is(algorithm, "GroundSegmentation"))
     stop("The algorithm is not an algorithm for ground segmentation")
 
-  . <- X <- Y <- Z <- Classification <- NULL
-
   npoints <- nrow(las@data)
-  filter  <- !logical(npoints)
   pointID <- 1:npoints
-
-  cloud <- coordinates3D(las)
-  data.table::setDT(cloud)
+  cloud   <- coordinates3D(las)
   cloud[, idx := pointID]
 
   if (last_returns)
   {
-    n <- names(las@data)
-
-    if (!all(c("ReturnNumber", "NumberOfReturns") %in% n))
+    if (!all(c("ReturnNumber", "NumberOfReturns") %in% names(las@data)))
     {
-      warning("'ReturnNumber' and/or 'NumberOfReturns' not found. Cannot use the option 'last_returns', all the points will be used.")
+      warning("'ReturnNumber' and/or 'NumberOfReturns' not found. Cannot use the option 'last_returns', all the points will be used.", call. = FALSE)
     }
     else
     {
-      filter <- las@data$ReturnNumber == las@data$NumberOfReturns
+      filter <- las@data[["ReturnNumber"]] == las@data[["NumberOfReturns"]]
 
       if (sum(filter) == 0)
         warning("Zero last return found. Cannot use the option 'last_returns', all the points will be used.")
@@ -110,8 +104,6 @@ lasground.LAS = function(las, algorithm, last_returns = TRUE)
 
   lidR.context <- "lasground"
   idx <- algorithm(cloud)
-
-  #message(glue::glue("{length(idx)} ground points found."))
 
   if ("Classification" %in% names(las@data))
   {
@@ -151,11 +143,10 @@ lasground.LAScluster = function(las, algorithm, last_returns = TRUE)
 lasground.LAScatalog = function(las, algorithm, last_returns = TRUE)
 {
   opt_select(las) <- "*"
-
   options <- list(need_buffer = TRUE, drop_null = TRUE, need_output_file = TRUE)
-  output  <- catalog_apply(las, lasground, algorithm = algorithm, last_returns = last_returns, .options = options)
+  output  <- catalog_apply(las, lasground, algorithm = algorithm,  last_returns = last_returns, .options = options)
   output  <- unlist(output)
-  ctg     <- catalog(output)
+  ctg     <- readLAScatalog(output)
 
   opt_copy(ctg) <- las
   return(ctg)

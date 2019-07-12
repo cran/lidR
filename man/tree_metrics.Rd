@@ -4,14 +4,16 @@
 \alias{tree_metrics}
 \title{Compute metrics for each tree}
 \usage{
-tree_metrics(las, func, field = "treeID")
+tree_metrics(las, func = ~max(Z), attribute = "treeID")
 }
 \arguments{
 \item{las}{An object of class \link[lidR:LAS-class]{LAS} or \link[lidR:LAScatalog-class]{LAScatalog}.}
 
-\item{func}{The function to be applied to each tree.}
+\item{func}{formula. An expression to be applied to each tree. It works like in \link{grid_metrics}
+\link{grid_metrics3d} or \link{tree_hulls} and computes, in addition to tree locations a set of metrics
+for each tree.}
 
-\item{field}{character. The column name of the field containing tree IDs. Default is \code{"treeID"}}
+\item{attribute}{character. The column name of the attribute containing tree IDs. Default is \code{"treeID"}}
 }
 \value{
 A \code{SpatialPoinsDataFrame} that references the xy-position with a table of attributes that
@@ -58,14 +60,11 @@ Supported processing options for a \code{LAScatalog} (in bold). For more details
 \item \strong{chunk buffer*}: Mandatory to get a continuous output without edge effects. The buffer is
 always removed once processed and will never be returned either in R or in files.
 \item \strong{chunk alignment}: Align the processed chunks.
-\item \strong{cores}: How many cores are used.
 \item \strong{progress}: Displays a progression estimation.
 \item \strong{output_files}: Supported templates are \code{\{XLEFT\}}, \code{\{XRIGHT\}},
 \code{\{YBOTTOM\}}, \code{\{YTOP\}}, \code{\{XCENTER\}}, \code{\{YCENTER\}} \code{\{ID\}} and,
 if chunk size is equal to 0 (processing by file), \code{\{ORIGINALFILENAME\}}.
-\item \strong{laz_compression}: write \code{las} or \code{laz} files
-\item select: The function will write files equivalent to the original ones. Thus \code{select = "*"}
-and cannot be changed.
+\item \strong{select}: Load only attributes of interest.
 \item \strong{filter}: Read only points of interest.
 }
 }
@@ -74,8 +73,14 @@ and cannot be changed.
 LASfile <- system.file("extdata", "MixedConifer.laz", package="lidR")
 las = readLAS(LASfile, filter = "-drop_z_below 0")
 
-# Mean height and mean intensity for each tree
-metrics = tree_metrics(las, list(`Mean Z` = mean(Z), `Mean I` = mean(Intensity)))
+# NOTE: This dataset is already segmented
+# plot(las, color = "treeID", colorPalette = pastel.colors(200))
+
+# Default computes only Z max
+metrics = tree_metrics(las)
+
+# User-defined metrics - mean height and mean intensity for each tree
+metrics = tree_metrics(las, ~list(Zmean = mean(Z), Imean = mean(Intensity)))
 
 # Define your own new metrics function
 myMetrics = function(z, i)
@@ -89,7 +94,7 @@ myMetrics = function(z, i)
    return(metrics)
 }
 
-metrics = tree_metrics(las, myMetrics(Z, Intensity))
+metrics = tree_metrics(las, ~myMetrics(Z, Intensity))
 
 # predefined metrics (see ?stdmetrics)
 metrics = tree_metrics(las, .stdtreemetrics)

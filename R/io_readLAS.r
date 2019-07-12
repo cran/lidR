@@ -29,21 +29,21 @@
 
 #' Read .las or .laz files
 #'
-#' Reads .las or .laz files in format 1 to 3 according to LAS specifications and returns an
-#' object of class \link[lidR:LAS-class]{LAS}. If several files are read at once the returned LAS object
-#' is considered as one LAS file. The optional parameters enable the user to save a substantial amount
-#' of memory by choosing to load only the attributes or points of interest. The LAS format 1.4 is
-#' currently only partially supported.
+#' Reads .las or .laz files into an object of class \link[lidR:LAS-class]{LAS}. If several files are read at
+#' once the returned LAS object is considered as one LAS file. The optional parameters enable the user
+#' to save a substantial amount of memory by choosing to load only the attributes or points of interest.
+#' The LAS formats 1.1 to 1.4 are supported. Point Data Record Format 0,1,2,3,5,6,7,8 are supported.
 #'
-#' \strong{Select:} the 'select' argument specifies which attribute will actually be loaded. For example,
+#' \strong{Select:} the 'select' argument specifies the data that will actually be loaded. For example,
 #' 'xyzia' means that the x, y, and z coordinates, the intensity and the scan angle will be loaded.
 #' The supported entries are t - gpstime, a - scan angle, i - intensity, n - number of returns,
-#' r - return number, c - classification, u - user data, p - point source ID, e - edge of
-#' flight line flag, d - direction of scan flag, R - red channel of RGB color, G - green
-#' channel of RGB color, B - blue channel of RGB color, N - near infrared channel. Also numbers from
-#' 1 to 9 are available for the extra bytes data 1 to 9. 0 enables loading of all extra bytes and '*'
-#' is the wildcard and enables everything to be loaded from the LAS file. Note that x, y, z are implicit
-#' and always loaded, thus 'xyzia' is equivalent to 'ia'.\cr\cr
+#' r - return number, c - classification, s - synthetic flag, k - keypoint flag, w - withheld flag,
+#' o - overlap flag (format 6+), u - user data, p - point source ID, e - edge of flight line flag,
+#' d - direction of scan flag, R - red channel of RGB color, G - green channel of RGB color,
+#' B - blue channel of RGB color, N - near-infrared channel. C - scanner channel (format 6+).
+#' Also numbers from 1 to 9 for the extra bytes data numbers 1 to 9. 0 enables all extra bytes to be
+#' loaded and '*' is the wildcard that enables everything to be loaded from the LAS file. \cr
+#' Note that x, y, z are implicit and always loaded. 'xyzia' is equivalent to 'ia'.\cr\cr
 #' \strong{Filter:} the 'filter' argument allows filtering of the point cloud while reading files.
 #' This is much more efficient than \link{lasfilter} in many ways. If the desired filters are known
 #' before reading the file, the internal filters should always be preferred. The available filters are
@@ -67,11 +67,36 @@
 #' las = readLAS(LASfile, select = "xyzi", filter = "-keep_first")
 #' las = readLAS(LASfile, select = "xyziar", filter = "-keep_first -drop_z_below 0")
 #'
-#' # Negation of attribute is also possible (all except intensity and angle)
+#' # Negation of attributes is also possible (all except intensity and angle)
 #' las = readLAS(LASfile, select = "* -i -a")
 readLAS = function(files, select = "*", filter = "")
 {
   UseMethod("readLAS", files)
+}
+
+
+#' Read a .las or .laz file header
+#'
+#' Reads a .las or .laz file header into an object of class \link[lidR:LASheader-class]{LASheader}.
+#' This function strictly reads the header while the function \link{readLAS} can alter the header to
+#' fit the actual data loaded.
+#'
+#' @param file characters. Path to one file.
+#' @return A LASheader object
+#' @export
+#' @examples
+#' LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
+#' header = readLASheader(LASfile)
+#'
+#' print(header)
+#' plot(header)
+#'
+#' \dontrun{
+#' plot(header, mapview = TRUE)}
+readLASheader = function(file)
+{
+  header <- rlas::read.lasheader(file)
+  return(LASheader(header))
 }
 
 #' @export
@@ -108,7 +133,7 @@ readLAS.LAScluster = function(files, select = "*", filter = "")
 
     if (files@shape == LIDRCIRCLE)
     {
-      las@data[(X-xc)^2 + (Y-yc)^2 > r^2, buffer := LIDRBUFFER]
+      las@data[(X - xc)^2 + (Y - yc)^2 > r^2, buffer := LIDRBUFFER]
     }
     else
     {
@@ -119,7 +144,7 @@ readLAS.LAScluster = function(files, select = "*", filter = "")
       las@data[(X >= xright) & (Y < ybottom), buffer := LIDRBOTTOMBUFFER]
     }
 
-    # We found a region with no actual data. The points all belong into the buffer
+    # We found a region with no actual data. The points all belong in the buffer
     # Return empty point cloud
     if (fast_countequal(las@data[["buffer"]], LIDRNOBUFFER) == 0)
       las <- LAS(data.frame(X = numeric(0), Y = numeric(0), Z = numeric(0)))
@@ -184,24 +209,29 @@ streamLAS.character = function(x, ofile, select = "*", filter = "", filter_wkt =
 
   if (nrow(data) > 0)
   {
-    rlas::check_header(header)
-    rlas::check_data(data)
-
-    # If filter is used, header will not be in accordance with the data. Hard check will necessarily return a false positive error
-    hard <- if (nchar(filter) > 0 | length(ifiles) > 1) FALSE else TRUE
-
-    # If the number of file read is > 1 header bbox will not be in accordance with the data. Update the header.
+    # If the number of files read is > 1 header bbox will not be in accordance with the data. Update the header.
     if (length(ifiles) > 1)
+      header <- rlas::header_update(header, data)
+  }
+
+  # Remove extrabytes in the header if not loaded
+
+  extrabytes <- names(header[["Variable Length Records"]][["Extra_Bytes"]][["Extra Bytes Description"]])
+
+  if (!is.null(extrabytes))
+  {
+    for (extrabyte in extrabytes)
     {
-      header$`Min X` = min(data$X)
-      header$`Max X` = max(data$X)
-      header$`Min Y` = min(data$Y)
-      header$`Max Y` = max(data$Y)
-      header$`Min Z` = min(data$Z)
-      header$`Max Z` = max(data$Z)
+      if (!extrabyte %in% names(data))
+      {
+        header[["Variable Length Records"]][["Extra_Bytes"]][["Extra Bytes Description"]][[extrabyte]] <- NULL
+      }
     }
 
-    rlas::check_data_vs_header(header, data, hard = hard)
+    if (length(header[["Variable Length Records"]][["Extra_Bytes"]][["Extra Bytes Description"]]) == 0)
+    {
+      header[["Variable Length Records"]][["Extra_Bytes"]] <- NULL
+    }
   }
 
   return(LAS(data, header, check = FALSE))

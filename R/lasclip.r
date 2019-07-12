@@ -75,7 +75,6 @@
 #' \item chunk_size: Does not make sense here.
 #' \item buffer: Not supported yet.
 #' \item alignment: Does not makes sense here.
-#' \item \strong{cores}: How many cores are used.
 #' \item \strong{progress}: Displays a progress estimation.
 #' \item \strong{stop_early}: Leave this 'as-is' unless you are an advanced user.
 #' \item \strong{output_files}: If 'output_files' is set in the catalog, the ROIs will not be returned in R.
@@ -104,7 +103,7 @@
 #' subset1 = lasclipRectangle(las, 684850, 5017850, 684900, 5017900)
 #'
 #' # Do not load the file(s), extract only the region of interest from a bigger dataset
-#' ctg = catalog(LASfile)
+#' ctg = readLAScatalog(LASfile)
 #' subset2 = lasclipRectangle(ctg, 684850, 5017850, 684900, 5017900)
 #'
 #' # Extract all the polygons from a shapefile
@@ -343,7 +342,7 @@ lasclipSimpleFeature.LAS = function(las, sf)
   output = vector(mode = "list", length(wkt))
   for (i in 1:length(wkt))
   {
-    roi = lasfilter(las, C_points_in_polygon_wkt(las@data$X, las@data$Y, wkt[i]))
+    roi = lasfilter(las, C_points_in_polygon_wkt(las@data$X, las@data$Y, wkt[i], getThread()))
     if (is.empty(roi)) warning(glue::glue("No point found for within {wkt[i]}."))
     output[[i]] = roi
   }
@@ -468,7 +467,7 @@ catalog_extract = function(ctg, bboxes, shape = LIDRRECTANGLE, sf = NULL, data =
   }
 
   # Process the cluster using LAScatalog internal engine
-  output <- cluster_apply(clusters, extract_query, ctg@processing_options, ctg@output_options, drop_null = FALSE)
+  output <- cluster_apply(clusters, extract_query, ctg@processing_options, ctg@output_options)
 
   # output should contain nothing because everything has been streamed into files
   if (opt_output_files(ctg) != "")
@@ -488,7 +487,7 @@ catalog_extract = function(ctg, bboxes, shape = LIDRRECTANGLE, sf = NULL, data =
         message(glue::glue("No point found for within region of interest {i}."))
     }
 
-    new_ctg <- suppressMessages(catalog(written_path))
+    new_ctg <- suppressMessages(readLAScatalog(written_path))
     opt_copy(new_ctg) <- ctg
     return(list(new_ctg))
   }
@@ -501,9 +500,6 @@ catalog_extract = function(ctg, bboxes, shape = LIDRRECTANGLE, sf = NULL, data =
       {
         # Transfer the CRS of the catalog.
         output[[i]]@proj4string <- ctg@proj4string
-
-        # Patch to solve issue #73 waiting for a better solution in issue #2333 in data.table
-        if (opt_cores(ctg) > 1) output[[i]]@data <- data.table::alloc.col(output[[i]]@data)
       }
       else
       {

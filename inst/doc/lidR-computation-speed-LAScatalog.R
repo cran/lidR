@@ -156,29 +156,20 @@ for (i in 1:nrow(neighbourg))
 }
 
 ## ---- echo = FALSE-------------------------------------------------------
-Cores = c(1,1,1,1,2,2)
-Format = c("laz", "laz + lax", "las", "las + lax", "laz + lax", "las + lax")
-Runtime = c("40 sec", "20 sec", "10 sec", "7 sec", "20 sec", "5 sec")
-Timing = data.frame(Format, Cores, Runtime)
-
+Format = c("laz", "laz + lax", "las", "las + lax")
+Runtime = c("40 sec", "20 sec", "10 sec", "7 sec")
+Timing = data.frame(Format, Runtime)
 knitr::kable(Timing)
 
 ## ---- echo = FALSE-------------------------------------------------------
-Cores = c(1,1,1,4)
-Format = c("laz", "las", "las + lax", "las + lax")
-Runtime = c("45 min", "15 min", "8 min", "7 min")
-
-Timing = data.frame(Format, Cores, Runtime)
-
+Format = c("laz", "las", "las + lax")
+Runtime = c("45 min", "15 min", "8 min")
+Timing = data.frame(Format, Runtime)
 knitr::kable(Timing)
 
 ## ---- echo = FALSE-------------------------------------------------------
-Cores = c(1,4,1,4, 1,4,1,4)
-Method = c("Streaming", "Streaming", "Streaming", "Streaming", "Memory", "Memory", "Memory", "Memory")
-Format = c("las", "las", "las + lax", "las + lax", "las", "las", "las + lax", "las + lax")
-Runtime = c("45 sec", "35 sec", "4 sec", "6 sec", "45 sec", "35 sec", "4 sec", "17 sec")
-
-Timing = data.frame(Format, Method, Cores, Runtime)
-
+Format = c("las", "las + lax")
+Runtime = c("45 sec", "4 sec")
+Timing = data.frame(Format, Runtime)
 knitr::kable(Timing)
 
