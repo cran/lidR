@@ -39,7 +39,7 @@
 #' \item{\link[lidR:VCI]{VCI}}
 #' \item{\link[lidR:LAD]{LAD}}
 #' }
-#' @param obj An object of class \code{LAS}
+#' @param las An object of class \code{LAS}
 #' @param func formula. An expression to be applied to the point cloud (see example)
 #' @return It returns a \code{list} containing the metrics
 #' @export
@@ -72,13 +72,29 @@
 #'
 #' # Predefined metrics
 #' lasmetrics(lidar, .stdmetrics)
-lasmetrics = function(obj, func)
+lasmetrics = function(las, func)
+{
+  UseMethod("lasmetrics", las)
+}
+
+#' @export
+lasmetrics.LAS = function(las, func)
 {
   is_formula <- tryCatch(lazyeval::is_formula(func), error = function(e) FALSE)
   if (!is_formula) func <- lazyeval::f_capture(func)
   func      <- lazyeval::f_interp(func)
   call      <- lazyeval::as_call(func)
-  metric    <- with(obj@data, eval(call))
+  metric    <- with(las@data, eval(call))
   return(metric)
+}
+
+#' @export
+lasmetrics.LAScluster = function(las, func)
+{
+  las <- readLAS(las)
+  if (is.empty(las)) return(NULL)
+  is_formula <- tryCatch(lazyeval::is_formula(func), error = function(e) FALSE)
+  if (!is_formula) func <- lazyeval::f_capture(func)
+  return(lasmetrics(las, func))
 }
 

@@ -51,16 +51,11 @@ tin = function()
 {
   f = function(what, where)
   {
-    context <- tryCatch({get("lidR.context", envir = parent.frame())}, error = function(e) {return(NULL)})
-    stopif_wrong_context(context, c("lasnormalize", "grid_terrain", "spatial_interpolation"), "tin")
-
+    assert_is_valid_context(LIDRCONTEXTSPI, "tin")
     z    <- interpolate_delaunay(what, where)
     isna <- is.na(z)
     nnas <- sum(isna)
-
-    if (nnas > 0)
-      z[isna] <- C_knnidw(where$X[!isna], where$Y[!isna], z[!isna], where$X[isna], where$Y[isna], 1, 1, getThread())
-
+    if (nnas > 0) z[isna] <- C_knnidw(where$X[!isna], where$Y[!isna], z[!isna], where$X[isna], where$Y[isna], 1, 1, getThread())
     return(z)
   }
 
@@ -96,11 +91,8 @@ knnidw = function(k = 10, p = 2)
 {
   f = function(what, where)
   {
-    context <- tryCatch({get("lidR.context", envir = parent.frame())}, error = function(e) {return(NULL)})
-    stopif_wrong_context(context, c("lasnormalize", "grid_terrain", "spatial_interpolation"), "knnidw")
-
-    z <- interpolate_knnidw(what, where, k, p)
-    return(z)
+    assert_is_valid_context(LIDRCONTEXTSPI, "knnidw")
+    return(interpolate_knnidw(what, where, k, p))
   }
 
   class(f) <- c("SpatialInterpolation", "Algorithm", "OpenMP", "lidR", "function")
@@ -138,11 +130,8 @@ kriging = function(model = gstat::vgm(.59, "Sph", 874), k = 10L)
 {
   f = function(what, where)
   {
-    context <- tryCatch({get("lidR.context", envir = parent.frame())}, error = function(e) {return(NULL)})
-    stopif_wrong_context(context, c("lasnormalize", "grid_terrain", "spatial_interpolation"), "kriging")
-
-    z <- interpolate_kriging(what, where, model, k)
-    return(z)
+    assert_is_valid_context(LIDRCONTEXTSPI, "kriging")
+    return(interpolate_kriging(what, where, model, k))
   }
 
   class(f) <- c( "function", "SpatialInterpolation", "Algorithm", "lidR")
@@ -157,6 +146,7 @@ interpolate_knnidw = function(points, coord, k, p)
 
 interpolate_kriging = function(points, coord, model, k)
 {
+  requireNamespace("gstat")
   X <- Y <- Z <- NULL
 
   if (!getOption("lidR.verbose"))
@@ -169,44 +159,11 @@ interpolate_kriging = function(points, coord, model, k)
   return(x$var1.pred)
 }
 
-interpolate_delaunay <- function(points, coord, th = 0)
+interpolate_delaunay <- function(points, coord, trim = 0)
 {
-  pitfree <- th > 0  # specific case if using Khosravipour algorithm in grid_tincanopy
-
-  verbose("Delaunay triangulation...")
-
-  X <- as.matrix(points)
-  Y <- as.matrix(coord)
-
-  dn   <- suppressMessages(geometry::delaunayn(X[,1:2], options = "QbB"))
-
-  # geometry::trimesh(dn, X, asp = 1)
-
-  verbose("Searching for the enclosing Delaunay convex hull...")
-
-  idx  <- C_tsearch(points$X, points$Y, dn, coord$X, coord$Y, getThread())
-
-  #uidx <- unique(idx)
-  #uidx <- uidx[!is.na(uidx)]
-
-  #active <- dn[uidx,]
-  #active <- cbind(active, uidx)
-
-  verbose("Rasterizing the triangulation...")
-
-  N = C_tinfo(dn, X)
-  N = N[idx,]
-
-  z = -(Y[,1] * N[,1] + Y[,2] * N[,2] + N[,4]) / N[,3]
-
-  if (pitfree)
-  {
-    verbose("Removing triangles larger than threshold...")
-
-    delete = N[,7] > th
-    delete[is.na(delete)] = FALSE
-    z[delete] = NA
-  }
-
-  return(z)
+  P <- as.matrix(points)
+  X <- as.matrix(coord)
+  D <- tDelaunay(P, trim = trim)
+  Z <- tInterpolate(D, P, X, getThreads())
+  return(Z)
 }

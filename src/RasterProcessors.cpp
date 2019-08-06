@@ -28,6 +28,7 @@
  */
 
 #include "RasterProcessors.h"
+#include <cmath>
 
 /*********************
  *  RASTER PROCESSOR *
@@ -62,8 +63,8 @@ RasterProcessor::RasterProcessor(double minx, double miny, double maxx, double m
   double endx = maxx;
   double endy = maxy;
 
-  m_ncols  = (endx - m_startx) / m_res;
-  m_nrows  = (endy - m_starty) / m_res;
+  m_ncols  = std::round((endx - m_startx) / m_res);
+  m_nrows  = std::round((endy - m_starty) / m_res);
 
   m_raster = NumericMatrix(m_ncols, m_nrows);
   std::fill(m_raster.begin(), m_raster.end(), NA_REAL);

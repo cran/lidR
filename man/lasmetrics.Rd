@@ -4,10 +4,10 @@
 \alias{lasmetrics}
 \title{Compute metrics for a cloud of points}
 \usage{
-lasmetrics(obj, func)
+lasmetrics(las, func)
 }
 \arguments{
-\item{obj}{An object of class \code{LAS}}
+\item{las}{An object of class \code{LAS}}
 
 \item{func}{formula. An expression to be applied to the point cloud (see example)}
 }

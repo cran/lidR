@@ -61,8 +61,7 @@ random = function(density, use_pulse = FALSE)
 
   f = function(las)
   {
-    context <- tryCatch({get("lidR.context", envir = parent.frame())}, error = function(e) {return(NULL)})
-    stopif_wrong_context(context, c("lasfilterdecimate"), "random")
+    assert_is_valid_context(LIDRCONTEXTDEC, "random")
 
     if(use_pulse & !"pulseID" %in% names(las@data))
     {
@@ -131,8 +130,7 @@ homogenize = function(density, res = 5, use_pulse = FALSE)
 
   f = function(las)
   {
-    context <- tryCatch({get("lidR.context", envir = parent.frame())}, error = function(e) {return(NULL)})
-    stopif_wrong_context(context, c("lasfilterdecimate"), "homogenize")
+    assert_is_valid_context(LIDRCONTEXTDEC, "homogenize")
 
     if (use_pulse & !"pulseID" %in% names(las@data))
     {
@@ -143,7 +141,7 @@ homogenize = function(density, res = 5, use_pulse = FALSE)
     pulseID <- NULL
 
     n       <- round(density*res^2)
-    layout  <- make_overlay_raster(las, res)
+    layout  <- rOverlay(las, res)
     cells   <- raster::cellFromXY(layout, coordinates(las))
 
     if (use_pulse)
@@ -184,13 +182,15 @@ highest = function(res = 1)
 
   f = function(las)
   {
-    context <- tryCatch({get("lidR.context", envir = parent.frame())}, error = function(e) {return(NULL)})
-    stopif_wrong_context(context, c("lasfilterdecimate"), "highest")
+    assert_is_valid_context(LIDRCONTEXTDEC, "highest")
 
     Z       <- NULL
-    layout  <- make_overlay_raster(las, res)
+    layout  <- rOverlay(las, res)
     cells   <- raster::cellFromXY(layout, coordinates(las))
-    return(las@data[, .I[which.max(Z)], by = cells]$V1)
+
+    x <- C_highest(las, cells, raster::ncell(layout))
+
+    return(x)
   }
 
   class(f) <- c("function", "PointCloudDecimation", "Algorithm", "lidR")

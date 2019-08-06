@@ -2,8 +2,8 @@ Package: lidR
 Type: Package
 Title: Airborne LiDAR Data Manipulation and Visualization for Forestry
         Applications
-Version: 2.1.0
-Date: 2019-07-12
+Version: 2.1.1
+Date: 2019-08-06
 Authors@R: c(
     person("Jean-Romain", "Roussel", email = "jean-romain.roussel.1@ulaval.ca", role = c("aut", "cre", "cph")),
     person("David", "Auty", email = "", role = c("aut", "ctb"), comment = "Reviews the documentation"),
@@ -19,9 +19,9 @@ BugReports: https://github.com/Jean-Romain/lidR/issues
 License: GPL-3
 Depends: R (>= 3.1.0),methods,raster,sp
 Imports: data.table (>= 1.12.0), future, gdalUtils, geometry, glue,
-        grDevices, gstat, lazyeval, imager, Rcpp (>= 0.11.0), RCSF,
-        rgeos, rgdal, rgl, rlas (>= 1.3.0), sf, stats, tools, utils
-Suggests: EBImage, concaveman, crayon, hexbin, mapview, mapedit,
+        grDevices, lazyeval, imager, Rcpp (>= 0.11.0), RCSF, rgeos,
+        rgdal, rgl, rlas (>= 1.3.0), sf, stats, tools, utils
+Suggests: EBImage, concaveman, crayon, gstat, hexbin, mapview, mapedit,
         progress, testthat, knitr, rmarkdown
 LazyData: true
 RoxygenNote: 6.1.1
@@ -31,37 +31,37 @@ ByteCompile: true
 VignetteBuilder: knitr
 biocViews:
 Collate: 'Class-LASheader.r' 'Class-LAS.r' 'Class-LAScatalog.r'
-        'Class-LAScluster.r' 'RcppExports.R' 'algorithm-dsm.r'
-        'algorithm-gnd.r' 'algorithm-itd.R' 'algorithm-its.r'
-        'algorithm-points-decimation.r' 'algorithm-shp.r'
-        'algorithm-snag.r' 'algorithm-spatial-interpolations.r'
-        'catalog_apply.r' 'catalog_fakerun.r' 'catalog_index.r'
-        'catalog_intersect.r' 'catalog_laxindex.r'
-        'catalog_makecluster.r' 'catalog_retile.r' 'catalog_select.r'
-        'clusters_apply.r' 'doc-drivers.R' 'doc-lidR.R'
-        'doc-parallelism.R' 'grid_canopy.r' 'grid_density.r'
-        'grid_hexametrics.r' 'grid_metrics.r' 'grid_metrics3d.r'
-        'grid_terrain.r' 'io_readLAS.r' 'io_readLAScatalog.r'
-        'io_writeANY.r' 'io_writeLAS.r' 'lascheck.r' 'lasclip.r'
-        'lasdetectshape.r' 'lasfilter.r' 'lasfilterdecimate.r'
-        'lasfilterduplicates.r' 'lasfiltersurfacepoints.r'
-        'lasground.r' 'lasindentify.r' 'lasmergelas.r'
-        'lasmergespatial.r' 'lasmetrics.r' 'lasnormalize.r' 'lasroi.r'
-        'lassmooth.r' 'lassnags.r' 'lastransform.r' 'lastrees.r'
-        'lasupdateheader.r' 'lasvoxelize.r' 'methods-LAS.r'
-        'methods-LAScatalog.r' 'methods-LAScluster.r'
-        'methods-LASheader.r' 'plot.r' 'plot.s3.r' 'print.r'
-        'projection.r' 'tree_detection.r' 'tree_hulls.r'
-        'tree_metrics.r' 'utils_assertive.r' 'utils_catalog_options.r'
-        'utils_colors.r' 'utils_define_constant.R' 'utils_geometry.r'
+        'Class-LAScluster.r' 'RcppExports.R' 'algorithm-dec.r'
+        'algorithm-dsm.r' 'algorithm-gnd.r' 'algorithm-itd.R'
+        'algorithm-its.r' 'algorithm-shp.r' 'algorithm-snag.r'
+        'algorithm-spi.r' 'catalog_apply.r' 'catalog_fakerun.r'
+        'catalog_index.r' 'catalog_intersect.r' 'catalog_laxindex.r'
+        'catalog_makecluster.r' 'catalog_merge_results.R'
+        'catalog_retile.r' 'catalog_select.r' 'clusters_apply.r'
+        'doc-drivers.R' 'doc-lidR.R' 'doc-parallelism.R'
+        'grid_canopy.r' 'grid_density.r' 'grid_hexametrics.r'
+        'grid_metrics.r' 'grid_metrics3d.r' 'grid_terrain.r'
+        'io_readLAS.r' 'io_readLAScatalog.r' 'io_writeANY.r'
+        'io_writeLAS.r' 'lascheck.r' 'lasclip.r' 'lasdetectshape.r'
+        'lasfilter.r' 'lasfilterdecimate.r' 'lasfilterduplicates.r'
+        'lasfiltersurfacepoints.r' 'lasground.r' 'lasindentify.r'
+        'lasmergelas.r' 'lasmergespatial.r' 'lasmetrics.r'
+        'lasnormalize.r' 'lasroi.r' 'lassmooth.r' 'lassnags.r'
+        'lastransform.r' 'lastrees.r' 'lasupdateheader.r'
+        'lasvoxelize.r' 'methods-LAS.r' 'methods-LAScatalog.r'
+        'methods-LAScluster.r' 'methods-LASheader.r' 'plot.r'
+        'plot.s3.r' 'print.r' 'projection.r' 'tree_detection.r'
+        'tree_hulls.r' 'tree_metrics.r' 'utils_assertive.r'
+        'utils_catalog_options.r' 'utils_colors.r'
+        'utils_define_constant.R' 'utils_delaunay.R' 'utils_geometry.r'
         'utils_is.r' 'utils_metrics.r' 'utils_misc.r' 'utils_raster.r'
         'utils_threads.r' 'utils_typecast.r' 'zzz.r'
 NeedsCompilation: yes
-Packaged: 2019-07-12 19:21:38 UTC; jr
+Packaged: 2019-08-06 16:51:43 UTC; jr
 Author: Jean-Romain Roussel [aut, cre, cph],
   David Auty [aut, ctb] (Reviews the documentation),
   Florian De Boissieu [ctb] (Fixed bugs and improved catalog features),
   Andrew Sánchez Meador [ctb] (Implemented lassnags)
 Maintainer: Jean-Romain Roussel <jean-romain.roussel.1@ulaval.ca>
 Repository: CRAN
-Date/Publication: 2019-07-12 22:30:30 UTC
+Date/Publication: 2019-08-06 17:40:06 UTC

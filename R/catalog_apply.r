@@ -233,7 +233,7 @@ catalog_apply <- function(ctg, FUN, ..., .options = NULL)
   cal <- opt[["check_alignment"]]
   dnu <- opt[["drop_null"]]
   nof <- opt[["need_output_file"]]
-  glo <- opt[["global"]]
+  glo <- opt[["globals"]]
   res <- ral[["res"]]
   sta <- ral[["start"]]
   pop <- ctg@processing_options
@@ -432,7 +432,7 @@ engine_parse_options = function(.option)
   if (is.null(.option$globals))
     output$globals <- NULL
   else
-    output$globals <- .option$globalsp
+    output$globals <- .option$globals
 
   return(output)
 }
