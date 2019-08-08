@@ -1,7 +1,7 @@
 8f0e2cd40e05189ec81232da84bd6e1a *COPYING
-031a8ffc988fbb1e2bac2b6fa8ea3190 *DESCRIPTION
+b26531fa2c4f8af4c1a5f0966364b85e *DESCRIPTION
 41148c5690381d4dd1a2a2a23bfe2894 *NAMESPACE
-51fce078741dc54fa390d2ec36ff481e *NEWS.md
+e6df372406b2ada104973d04a8e20061 *NEWS.md
 89c9f4257ed34855b5aab9eec839a89a *R/Class-LAS.r
 d518744f68ff32888b6bfeab7db48ee2 *R/Class-LAScatalog.r
 df9e797a0352ace9300d59d750e9d864 *R/Class-LAScluster.r
@@ -73,7 +73,7 @@ e48ad09262999895966c77f15e6d3c27 *R/tree_metrics.r
 5e7f3162eefa379e0d5271e24b9e4fb2 *R/utils_catalog_options.r
 6ea7286953ae0a15c335115772421b91 *R/utils_colors.r
 6820775ac11c6092a99a986ba23e4efd *R/utils_define_constant.R
-7ad183d974cb2259cf5702228a32c369 *R/utils_delaunay.R
+e6444ab24396758b2886469433840aaa *R/utils_delaunay.R
 7332d712f667129692913c33a4012aff *R/utils_geometry.r
 22ca0cd0636fd7a9aa5e4f076c961924 *R/utils_is.r
 d892e26b4a9e607e13c4085d19e4501c *R/utils_metrics.r
@@ -95,7 +95,7 @@ f5263fd96ff8043d13bc367d5241d07b *inst/doc/lidR-LAScatalog-class.R
 5932664c527815ab64cdc38a8a5c51ef *inst/doc/lidR-catalog-apply-examples.html
 e6ce0627b66cccc2ad0086455fbcb7f2 *inst/doc/lidR-computation-speed-LAScatalog.R
 02c73699bccccfaa944213bde06c94f6 *inst/doc/lidR-computation-speed-LAScatalog.Rmd
-dc98570ce08597221f883638c641172d *inst/doc/lidR-computation-speed-LAScatalog.html
+6d9a378296e4996e6fd525249ec45fae *inst/doc/lidR-computation-speed-LAScatalog.html
 7ae0300dea70dd5e45b126e9e5b6139a *inst/extdata/Megaplot.lax
 426515372c557ab5e918410b724ca6f5 *inst/extdata/Megaplot.laz
 83c23ba8228b8256b1e724b114a0022b *inst/extdata/MixedConifer.lax
@@ -227,7 +227,7 @@ bdfa6f61edf18df288d1f0f4c5813a47 *src/lidr.h
 49940463bca67a58b6be54d6caba449a *src/myomp.h
 edef784359644342819e6150a7908495 *src/openmputils.cpp
 af5312ac45c4f8bdab580d8984e19bfa *tests/testthat.R
-cb4d60547947666febe6fe213e3f91ff *tests/testthat/Rplots.pdf
+f78a9ae5e42b80612e95a161d93f0869 *tests/testthat/Rplots.pdf
 df80ec46695e7fdfde0397b5d1f28962 *tests/testthat/test-LAS.R
 002c18150318e2c218b0653d827e7af4 *tests/testthat/test-LAScatalog.R
 63eab6ea858bf8e8ee83a11ac94e217e *tests/testthat/test-algorithm-dispatch.R

@@ -2,8 +2,8 @@ Package: lidR
 Type: Package
 Title: Airborne LiDAR Data Manipulation and Visualization for Forestry
         Applications
-Version: 2.1.1
-Date: 2019-08-06
+Version: 2.1.2
+Date: 2019-08-07
 Authors@R: c(
     person("Jean-Romain", "Roussel", email = "jean-romain.roussel.1@ulaval.ca", role = c("aut", "cre", "cph")),
     person("David", "Auty", email = "", role = c("aut", "ctb"), comment = "Reviews the documentation"),
@@ -57,11 +57,11 @@ Collate: 'Class-LASheader.r' 'Class-LAS.r' 'Class-LAScatalog.r'
         'utils_is.r' 'utils_metrics.r' 'utils_misc.r' 'utils_raster.r'
         'utils_threads.r' 'utils_typecast.r' 'zzz.r'
 NeedsCompilation: yes
-Packaged: 2019-08-06 16:51:43 UTC; jr
+Packaged: 2019-08-07 14:59:00 UTC; jr
 Author: Jean-Romain Roussel [aut, cre, cph],
   David Auty [aut, ctb] (Reviews the documentation),
   Florian De Boissieu [ctb] (Fixed bugs and improved catalog features),
   Andrew Sánchez Meador [ctb] (Implemented lassnags)
 Maintainer: Jean-Romain Roussel <jean-romain.roussel.1@ulaval.ca>
 Repository: CRAN
-Date/Publication: 2019-08-06 17:40:06 UTC
+Date/Publication: 2019-08-08 15:30:07 UTC
