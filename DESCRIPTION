@@ -2,8 +2,8 @@ Package: lidR
 Type: Package
 Title: Airborne LiDAR Data Manipulation and Visualization for Forestry
         Applications
-Version: 2.1.2
-Date: 2019-08-07
+Version: 2.1.3
+Date: 2019-09-09
 Authors@R: c(
     person("Jean-Romain", "Roussel", email = "jean-romain.roussel.1@ulaval.ca", role = c("aut", "cre", "cph")),
     person("David", "Auty", email = "", role = c("aut", "ctb"), comment = "Reviews the documentation"),
@@ -22,7 +22,7 @@ Imports: data.table (>= 1.12.0), future, gdalUtils, geometry, glue,
         grDevices, lazyeval, imager, Rcpp (>= 0.11.0), RCSF, rgeos,
         rgdal, rgl, rlas (>= 1.3.0), sf, stats, tools, utils
 Suggests: EBImage, concaveman, crayon, gstat, hexbin, mapview, mapedit,
-        progress, testthat, knitr, rmarkdown
+        progress, testthat (>= 2.1.0), knitr, rmarkdown
 LazyData: true
 RoxygenNote: 6.1.1
 LinkingTo: BH,Rcpp,RcppArmadillo
@@ -46,8 +46,8 @@ Collate: 'Class-LASheader.r' 'Class-LAS.r' 'Class-LAScatalog.r'
         'lasfilter.r' 'lasfilterdecimate.r' 'lasfilterduplicates.r'
         'lasfiltersurfacepoints.r' 'lasground.r' 'lasindentify.r'
         'lasmergelas.r' 'lasmergespatial.r' 'lasmetrics.r'
-        'lasnormalize.r' 'lasroi.r' 'lassmooth.r' 'lassnags.r'
-        'lastransform.r' 'lastrees.r' 'lasupdateheader.r'
+        'lasnormalize.r' 'lasrescale.R' 'lasroi.r' 'lassmooth.r'
+        'lassnags.r' 'lastransform.r' 'lastrees.r' 'lasupdateheader.r'
         'lasvoxelize.r' 'methods-LAS.r' 'methods-LAScatalog.r'
         'methods-LAScluster.r' 'methods-LASheader.r' 'plot.r'
         'plot.s3.r' 'print.r' 'projection.r' 'tree_detection.r'
@@ -57,11 +57,11 @@ Collate: 'Class-LASheader.r' 'Class-LAS.r' 'Class-LAScatalog.r'
         'utils_is.r' 'utils_metrics.r' 'utils_misc.r' 'utils_raster.r'
         'utils_threads.r' 'utils_typecast.r' 'zzz.r'
 NeedsCompilation: yes
-Packaged: 2019-08-07 14:59:00 UTC; jr
+Packaged: 2019-09-10 15:30:40 UTC; jr
 Author: Jean-Romain Roussel [aut, cre, cph],
   David Auty [aut, ctb] (Reviews the documentation),
   Florian De Boissieu [ctb] (Fixed bugs and improved catalog features),
   Andrew Sánchez Meador [ctb] (Implemented lassnags)
 Maintainer: Jean-Romain Roussel <jean-romain.roussel.1@ulaval.ca>
 Repository: CRAN
-Date/Publication: 2019-08-08 15:30:07 UTC
+Date/Publication: 2019-09-10 16:20:05 UTC

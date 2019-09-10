@@ -1,9 +1,6 @@
 #include "QuadTree.h"
 
-QuadTree::QuadTree()
-{
-  init();
-}
+#define EPSILON 1e-9
 
 QuadTree::QuadTree(const double xcenter, const double ycenter, const double range)
 {
@@ -28,29 +25,21 @@ QuadTree::QuadTree(Rcpp::NumericVector x, Rcpp::NumericVector y)
   init(x,y);
 }
 
+QuadTree::QuadTree(Rcpp::NumericVector x, Rcpp::NumericVector y, std::vector<bool>& f)
+{
+  use3D = false;
+  init(x,y, f);
+}
+
+
 QuadTree::QuadTree(Rcpp::NumericVector x, Rcpp::NumericVector y, Rcpp::NumericVector z)
 {
   use3D = true;
   init(x,y,z);
 }
 
-QuadTree::QuadTree(Rcpp::S4 las)
+QuadTree::QuadTree(Rcpp::NumericVector x, Rcpp::NumericVector y, Rcpp::NumericVector z, std::vector<bool>& f)
 {
-  Rcpp::DataFrame data = Rcpp::as<Rcpp::DataFrame>(las.slot("data"));
-  Rcpp::NumericVector x = data["X"];
-  Rcpp::NumericVector y = data["Y"];
-  Rcpp::NumericVector z = data["Z"];
-  use3D = true;
-  init(x,y,z);
-}
-
-QuadTree::QuadTree(Rcpp::S4 las, std::vector<bool>& f)
-
-{
-  Rcpp::DataFrame data = Rcpp::as<Rcpp::DataFrame>(las.slot("data"));
-  Rcpp::NumericVector x = data["X"];
-  Rcpp::NumericVector y = data["Y"];
-  Rcpp::NumericVector z = data["Z"];
   use3D = true;
   init(x,y,z,f);
 }
@@ -65,7 +54,7 @@ QuadTree::~QuadTree()
 
 bool QuadTree::insert(const Point& p)
 {
-  if(!boundary.contains(p))
+  if(!boundary.contains(p, EPSILON))
     return false;
 
   npoints++;
@@ -95,7 +84,7 @@ void QuadTree::subdivide()
 {
   double half_res_half = boundary.half_res.x * 0.5;
 
-  Point p(half_res_half+0.0001, half_res_half+0.0001);
+  Point p(half_res_half, half_res_half);
   Point pNE(boundary.center.x + half_res_half, boundary.center.y + half_res_half);
   Point pNW(boundary.center.x - half_res_half, boundary.center.y + half_res_half);
   Point pSE(boundary.center.x + half_res_half, boundary.center.y - half_res_half);
@@ -117,7 +106,7 @@ void QuadTree::knn(const Point& p, const unsigned int k, std::vector<Point*>& re
 
   // Get at least k point within a circle
   std::vector<Point*> pts;
-  while (pts.size() < k)
+  while (pts.size() < k && pts.size() < npoints)
   {
     pts.clear();
     Circle circ(p.x, p.y, radius);
@@ -127,7 +116,7 @@ void QuadTree::knn(const Point& p, const unsigned int k, std::vector<Point*>& re
 
   std::sort(pts.begin(), pts.end(), DSort2D<Point>(p));
 
-  for (unsigned int i = 0 ; i < k ; i++)
+  for (unsigned int i = 0 ; i < std::min((int)k, (int)pts.size()) ; i++)
     res.push_back(pts[i]);
 
   return;
@@ -143,7 +132,7 @@ void QuadTree::knn(const PointXYZ& p, const unsigned int k, std::vector<PointXYZ
 
   // Get at least k point within a sphere
   std::vector<PointXYZ> pts;
-  while (pts.size() < k)
+  while (pts.size() < k && pts.size() < npoints)
   {
     pts.clear();
     Sphere sphere(p.x, p.y, p.z, radius);
@@ -153,7 +142,7 @@ void QuadTree::knn(const PointXYZ& p, const unsigned int k, std::vector<PointXYZ
 
   std::sort(pts.begin(), pts.end(), DSort3D<PointXYZ>(p));
 
-  for (unsigned int i = 0 ; i < k ; i++)
+  for (unsigned int i = 0 ; i < std::min((int)k, (int)pts.size()) ; i++)
     res.push_back(pts[i]);
 
   return;
@@ -185,7 +174,8 @@ void QuadTree::init(Rcpp::NumericVector x, Rcpp::NumericVector y)
   double xrange = xmax - xmin;
   double yrange = ymax - ymin;
   double range = xrange > yrange ? xrange/2 : yrange/2;
-  boundary = BoundingBox(Point((xmin+xmax)/2, (ymin+ymax)/2), Point(range+0.001, range+0.001));
+
+  boundary = BoundingBox(Point((xmin+xmax)/2, (ymin+ymax)/2), Point(range, range));
 
   int computed_depth = std::floor(std::log(n)/std::log(4));
   computed_depth = (computed_depth >= 1) ? computed_depth : 1;
@@ -195,7 +185,7 @@ void QuadTree::init(Rcpp::NumericVector x, Rcpp::NumericVector y)
   for(int i = 0 ; i < x.size() ; i++)
   {
     Point p(x[i], y[i], i);
-    insert(p);
+    if(!insert(p)) Rcpp::stop("Internal error in QuadTree. Point not inserted.");
   }
 }
 
@@ -212,14 +202,15 @@ void QuadTree::init(Rcpp::NumericVector x, Rcpp::NumericVector y, std::vector<bo
   double xrange = xmax - xmin;
   double yrange = ymax - ymin;
   double range = xrange > yrange ? xrange/2 : yrange/2;
-  boundary = BoundingBox(Point((xmin+xmax)/2, (ymin+ymax)/2), Point(range+0.001, range+0.001));
+
+  boundary = BoundingBox(Point((xmin+xmax)/2, (ymin+ymax)/2), Point(range, range));
 
   for(int i = 0 ; i < x.size() ; i++)
   {
     if (f[i])
     {
       Point p(x[i], y[i], i);
-      insert(p);
+      if(!insert(p)) Rcpp::stop("Internal error in QuadTree. Point not inserted.");
     }
   }
 }

@@ -77,30 +77,18 @@ lasground.LAS = function(las, algorithm, last_returns = TRUE)
   assert_is_algorithm(algorithm)
   assert_is_algorithm_gnd(algorithm)
 
-  npoints <- nrow(las@data)
-  pointID <- 1:npoints
-  cloud   <- coordinates3D(las)
-  cloud[, idx := pointID]
-
-  if (last_returns)
-  {
-    if (!all(c("ReturnNumber", "NumberOfReturns") %in% names(las@data)))
-    {
+  filter <- TRUE
+  if (last_returns) {
+    if (!all(c("ReturnNumber", "NumberOfReturns") %in% names(las@data))) {
       warning("'ReturnNumber' and/or 'NumberOfReturns' not found. Cannot use the option 'last_returns', all the points will be used.", call. = FALSE)
-    }
-    else
-    {
-      filter <- las@data[["ReturnNumber"]] == las@data[["NumberOfReturns"]]
-
-      if (sum(filter) == 0)
-        warning("Zero last return found. Cannot use the option 'last_returns', all the points will be used.")
-      else
-        cloud <- cloud[filter]
+    } else {
+      filter <- parse_filter(las, ~ReturnNumber == NumberOfReturns)
+      if (sum(filter) == 0) warning("Zero last return found. Cannot use the option 'last_returns', all the points will be used.")
     }
   }
 
   lidR.context <- "lasground"
-  idx <- algorithm(cloud)
+  idx <- algorithm(las, filter)
 
   if ("Classification" %in% names(las@data))
   {
@@ -114,11 +102,11 @@ lasground.LAS = function(las, algorithm, last_returns = TRUE)
     }
     else
     {
-      new_classes <- rep(LASUNCLASSIFIED, npoints)
+      new_classes <- rep(LASUNCLASSIFIED, npoints(las))
     }
   }
   else
-    new_classes <- rep(LASUNCLASSIFIED, npoints)
+    new_classes <- rep(LASUNCLASSIFIED, npoints(las))
 
   new_classes[idx] <- LASGROUND
   las@data[["Classification"]] <- new_classes

@@ -131,22 +131,22 @@ ctg &lt;-<span class="st"> </span><span class="kw">readLAScatalog</span>(<span c
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">lascheck</span>(ctg)
 <span class="co">#&gt; </span>
 <span class="co">#&gt;  Checking headers consistency</span>
-<span class="co">#&gt;   - Checking file version consistency... ok</span>
-<span class="co">#&gt;   - Checking scale consistency... ok</span>
-<span class="co">#&gt;   - Checking offset consistency... ok</span>
-<span class="co">#&gt;   - Checking point type consistency... ok</span>
-<span class="co">#&gt;   - Checking VLR consistency... ok</span>
-<span class="co">#&gt;   - Checking CRS consistency... ok</span>
+<span class="co">#&gt;   - Checking file version consistency... ✓</span>
+<span class="co">#&gt;   - Checking scale consistency... ✓</span>
+<span class="co">#&gt;   - Checking offset consistency... ✓</span>
+<span class="co">#&gt;   - Checking point type consistency... ✓</span>
+<span class="co">#&gt;   - Checking VLR consistency... ✓</span>
+<span class="co">#&gt;   - Checking CRS consistency... ✓</span>
 <span class="co">#&gt;  Checking the headers</span>
-<span class="co">#&gt;   - Checking scale factor validity... ok</span>
-<span class="co">#&gt;   - Checking Point Data Format ID validity... ok</span>
+<span class="co">#&gt;   - Checking scale factor validity... ✓</span>
+<span class="co">#&gt;   - Checking Point Data Format ID validity... ✓</span>
 <span class="co">#&gt;  Checking preprocessing already done </span>
 <span class="co">#&gt;   - Checking negative outliers...</span>
-<span class="co">#&gt;     warning: 2 file(s) with points below 0</span>
+<span class="co">#&gt;     ⚠ 2 file(s) with points below 0</span>
 <span class="co">#&gt;   - Checking normalization... no</span>
 <span class="co">#&gt;  Checking the geometry</span>
 <span class="co">#&gt;   - Checking overlapping tiles...</span>
-<span class="co">#&gt;     warning: Some tiles seem to overlap each other</span>
+<span class="co">#&gt;     ⚠ Some tiles seem to overlap each other</span>
 <span class="co">#&gt;   - Checking point indexation... no</span></code></pre></div>
 <p>The function <code>lascheck</code> when applied to a catalog does not perform a deep inspection of the point cloud unlike when applied to a LAS object. Indeed the point cloud is not actually read.</p>
 </div>
