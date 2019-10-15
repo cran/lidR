@@ -79,7 +79,8 @@ dummy_las = function(n, seeds = 1)
   set.seed(seeds + 2)
   Z = c(stats::runif(0.8*n, 0, 25), rep(0, 0.2*n))
   Classification = as.integer(c(rep(1, 0.8*n), rep(2, 0.2*n)))
-  Intensity = sample(10:50, n, TRUE)
+  set.seed(seeds + 3)
+  Intensity = as.integer(stats::runif(n, 10, 50))
   ReturnNumber    = as.integer(rep(c(1,1,1,2,3,1,2,1,2,1), n/10))
   NumberOfReturns = as.integer(rep(c(1,1,3,3,3,2,2,2,2,1), n/10 ))
 
@@ -108,7 +109,7 @@ subcircled = function(dt, r, n)
   px = r*cos(alpha)
   py = r*sin(alpha)
 
-  return(dt[, f(X, Y, Z, px, py), by = rownames(dt)][, rownames := NULL][])
+  return(dt[, f(X, Y, Z, px, py), by = 1:nrow(dt)][, nrow := NULL][])
 }
 
 coordinates = function(las)

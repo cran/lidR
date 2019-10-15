@@ -1,3 +1,35 @@
+## lidR v2.1.4 (Release date: )
+
+#### NEW FEATURES
+
+1. `grid_terrain()` gains an argument `full_raster = FALSE`.
+
+2. `lasnormalize()` gains an argument `...` to tune `raster::extract()` and use, for example, `method = "bilinear"`.
+
+#### FIXES
+
+1. In `lasground()` if `last_returns = TRUE` and the `LAS` is not properly populated i.e. no last return, the classification was not actually computed. The expected behavior was to use all the points. This is now the case.
+
+2. `lasclip()` is now able to clip into a `LAS` objects using `SpatialPoints` or `sf POINT`. It previously worked only into `LAScatalog` objects.
+
+3. `lasaddextrabyte_manual()` was not actually working because the `type` was not converted to a numeric value according to the LAS specifications.
+
+4. Fix double precision floating point error in `grid_*` function in some specific cases. This fix affect also `highest()` and other raster-based algorithms [#273](https://github.com/Jean-Romain/lidR/issues/273).
+
+5. `lasreoffset()` now checks for integer overflow and throws an error in case of invalid user request [#274](https://github.com/Jean-Romain/lidR/issues/274).
+
+6. Tolerance for internal `point_in_triangle()` have been increased to fix double precision error in rasterization of a triangulation. This fixes some rare `NA`s in `pitfree()`, `dsmtin()` and `tin()`.
+
+7. The NAs are now correctly interpreted when writing a GDAL virtual raster [#283](https://github.com/Jean-Romain/lidR/issues/283).
+
+8. Fix `lasmergespatial()` with 'on disk' rasters [#285](https://github.com/Jean-Romain/lidR/issues/285).
+
+9. Fix `pitfree()` with a single triangle case [#288](https://github.com/Jean-Romain/lidR/issues/288).
+
+### ENHANCEMENTS
+
+1. `pitfree()` handles more errors and fails more nicely in some specific cases [#286](https://github.com/Jean-Romain/lidR/issues/286).
+
 ## lidR v2.1.3 (Release date: 2019-09-10)
 
 #### NEW FEATURES

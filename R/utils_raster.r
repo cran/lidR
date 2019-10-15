@@ -52,7 +52,7 @@ rOverlay = function(las, res, start = c(0,0), buffer = 0)
   if (is(res, "RasterLayer"))
   {
     resolution <- raster::res(res)
-    if (resolution[1] !=  resolution[2])
+    if (round(resolution[1], 4) != round(resolution[2], 4))
       stop("Rasters with different x y resolutions are not supported", call. = FALSE)
     return(res)
   }
@@ -115,7 +115,7 @@ rBuildVRT = function(file_list, vrt)
   folder    <- dirname(file_list[1])
   file      <- paste0("/", vrt, ".vrt")
   vrt       <- paste0(folder, file)
-  gdalUtils::gdalbuildvrt(file_list, vrt)
+  gdalUtils::gdalbuildvrt(file_list, vrt, vrtnodata = -Inf)
   file_list <- raster::stack(vrt)
 
   if (dim(file_list)[3] == 1)
