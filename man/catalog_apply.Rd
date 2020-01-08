@@ -20,10 +20,10 @@ This function gives users access to the \link[lidR:LAScatalog-class]{LAScatalog}
 It allows the application of a user-defined routine over an entire catalog. The LAScatalog
 processing engine tool is explained in the \link[lidR:LAScatalog-class]{LAScatalog class}\cr\cr
 This function is the core of the lidR package. It drives every single function that can process a
-\code{LAScatalog}. It is flexible and powerful but also complex and reserved to users that are
-\strong{Warning:} the LAScatalog processing engine has a mechanism to load buffered data to avoid
-edge artifacts, but no mechanism to remove the buffer after applying user-defined functions, since
-this task is specific to each process. In other \code{lidR} functions this task is performed
+\code{LAScatalog}. It is flexible and powerful but also complex.\cr\cr
+\strong{Warning:} the LAScatalog processing engine has a mechanism to load buffered data 'on-the-fly'
+to avoid edge artifacts, but no mechanism to remove the buffer after applying user-defined functions,
+since this task is specific to each process. In other \code{lidR} functions this task is performed
 specifically for each function. In \code{catalog_apply} the user's function can return any output,
 thus users must take care of this task themselves (See section "Edge artifacts")
 }
@@ -34,9 +34,10 @@ It is important to take precautions to avoid 'edge artifacts' when processing wa
 tiles. If the points from neighboring tiles are not included during certain processes,
 this could create 'edge artifacts' at the tile boundaries. For example, empty or incomplete
 pixels in a rasterization process, or dummy elevations in a ground interpolation. The LAScatalog
-processing engine provides internal tools to load buffered data. However, there is
+processing engine provides internal tools to load buffered data 'on-the-fly'. However, there is
 no mechanism to remove the results computed in the buffered area since this task depends on the
-output of the user-defined function. The user must take care of this task (see examples).
+output of the user-defined function. The user must take care of this task (see examples) to prevent
+unexpected output with duplicated entries or conflict between values computed twice.
 }
 
 \section{Buffered data}{
@@ -45,7 +46,8 @@ output of the user-defined function. The user must take care of this task (see e
 The LAS objects read by the user function have a special attribute called 'buffer' that indicates,
 for each point, if it comes from a buffered area or not. Points from non-buffered areas have a
 'buffer' value of 0, while points from buffered areas have a 'buffer' value of 1, 2, 3 or 4, where
-1 is the bottom buffer and 2, 3 and 4 are the left, top and right buffers, respectively.
+1 is the bottom buffer and 2, 3 and 4 are the left, top and right buffers, respectively. This allows
+for filtering of buffer points if required.
 }
 
 \section{Function template}{
@@ -72,38 +74,42 @@ myfun = function(cluster, ...)
    return(something)
 }}
 The line \code{if(is.empty(las)) return(NULL)} is important because some clusters (chunks) may contain
-0 points (we can't know that before reading the file). In this case an empty point cloud with 0 points
+0 points (we can't know this before reading the file). In this case an empty point cloud with 0 points
 is returned by \code{readLAS} and this may fail in subsequent code. Thus, exiting early from the user-defined
 function by returning \code{NULL} indicates to the internal engine that the cluster was empty.
 }
 
 \section{.options}{
 
-User may have noticed that some lidR functions throw an errors when the processing options are
+Users may have noticed that some lidR functions throw an error when the processing options are
 inappropriate. For example, some functions need a buffer and thus \code{buffer = 0} is forbidden.
-User can add the same constrains to protect against inappropriate options. The \code{.options}
-argument is a \code{list} that allows to tune the behavior of the function.
+Users can add the same constraints to protect against inappropriate options. The \code{.options}
+argument is a \code{list} that allows users to tune the behavior of the processing engine.
 \itemize{
-\item \code{need_buffer = TRUE} the function complains if the buffer is 0
-\item \code{need_output_file = TRUE} the function complains if no output file template is provided
+\item \code{drop_null = FALSE} Not intended to be used by regular users. The engine does not remove
+NULL outputs
+\item \code{need_buffer = TRUE} the function complains if the buffer is 0.
+\item \code{need_output_file = TRUE} the function complains if no output file template is provided.
 \item \code{raster_alignment = ...} the function checks the alignment of the chunks. This option is
 important if the output is a raster. See below for more details.
-\item \code{drop_null = FALSE} Not intended to be used by regular users. The function does not
-remove the NULL outputs.
+ \item \code{automerge = TRUE} by defaut the engine returns a \code{list} with one item per chunk. If
+\code{automerge = TRUE}, it tries to merge the outputs into a single object: a \code{Raster*}, a
+\code{Spatial*}, a \code{LAS*} similar to other functions of the package. This is a fail-safe
+option so in the worst case, if the merge fails, the \code{list} is returned.
 }
 
 When the function \code{FUN} returns a raster it is important to ensure that the chunks are aligned
 with the raster to avoid edge artifacts. Indeed, if the edge of a chunk does not correspond to the edge
-of the pixels the output will not be strictly continuous and will have edge artifacts (that might
-not be visible). Users can check this with the options \code{raster_alignment}, that  can take the
+of the pixels, the output will not be strictly continuous and will have edge artifacts (that might
+not be visible). Users can check this with the options \code{raster_alignment}, that can take the
 resolution of the raster as input, as well as the starting point if needed. The following are accepted:\cr\cr
 \preformatted{
-# check if the chunks are aligned with a raster of resolution 20
+# check if chunks are aligned with a raster of resolution 20
 raster_alignment = 20
 raster_alignment = list(res = 20)
 
 # check if chunks are aligned with a raster of resolution 20
-# that starts a (0,10)
+# that starts at (0,10)
 raster_alignment = list(res = 20, start = c(0,10))
 }
 See also \link{grid_metrics} for more details.
@@ -133,7 +139,7 @@ returns a \code{LAS} object.
 
 ## =========================================================================
 ## Example 1: detect all the tree tops over an entire catalog
-## (this is basically the reproduction of existing lidR function 'tree_detection')
+## (this is basically a reproduction of the existing lidR function 'tree_detection')
 ## =========================================================================
 
 # 1. Build the user-defined function that analyzes each chunk of the catalog.
@@ -172,12 +178,10 @@ opt_select(project)       <- "xyz"         # read only the coordinates.
 opt_filter(project)       <- "-keep_first" # read only first returns.
 
 # 4. Apply a user-defined function to take advantage of the internal engine
-opt    <- list(need_buffer = TRUE)   # catalog_apply will throw an error if buffer = 0
+opt    <- list(need_buffer = TRUE,   # catalog_apply will throw an error if buffer = 0
+               automerge   = TRUE)   # catalog_apply will merge the outputs into a single object
 output <- catalog_apply(project, my_tree_detection_method, ws = 5, .options = opt)
 
-# 5. Post-process the output to merge the results (depending on the output computed).
-# Here, each value of the list is a SpatialPointsDataFrame, so rbind does the job:
-output <- do.call(rbind, output)
 spplot(output)
 
 ## ===================================================
@@ -204,8 +208,9 @@ opt_chunk_buffer(project) <- 1
 opt_chunk_size(project)   <- 120     # small because this is a dummy example.
 opt_select(project)       <- "xyz"   # read only the coordinates.
 
-opt     <- list(raster_alignment = 20)  # catalog_apply will adjust the chunks if required
+opt     <- list(raster_alignment = 20, # catalog_apply will adjust the chunks if required
+                automerge = TRUE)      # catalog_apply will merge the outputs into a single raster
 output  <- catalog_apply(project, rumple_index_surface, res = 20, .options = opt)
-output  <- do.call(raster::merge, output)
+
 plot(output, col = height.colors(50))
 }

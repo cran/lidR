@@ -1,9 +1,12 @@
 #include "LAS.h"
 #include <boost/geometry.hpp>
 #include <limits>
-#include "QuadTree.h"
+//#include "QuadTree.h"
+#include "GridPartition.h"
 #include "Progress.h"
 #include "myomp.h"
+
+typedef GridPartition SpatialIndex;
 
 LAS::LAS(S4 las)
 {
@@ -14,6 +17,9 @@ LAS::LAS(S4 las)
 
   if (data.containsElementNamed("Intensity"))
     this->I = data["Intensity"];
+
+  if (data.containsElementNamed("gpstime"))
+    this->T = data["gpstime"];
 
   this->npoints = X.size();
   this->ncpu = 1;
@@ -44,14 +50,14 @@ LAS::~LAS()
 void LAS::new_filter(LogicalVector b)
 {
   if (b.size() == 1)
-    std:fill(filter.begin(), filter.end(), b[0]);
-  else if (b.size() == npoints)
+    std::fill(filter.begin(), filter.end(), b[0]);
+  else if (b.size() == (int)npoints)
     this->filter = Rcpp::as< std::vector<bool> >(b);
   else
-    Rcpp::stop("Internal error in 'new_filter");
+    Rcpp::stop("Internal error in 'new_filter"); // nocov
 }
 
-void LAS::apply_filter()
+/*void LAS::apply_filter()
 {
   LogicalVector keep = wrap(filter);
 
@@ -65,9 +71,9 @@ void LAS::apply_filter()
   npoints = X.size();
   filter = std::vector<bool>(npoints);
   std::fill(filter.begin(), filter.end(), false);
-}
+}*/
 
-IntegerVector LAS::index_filter()
+/*IntegerVector LAS::index_filter()
 {
   std::vector<int> index;
   for (int i = 0 ; i < npoints ; i++)
@@ -76,7 +82,7 @@ IntegerVector LAS::index_filter()
   }
 
   return Rcpp::wrap(index);
-}
+}*/
 
 void LAS::z_smooth(double size, int method, int shape, double sigma)
 {
@@ -88,7 +94,7 @@ void LAS::z_smooth(double size, int method, int shape, double sigma)
 
   NumericVector Zsmooth = clone(Z);
 
-  QuadTree tree(X,Y);
+  SpatialIndex tree(X,Y);
 
   Progress pb(npoints, "Point cloud smoothing: ");
 
@@ -153,7 +159,7 @@ void LAS::z_open(double resolution)
 
   NumericVector Z_out(npoints);
 
-  QuadTree tree(X, Y, filter);
+  SpatialIndex tree(X, Y, filter);
 
   Progress p(2*npoints, "Morphological filter: ");
 
@@ -211,16 +217,97 @@ void LAS::z_open(double resolution)
   return;
 }
 
+void LAS::i_range_correction(DataFrame flightlines, double Rs, double f)
+{
+  NumericVector x = flightlines["X"];
+  NumericVector y = flightlines["Y"];
+  NumericVector z = flightlines["Z"];
+  NumericVector t = flightlines["gpstime"];
+
+  double average_z_sensor = Rcpp::mean(z);
+  double R_control = mean(average_z_sensor - Z);
+
+  NumericVector::iterator it;
+  double dx, dy, dz, r, R;
+  double i;
+  int j;
+
+  IntegerVector Inorm(X.size());
+
+  Progress pbar(npoints, "Range computation");
+
+  for (unsigned int k = 0 ; k < npoints ; k++)
+  {
+    pbar.increment();
+    pbar.check_abort();
+
+    it = std::lower_bound(t.begin(), t.end(), T[k]);
+
+    // If the gpstime is the last one: no interpolation with the next one (edge of data)
+    if (it == t.begin())
+    {
+      j  = 0;
+      dx = X[k] - x[j];
+      dy = Y[k] - y[j];
+      dz = Z[k] - z[j];
+    }
+    // If t2-t1 is too big it is two differents lines: no interpolation with the next one (edge of data)
+    else if (*it - *(it-1) > 30)
+    {
+      j  = it - t.begin() - 1;
+      dx = X[k] - x[j];
+      dy = Y[k] - y[j];
+      dz = Z[k] - z[j];
+    }
+    // General case with t2 > t > t1
+    else
+    {
+      j  = it - t.begin() - 1;
+      r  = 1 - (t[j+1]-T[k])/(t[j+1]-t[j]);
+
+      dx = X[k] - (x[j] + (x[j+1] - x[j])*r);
+      dy = Y[k] - (y[j] + (y[j+1] - y[j])*r);
+      dz = Z[k] - (z[j] + (z[j+1] - z[j])*r);
+    }
+
+    R = std::sqrt(dx*dx + dy*dy + dz*dz);
+
+    if (R > 3 * R_control)
+    {
+      Rprintf("An high range R has been computed relatively to the expected average range Rm = %.0lf\n", R_control);
+      Rprintf("Point number %d at (x,y,z,t) = (%.2lf, %.2lf, %.2lf, %.2lf)\n", k+1, X[k], Y[k], Z[k], T[k]);
+      Rprintf("Matched with sensor at (%.2lf, %.2lf, %.2lf, %.2lf)\n", x[j], y[j], z[j], t[j]);
+      Rprintf("The range computed was R = %.2lf\n", R, dx, dy, dz, t[j]);
+      Rprintf("Check the correctness of the sensor positions and the correctness of the gpstime either in the point cloud or in the sensor positions.\n");
+      throw Rcpp::exception("Unrealistic range: see message above", false);
+    }
+
+    i = I[k] * std::pow((R/Rs),f);
+
+    if (i > 65535)
+    {
+      Rf_warningcall(R_NilValue, "Normalized intensity does not fit in 16 bit. Value clamped to 2^16.");
+      i = 65535;
+    }
+
+    Inorm[k]  = i;
+  }
+
+  I = Inorm;
+
+  return;
+}
+
 void LAS::filter_local_maxima(NumericVector ws, double min_height, bool circular)
 {
   bool abort = false;
   bool vws = ws.length() > 1;
 
-  QuadTree tree(X,Y);
+  SpatialIndex tree(X,Y);
   Progress pb(npoints, "Local maximum filter: ");
 
   #pragma omp parallel for num_threads(ncpu)
-  for (int i = 0 ; i < npoints ; i++)
+  for (unsigned int i = 0 ; i < npoints ; i++)
   {
     if (abort) continue;
     if (pb.check_interrupt()) abort = true;
@@ -246,8 +333,8 @@ void LAS::filter_local_maxima(NumericVector ws, double min_height, bool circular
 
     // Get the highest Z in the windows
     double Zmax = std::numeric_limits<double>::min();
-    Point *p;
-    for(size_t j = 0 ; j < pts.size() ; j++)
+    Point* p = pts[0];
+    for (unsigned int j = 0 ; j < pts.size() ; j++)
     {
       if(Z[pts[j]->id] > Zmax)
       {
@@ -284,7 +371,7 @@ void LAS::filter_with_grid(S4 layout)
   std::vector<int> output(ncols*nrows);
   std::fill(output.begin(), output.end(), std::numeric_limits<int>::min());
 
-  for (int i = 0 ; i < npoints ; i++)
+  for (unsigned int i = 0 ; i < npoints ; i++)
   {
     if (filter[i]) continue;
 
@@ -298,7 +385,7 @@ void LAS::filter_with_grid(S4 layout)
     if (x == xmax) col = ncols-1;
 
     if (row < 0 || row >= nrows || col < 0 || col >= ncols)
-      Rcpp::stop("C++ unexpected internal error in 'filter_with_grid': point of raster.");
+      Rcpp::stop("C++ unexpected internal error in 'filter_with_grid': point out of raster."); // nocov
 
     int cell = row * ncols + col;
 
@@ -313,7 +400,7 @@ void LAS::filter_with_grid(S4 layout)
     }
   }
 
-  for (int i = 0 ; i < output.size() ; i++)
+  for (unsigned int i = 0 ; i < output.size() ; i++)
   {
     if (output[i] > std::numeric_limits<int>::min())
       filter[output[i]] = true;
@@ -339,7 +426,7 @@ void LAS::filter_in_polygon(std::string wkt)
     boost::geometry::envelope(polygons, bbox);
 
     #pragma omp parallel for num_threads(ncpu)
-    for(int i = 0 ; i < npoints ; i++)
+    for(unsigned int i = 0 ; i < npoints ; i++)
     {
       if (filter[i]) continue;
 
@@ -371,7 +458,7 @@ void LAS::filter_in_polygon(std::string wkt)
     boost::geometry::envelope(polygon, bbox);
 
     #pragma omp parallel for num_threads(ncpu)
-    for(int i = 0 ; i < npoints ; i++)
+    for(unsigned int i = 0 ; i < npoints ; i++)
     {
       if (filter[i]) continue;
 
@@ -394,7 +481,7 @@ void LAS::filter_in_polygon(std::string wkt)
     }
   }
   else
-    Rcpp::stop("Unexpected error in point in polygon: WKT is not a POLYGON or MULTIPOLYGON");
+    Rcpp::stop("Unexpected error in point in polygon: WKT is not a POLYGON or MULTIPOLYGON"); // nocov
 
   return;
 }
@@ -405,7 +492,7 @@ void LAS::filter_shape(int method, NumericVector th, int k)
 
   bool abort = false;
 
-  QuadTree qtree(X,Y,Z, filter);
+  SpatialIndex qtree(X,Y,Z, filter);
 
   bool (*predicate)(arma::vec&, arma::mat&, NumericVector&);
   switch(method)
@@ -456,14 +543,14 @@ void LAS::filter_shape(int method, NumericVector th, int k)
 void LAS::filter_progressive_morphology(NumericVector ws, NumericVector th)
 {
   if (ws.size() != th.size())
-    Rcpp::stop("Internal error in 'filter_progressive_morphology'");
+    Rcpp::stop("Internal error in 'filter_progressive_morphology'"); // nocov
 
   for (int i = 0 ; i < ws.size() ; i++)
   {
     NumericVector oldZ = clone(Z);
     z_open(ws[i]);
 
-    for (int j = 0 ; j < npoints ; j++)
+    for (unsigned int j = 0 ; j < npoints ; j++)
     {
       if (!filter[j]) continue;
       filter[j] = (oldZ[j] - Z[j]) < th[i];
@@ -487,7 +574,7 @@ IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh
   IntegerVector ptDen_bigcyl(npoints);      // the big cylinder neighborhood point density for each focal point
   NumericVector meanBBPr_bigcyl(npoints);   // the mean BBPr for each focal point in its corresponding big cylinder neighborhood
 
-  QuadTree qtree(X,Y,Z);                    // the quadtree for the las object
+  SpatialIndex qtree(X,Y,Z);                // the SpatialIndex for the las object
 
   // Step 1 - First we have to build neighborhood objects (sphere, small and large cylinders) around each focal point and get
   // the BBPr counts, then we have to calculate the actual ratio of BBPr to neighborhood points for each focal point
@@ -579,7 +666,7 @@ IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh
     qtree.lookup(sphere, sphpts);
 
     sum_of_elements = 0;
-    for(unsigned int j = 0; j < sphpts.size(); j++)
+    for (unsigned int j = 0; j < sphpts.size(); j++)
     {
       sum_of_elements += BBPr_sph[sphpts[j].id];
     }
@@ -617,7 +704,7 @@ IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh
     qtree.lookup(bigcircle, bigcylpts);
 
     sum_of_elements = 0;
-    for(unsigned int j = 0 ; j < bigcylpts.size() ; j++)
+    for (unsigned int j = 0 ; j < bigcylpts.size() ; j++)
     {
       sum_of_elements += BBPr_bigcyl[bigcylpts[j]->id];
     }
@@ -757,9 +844,9 @@ IntegerVector LAS::segment_trees(double dt1, double dt2, double Zu, double R, do
     {
       if (p.check_interrupt())
       {
-        for (unsigned int i = 0 ; i < U.size() ; i++) delete U[i];
-        delete dummy;
-        p.exit();
+        for (unsigned int i = 0 ; i < U.size() ; i++) delete U[i]; // nocov
+        delete dummy; // nocov
+        p.exit(); // nocov
       }
 
       p.update(ni-n);
@@ -835,7 +922,7 @@ IntegerVector LAS::segment_trees(double dt1, double dt2, double Zu, double R, do
     std::vector<PointXYZ*> temp;
     temp.reserve(N.size()-1);
 
-    for(unsigned int i = 0 ; i < n ; i++)
+    for (unsigned int i = 0 ; i < n ; i++)
     {
       if(inN[i])
         temp.push_back(U[i]);
@@ -874,6 +961,7 @@ NumericVector LAS::rasterize(S4 layout, double subcircle, int method)
   case 1: f = &LAS::rmax; break;
   case 2: f = &LAS::rmin; break;
   case 3: f = &LAS::rcount; break;
+  default: Rcpp::stop("C++ unexpected internal error in 'rasterize': invalid method."); break; // # nocov;
   }
 
   if (subcircle > 0)
@@ -881,11 +969,11 @@ NumericVector LAS::rasterize(S4 layout, double subcircle, int method)
     double cs[8] = {cos(0.0), cos(2*M_PI/8), cos(4*M_PI/8), cos(6*M_PI/8), cos(M_PI), cos(10*M_PI/8), cos(12*M_PI/8), cos(14*M_PI/8)};
     double ss[8] = {sin(0.0), sin(2*M_PI/8), sin(4*M_PI/8), sin(6*M_PI/8), sin(M_PI), sin(10*M_PI/8), sin(12*M_PI/8), sin(14*M_PI/8)};
 
-    for (int i = 0 ; i < npoints ; i++)
+    for (unsigned int i = 0 ; i < npoints ; i++)
     {
       double z = Z[i];
 
-      for (int j = 0 ; j < 8 ; j++)
+      for (unsigned int j = 0 ; j < 8 ; j++)
       {
         double x = X[i] + subcircle * cs[j];
         double y = Y[i] + subcircle * ss[j];
@@ -896,10 +984,23 @@ NumericVector LAS::rasterize(S4 layout, double subcircle, int method)
         if (x == xmax) col = ncols-1;
 
         if (row < 0 || row >= nrows || col < 0 || col >= ncols)
-          Rcpp::stop("C++ unexpected internal error in 'rasterize': point of raster.");
+          Rcpp::stop("C++ unexpected internal error in 'rasterize': point out of raster."); // # nocov
 
         int cell = row * ncols + col;
         raster(cell) = f(raster(cell), z);
+
+        // This is a hack for R 4.0.0 with alternative compiler toolchain (gcc8 32 bits)
+        // I'm not able to understant why adding a print line fixes the problem
+        // and I don't even know what is the problem.
+        #ifdef _WIN32
+        #ifdef __MINGW32__
+        #ifdef __GNUC__
+        #if __GNUC__ >= 8
+                if (cell == raster.size() + 1) Rprintf("x = %lf, y = %lf\n", x, y);
+        #endif
+        #endif
+        #endif
+        #endif
       }
     }
   }
@@ -917,7 +1018,7 @@ NumericVector LAS::rasterize(S4 layout, double subcircle, int method)
       if (x == xmax) col = ncols-1;
 
       if (row < 0 || row >= nrows || col < 0 || col >= ncols)
-        Rcpp::stop("C++ unexpected internal error in 'rasterize': point of raster.");
+        Rcpp::stop("C++ unexpected internal error in 'rasterize': point out of raster."); // # nocov
 
       int cell = row * ncols + col;
       raster(cell) = f(raster(cell), z);
@@ -925,4 +1026,64 @@ NumericVector LAS::rasterize(S4 layout, double subcircle, int method)
   }
 
   return raster;
+}
+
+List LAS::knn_metrics(unsigned int k, DataFrame data, DataFrame sub, SEXP call, SEXP env)
+{
+  int nprocessed = std::count(filter.begin(), filter.end(), true);
+  int j = 0;
+  List output(nprocessed);
+  SpatialIndex tree(X,Y,Z,filter);
+  Progress pb(npoints, "Metrics computation: ");
+  bool abort = false;
+  int pOutError = 0;
+
+  for(unsigned int i = 0 ; i < npoints ; ++i) {
+    if (abort) continue;
+    if (pb.check_interrupt()) abort = true;
+    pb.increment();
+    if (!filter[i]) continue;
+
+
+    PointXYZ p(X[i], Y[i], Z[i]);
+    std::vector<PointXYZ> pts;
+    tree.knn(p, k, pts);
+
+    Rcpp::DataFrame::iterator it2 = sub.begin();
+    for (Rcpp::DataFrame::iterator it1 = data.begin() ; it1 != data.end() ; ++it1) {
+      switch( TYPEOF(*it1) ) {
+        case REALSXP: {
+          Rcpp::NumericVector tmp1 = Rcpp::as<Rcpp::NumericVector>(*it1);
+          Rcpp::NumericVector tmp2 = Rcpp::as<Rcpp::NumericVector>(*it2);
+          for(unsigned int i = 0 ; i < k ; ++i) tmp2[i] = tmp1[pts[i].id];
+          break;
+        }
+        case INTSXP: {
+          Rcpp::IntegerVector tmp1 = Rcpp::as<Rcpp::IntegerVector>(*it1);
+          Rcpp::IntegerVector tmp2 = Rcpp::as<Rcpp::IntegerVector>(*it2);
+          for(unsigned int i = 0 ; i < k ; ++i) tmp2[i] = tmp1[pts[i].id];
+          break;
+        }
+        case LGLSXP: {
+          Rcpp::LogicalVector tmp1 = Rcpp::as<Rcpp::LogicalVector>(*it1);
+          Rcpp::LogicalVector tmp2 = Rcpp::as<Rcpp::LogicalVector>(*it2);
+          for(unsigned int i = 0 ; i < k ; ++i) tmp2[i] = tmp1[pts[i].id];
+          break;
+        }
+        default: {
+          Rcpp::stop("Incompatible SEXP encountered; only accepts DataFrame with REALSXPs, INTSXPs and LGLSXPs");
+        }
+      }
+      ++it2;
+    }
+
+    output[j] = R_tryEvalSilent(call, env, &pOutError);
+
+    if (pOutError == 1)
+      throw Rcpp::exception(R_curErrorBuf(), false);
+
+    j++;
+  }
+
+  return output;
 }

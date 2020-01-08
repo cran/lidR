@@ -70,9 +70,18 @@ tree_detection.LAS = function(las, algorithm)
   if (is.logical(res) || is.integer(res))
   {
     maxima <- las@data[res, c("X", "Y", "Z")]
-    coords <- cbind(maxima[["X"]], maxima[["Y"]])
-    data   <- data.frame(treeID = 1:nrow(maxima), Z = maxima[["Z"]])
-    output <- sp::SpatialPointsDataFrame(coords, data, proj4string = las@proj4string)
+
+    if (nrow(maxima) == 0) {
+      coords <- matrix(0, ncol = 2)
+      data   <- data.frame(treeID = integer(1), Z = numeric(1))
+      output <- sp::SpatialPointsDataFrame(coords, data, proj4string = las@proj4string)
+      output <- output[0,]
+    } else {
+      coords <- cbind(maxima[["X"]], maxima[["Y"]])
+      data   <- data.frame(treeID = 1:nrow(maxima), Z = maxima[["Z"]])
+      output <- sp::SpatialPointsDataFrame(coords, data, proj4string = las@proj4string)
+    }
+
     output@bbox <- sp::bbox(las)
     return(output)
   }
@@ -85,7 +94,8 @@ tree_detection.RasterLayer = function(las, algorithm)
 {
   data <- raster::as.data.frame(las, xy = TRUE, na.rm = TRUE)
   names(data) <- c("X", "Y", "Z")
-  las <- LAS(data, proj4string = las@crs, check = FALSE)
+  header <- rlas::header_create(data)
+  las <- LAS(data, header, proj4string = las@crs, check = FALSE)
   return(tree_detection(las, algorithm))
 }
 
@@ -104,9 +114,8 @@ tree_detection.LAScluster = function(las, algorithm)
 tree_detection.LAScatalog = function(las, algorithm)
 {
   opt_select(las) <- "xyz"
-  options <- list(need_buffer = TRUE)
+  options <- list(need_buffer = TRUE, automerge = TRUE)
   output  <- catalog_apply(las, tree_detection, algorithm = algorithm, .options = options)
-  output  <- catalog_merge_results(las, output, "spatial")
   return(output)
 }
 

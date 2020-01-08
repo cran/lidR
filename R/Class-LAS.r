@@ -31,7 +31,7 @@
 #' \href{http://www.asprs.org/a/society/committees/standards/LAS_1_4_r13.pdf}{LAS file format specifications}.
 #'
 #' A \code{LAS} object inherits a \link[sp:Spatial-class]{Spatial} object from \code{sp}. Thus it is
-#' a \code{Spatial} object plus a \code{data.table} with the data read from  a \code{las/laz} file and
+#' a \code{Spatial} object plus a \code{data.table} with the data read from a \code{las/laz} file and
 #' a \link[lidR:LASheader-class]{LASheader} (see the ASPRS documentation for the
 #' \href{http://www.asprs.org/a/society/committees/standards/LAS_1_4_r13.pdf}{LAS file format}
 #' for more information). Because las files are standardized the table of attributes read from the las/laz file
@@ -70,9 +70,21 @@
 #' @include Class-LASheader.r
 #' @export
 #' @examples
+#' # Read a las/laz file
 #' LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
-#' las = readLAS(LASfile)
+#' las <- readLAS(LASfile)
+#' las
 #'
+#' # Creation of a LAS object out of external data
+#' data <- data.frame(X = runif(100, 0, 100),
+#'                    Y = runif(100, 0, 100),
+#'                    Z = runif(100, 0, 20))
+#' data
+#'
+#' las <- LAS(data) # /!\ data is updated by reference
+#'
+#' data
+#' las
 #' @seealso
 #' \link{readLAS}
 setClass(

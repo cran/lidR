@@ -43,7 +43,7 @@
 #'
 #' @template param-las
 #' @param func formula. An expression to be applied to each tree. It works like in \link{grid_metrics}
-#' \link{grid_metrics3d} or \link{tree_hulls} and computes, in addition to tree locations a set of metrics
+#' \link{voxel_metrics} or \link{tree_hulls} and computes, in addition to tree locations a set of metrics
 #' for each tree.
 #' @param attribute character. The column name of the attribute containing tree IDs. Default is \code{"treeID"}
 #'
@@ -84,6 +84,7 @@
 #' # predefined metrics (see ?stdmetrics)
 #' metrics = tree_metrics(las, .stdtreemetrics)
 #' @export
+#' @family metrics
 tree_metrics = function(las, func = ~max(Z), attribute = "treeID")
 {
   UseMethod("tree_metrics", las)
@@ -129,8 +130,7 @@ tree_metrics.LAScatalog = function(las, func = ~max(Z), attribute = "treeID")
   if (!is_formula) func <- lazyeval::f_capture(func)
 
   globals <- future::getGlobalsAndPackages(func)
-  options <- list(need_buffer = FALSE, drop_null = TRUE, globals = names(globals$globals))
+  options <- list(need_buffer = FALSE, drop_null = TRUE, globals = names(globals$globals), automerge = TRUE)
   output  <- catalog_apply(las, tree_metrics, func = substitute(func), attribute = attribute, .options = options)
-  output  <- catalog_merge_results(las, output, "spatial")
   return(output)
 }

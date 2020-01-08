@@ -43,10 +43,10 @@
 #' LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
 #' lidar = readLAS(LASfile)
 #'
-#' voxels = grid_metrics3d(lidar, list(Imean = mean(Intensity)))
+#' voxels = voxel_metrics(lidar, list(Imean = mean(Intensity)))
 #' plot(voxels, color = "Imean", colorPalette = heat.colors(50), trim=0.99)
 #' @seealso
-#' \link[lidR:grid_metrics3d]{grid_metrics3d}
+#' \link[lidR:voxel_metrics]{voxel_metrics}
 #' \link[rgl:points3d]{points3d}
 #' \link[lidR:height.colors]{height.colors}
 #' \link[lidR:forest.colors]{forest.colors}
@@ -54,25 +54,30 @@
 #' \link[grDevices:colorRamp]{colorRampPalette}
 #' @export
 #' @method plot lasmetrics3d
-plot.lasmetrics3d = function(x, y, color = "Z", colorPalette = height.colors(50), bg = "black", trim = 1, ...)
+plot.lasmetrics3d = function(x, y, color = "Z", colorPalette = height.colors(50), bg = "black", trim = Inf, ...)
 {
   inargs <- list(...)
-
-  inargs$col = color
+  inargs$col <- color
 
   if (length(color) == 1)
   {
     if (color %in% names(x))
     {
-      data = unlist(x[,color, with = FALSE])
+      data <- x[[color]]
 
-      if (is.numeric(data))
+      if (is.numeric(data) | is.logical(data))
       {
-        inargs$col = set.colors(data, colorPalette, trim)
-        inargs$col[is.na(inargs$col)] = "lightgray"
+        inargs$col <- set.colors(data, colorPalette, trim)
+        inargs$col[is.na(inargs$col)] <- "lightgray"
       }
       else if (is.character(data))
-        inargs$col = data
+      {
+        inargs$col <- data
+      }
+      else
+      {
+        stop("Internal error: type not supported to color the voxels", call. = FALSE)
+      }
     }
   }
 
@@ -96,7 +101,8 @@ plot.lasmetrics3d = function(x, y, color = "Z", colorPalette = height.colors(50)
 #' \link[rgl:spheres3d]{spheres3d}.
 #' @param x The output of the function plot used with a LAS object.
 #' @param ttops A SpatialPointsDataFrame that contains tree tops coordinates.
-#' @param z character. The name of the attribute that contains the height of the tree tops.
+#' @param flightlines A SpatialPointsDataFrame that contains flightlines coordinates.
+#' @param z character. The name of the attribute that contains the height of the tree tops or of the flightlines.
 #' @param clear_artifacts logical. It is a known and documented issue that 3D visualisation with
 #' \code{rgl} displays artifacts. The points and lines are inaccurately positioned in the space and thus
 #' the rendering may look false or weird. This is because \code{rgl} computes with single precision \code{float}.
@@ -196,4 +202,12 @@ add_treetops3d = function(x, ttops, z = "Z", ...)
   do.call(rgl::spheres3d, args)
   return(invisible(x))
 }
+
+#' @rdname plot_3d
+#' @export
+add_flightlines3d = function(x, flightlines, z = "Z", ...)
+{
+  return(add_treetops3d(x,flightlines, z = "Z", ...))
+}
+
 

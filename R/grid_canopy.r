@@ -133,9 +133,11 @@ grid_canopy.LAScatalog = function(las, res, algorithm)
     alignment <- list(res = r, start = start)
   }
 
+  if (opt_chunk_size(las) > 0 && opt_chunk_size(las) < 2*alignment$res)
+    stop("The chunk size is too small. Process aborted.", call. = FALSE)
+
   # Processing
-  options <- list(need_buffer = TRUE, drop_null = TRUE, raster_alignment = alignment)
+  options <- list(need_buffer = TRUE, drop_null = TRUE, raster_alignment = alignment, automerge = TRUE)
   output  <- catalog_apply(las, grid_canopy, res = res, algorithm = algorithm, .options = options)
-  output  <- catalog_merge_results(las, output, "raster", "grid_canopy")
   return(output)
 }

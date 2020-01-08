@@ -117,9 +117,8 @@ test_that("lasclip clips polygon works from sp polygons both on a LAS and LAScat
   expect_equal(poly1, poly2)
 })
 
-test_that("lasclip clips disc from sp points both on a LAS and LAScatalog", {
+test_that("lasclip clips point with SpatialPoints on LAS and LAScatalog", {
 
-  # Multiple disc
   xc <- c(684800, 684850)
   yc <- c(5017850, 5017900)
   r  <- 10
@@ -128,10 +127,37 @@ test_that("lasclip clips disc from sp points both on a LAS and LAScatalog", {
 
   discs1 <- lasclip(las, p, radius = 5)
   discs2 <- lasclip(ctg, p, radius = 5)
+  discs3 <- lasclip(ctg, p, radius = c(5,10))
 
   expect_is(discs1, "list")
   expect_equal(discs1, discs2)
 })
+
+test_that("lasclip throw error with points and no radius", {
+
+  xc <- c(684800, 684850)
+  yc <- c(5017850, 5017900)
+  r  <- 10
+
+  p = sp::SpatialPoints(cbind(xc, yc))
+
+  expect_error(lasclip(las, p), "requires addition of parameter 'radius'")
+})
+
+test_that("lasclip throw error with lines", {
+
+  l1 = cbind(c(1,2,3),c(3,2,2))
+  l2 = cbind(c(1,2,3),c(1,1.5,1))
+  Sl1 = Line(l1)
+  Sl2 = Line(l2)
+  S1 = Lines(list(Sl1), ID="a")
+  S2 = Lines(list(Sl2), ID="b")
+  Sl = SpatialLines(list(S1,S2))
+
+  expect_error(lasclip(las, S2), "Geometry type Lines not supported")
+  expect_error(lasclip(las, Sl), "Geometry type SpatialLines not supported")
+})
+
 
 test_that("lasclip clips a rectangle from a bounding box both on a LAS and LAScatalog", {
 
@@ -315,5 +341,16 @@ test_that("clip writes file following LAScatalog options", {
   expect_equal(normalizePath(ctg3@data$filename), normalizePath(paste0(tmp, "/file_Havelock Lake.las")))
 
   file.remove(paste0(tmp, "/file_Havelock Lake.las"))
+
+  xc <- c(684800, 684900)
+  yc <- c(5017850, 5017900)
+  X = cbind(xc, yc)
+  D = data.frame(PlotID = paste0("plot", 1:2))
+  P = sp::SpatialPointsDataFrame(X, D)
+
+  opt_output_files(ctg2) <- paste0(tmp, "/{PlotID}")
+  ctg3 = lasclip(ctg2, P, radius = 10)
+
+  expect_equal(normalizePath(ctg3@data$filename), normalizePath(paste0(tmp, "/plot", 1:2, ".las")))
 })
 

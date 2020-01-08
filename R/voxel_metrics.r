@@ -50,11 +50,11 @@
 #'
 #' # Cloud of points is voxelized with a 3-meter resolution and in each voxel
 #' # the number of points is computed.
-#' grid_metrics3d(las, ~length(Z), 3)
+#' voxel_metrics(las, ~length(Z), 3)
 #'
 #' # Cloud of points is voxelized with a 3-meter resolution and in each voxel
 #' # the mean scan angle of points is computed.
-#' grid_metrics3d(las, ~mean(Intensity), 3)
+#' voxel_metrics(las, ~mean(Intensity), 3)
 #'
 #' \dontrun{
 #' # Define your own metric function
@@ -68,12 +68,13 @@
 #'    return(ret)
 #' }
 #'
-#' voxels = grid_metrics3d(las, ~myMetrics(Intensity), 3)
+#' voxels = voxel_metrics(las, ~myMetrics(Intensity), 3)
 #'
-#' plot(voxels, color = "imean")
+#' plot(voxels, color = "imean", trim = 100)
 #' #etc.
 #' }
-grid_metrics3d = function(las, func, res = 1)
+#' @family metrics
+voxel_metrics = function(las, func, res = 1)
 {
   stopifnotlas(las)
   assert_all_are_non_negative(res)

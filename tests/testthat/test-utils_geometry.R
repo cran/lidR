@@ -179,4 +179,3 @@ test_that("tinfo works", {
   expect_equal(I[6], 1/2)
 })
 
-

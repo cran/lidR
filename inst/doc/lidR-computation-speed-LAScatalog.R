@@ -1,4 +1,4 @@
-## ----setup, include = FALSE----------------------------------------------
+## ----setup, include = FALSE---------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -6,7 +6,7 @@ knitr::opts_chunk$set(
 
 library(lidR)
 
-## ---- echo = FALSE-------------------------------------------------------
+## ---- echo = FALSE------------------------------------------------------------
 data = data.table::data.table(
   Max.X   = c(885228.88, 886993.96, 885260.93, 887025.96,
               885292.94, 887056.88, 892199.94, 893265.54, 892229.99, 893295.15,
@@ -89,20 +89,20 @@ ctg@plotOrder <- Sr@plotOrder
 ctg@data <- data
 ctg@polygons <- Sr@polygons
 
-## ---- echo = FALSE, fig.width=3.5, fig.height=3.5------------------------
+## ---- echo = FALSE, fig.width=3.5, fig.height=3.5-----------------------------
 bbox = as.numeric(ctg@data[42,1:4])
 
 plot(ctg)
 graphics::rect(bbox[1], bbox[3], bbox[2], bbox[4], border = "black", col = "blue")
 
-## ---- echo = FALSE, fig.width=3.5, fig.height=3.5------------------------
+## ---- echo = FALSE, fig.width=3.5, fig.height=3.5-----------------------------
 bbox = as.numeric(ctg@data[42,1:4])
 
 plot(ctg)
 graphics::rect(bbox[1]+200, bbox[3]+200, bbox[2]-200, bbox[4]-200, border = "black", col = "red")
 graphics::rect(bbox[2], bbox[4], bbox[1], bbox[3], border = "black", col = "blue")
 
-## ---- echo = FALSE, fig.width=3.5, fig.height=3.5------------------------
+## ---- echo = FALSE, fig.width=3.5, fig.height=3.5-----------------------------
 neighbourg = ctg@data[c(19,20,23, 41, 43, 44, 45, 47),1:4]
 
 plot(ctg)
@@ -113,7 +113,7 @@ for (i in 1:nrow(neighbourg))
   graphics::rect(bbox[2], bbox[4], bbox[1], bbox[3], border = "black", col = "red")
 }
 
-## ---- echo = FALSE, fig.width=3.5, fig.height=3.4------------------------
+## ---- echo = FALSE, fig.width=3.5, fig.height=3.4-----------------------------
 LASfile <- system.file("extdata", "Megaplot.laz", package = "lidR")
 las = readLAS(LASfile)
 f = tempfile(fileext = ".las")
@@ -134,7 +134,7 @@ op <- graphics::par(mar = c(4,4,1,1) + 0.1)
 barplot(X$t/min(X$t), names.arg = X$format, col = "darkred", xlab = "File format", ylab = "Relative read time", asp = 1)
 graphics::par(op)
 
-## ---- echo = FALSE, fig.width=3.5, fig.height=3.5------------------------
+## ---- echo = FALSE, fig.width=3.5, fig.height=3.5-----------------------------
 neighbourg = ctg@data[c(19,20,23, 41, 43, 44, 45, 47),1:4]
 
 J = list(c(1200,1000,0,0),
@@ -155,19 +155,46 @@ for (i in 1:nrow(neighbourg))
   graphics::rect(bbox[2] + j[1], bbox[4] + j[2], bbox[1] + j[3], bbox[3] + j[4], border = "black", col = "red")
 }
 
-## ---- echo = FALSE-------------------------------------------------------
+## ---- echo = FALSE, fig.width=3.4, fig.height=3.4-----------------------------
+# LASfile <- system.file("extdata", "Megaplot.laz", package = "lidR")
+# las = readLAS(LASfile)
+# f = tempfile(fileext = ".las")
+# writeLAS(las, f)
+# t1 <- t2 <- t3 <- t4 <- 0
+# for(i in 1:3)
+# {
+#   tt1 = system.time(readLAS(f))
+#   tt2 = system.time(readLAS(f, "xyz"))
+#   tt3 = system.time(readLAS(LASfile))
+#   tt4 = system.time(readLAS(LASfile, "xyz"))
+#   
+#   t1 = t1 + tt1[3]
+#   t2 = t2 + tt2[3]
+#   t3 = t3 + tt3[3]
+#   t4 = t4 + tt4[3]
+# }
+
+t = c(0.087, 0.046, 0.182, 0.156)
+format = c("las\n*", "las\nxyz", "laz\n*", "laz\nxyz")
+X = data.frame(t, format)
+
+op <- graphics::par(mar = c(4,4,1,1) + 0.1)
+barplot(X$t/min(X$t), names.arg = X$format, col = "darkred", xlab = "Format and attribute selection", ylab = "Relative read time", asp = 1)
+graphics::par(op)
+
+## ---- echo = FALSE------------------------------------------------------------
 Format = c("laz", "laz + lax", "las", "las + lax")
 Runtime = c("40 sec", "20 sec", "10 sec", "7 sec")
 Timing = data.frame(Format, Runtime)
 knitr::kable(Timing)
 
-## ---- echo = FALSE-------------------------------------------------------
+## ---- echo = FALSE------------------------------------------------------------
 Format = c("laz", "las", "las + lax")
 Runtime = c("45 min", "15 min", "8 min")
 Timing = data.frame(Format, Runtime)
 knitr::kable(Timing)
 
-## ---- echo = FALSE-------------------------------------------------------
+## ---- echo = FALSE------------------------------------------------------------
 Format = c("las", "las + lax")
 Runtime = c("45 sec", "4 sec")
 Timing = data.frame(Format, Runtime)

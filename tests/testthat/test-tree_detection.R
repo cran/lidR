@@ -14,7 +14,7 @@ test_that("tree_detection LMF works with a LAS", {
   ttops = tree_detection(las, lmf(5))
 
   expect_is(ttops, "SpatialPointsDataFrame")
-  expect_equal(dim(ttops@data), c(175,2))
+  expect_equal(dim(ttops@data), c(177,2))
   expect_equal(ttops@proj4string, las@proj4string)
 
   f = function(x) { x * 0.07 + 3}
@@ -32,7 +32,7 @@ test_that("tree_detection LMF works with a RasterLayer", {
   ttops = tree_detection(chm, lmf(5))
 
   expect_is(ttops, "SpatialPointsDataFrame")
-  expect_equal(dim(ttops@data), c(158,2))
+  expect_equal(dim(ttops@data), c(160,2))
   expect_equal(ttops@proj4string, chm@crs)
 
   # variable windows size
@@ -40,7 +40,7 @@ test_that("tree_detection LMF works with a RasterLayer", {
   ttops = tree_detection(chm, lmf(f))
 
   expect_is(ttops, "SpatialPointsDataFrame")
-  expect_equal(dim(ttops@data), c(185,2))
+  expect_equal(dim(ttops@data), c(186,2))
   expect_equal(ttops@proj4string, chm@crs)
 })
 
@@ -49,6 +49,27 @@ test_that("tree_detection LMF works with a LAScatalog", {
   ttops = tree_detection(ctg, lmf(5))
 
   expect_is(ttops, "SpatialPointsDataFrame")
-  expect_equal(dim(ttops@data), c(175,2))
+  expect_equal(dim(ttops@data), c(177,2))
   expect_equal(ttops@proj4string, ctg@proj4string)
 })
+
+test_that("Special test for R-devel with gcc8", {
+
+  layout <- lidR:::rOverlay(las, 1, buffer = 0.15)
+  lidR.context <- "grid_canopy"
+
+  i  = c(38, 228,545)
+  expected = c(NA, 17, 14.87)
+  z <- p2r(0.15)(las, layout)
+
+  expect_equal(z[i], expected)
+})
+
+#test_that("tree_detection LMFauto works with a LAS", {
+#
+#  ttops = tree_detection(las, lidR:::lmfauto())
+#
+#  expect_is(ttops, "SpatialPointsDataFrame")
+#  expect_equal(dim(ttops@data), c(231,2))
+#  expect_equal(ttops@proj4string, ctg@proj4string)
+#})

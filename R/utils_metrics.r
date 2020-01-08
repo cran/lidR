@@ -30,11 +30,11 @@
 #' Predefined standard metrics functions
 #'
 #' Predefined functions computable at pixel level (\link{grid_metrics}), hexagonal cell level
-#' (\link{grid_hexametrics}), point cloud level (\link{lasmetrics}), tree level (\link{tree_metrics})
-#' and voxel level (\link{grid_metrics3d}). Each function comes with a convenient shortcuts for lazy
-#' coding. The \code{lidR} package aims to provide an easy way to compute user-defined metrics rather
-#' than to provide them. However, for efficiency and to save time, a set of standard metrics has been
-#' predefined (see details.
+#' (\link{hexbin_metrics}), point cloud level (\link{cloud_metrics}), tree level (\link{tree_metrics})
+#' voxel level (\link{voxel_metrics}) and point level  (\link{point_metrics}). Each function comes
+#' with a convenient shortcuts for lazy coding. The \code{lidR} package aims to provide an easy way
+#' to compute user-defined metrics rather than to provide them. However, for efficiency and to save
+#' time, a set of standard metrics has been predefined (see details).
 #'
 #' The function names, their parameters and the output names of the metrics rely on a nomenclature chosen for brevity:
 #' \itemize{
@@ -99,9 +99,9 @@
 #' over2 = lasfilter(las, Z > 2)
 #' m7 = grid_metrics(over2, .stdmetrics_z)
 #'
-#' # Works also with lasmetrics and grid_hexametrics
-#' m8 = lasmetrics(las, .stdmetrics)
-#' m9 = grid_hexametrics(las, .stdmetrics)
+#' # Works also with cloud_metrics and hexbin_metrics
+#' m8 = cloud_metrics(las, .stdmetrics)
+#' m9 = hexbin_metrics(las, .stdmetrics)
 #'
 #' # Combine some predefined function with your own new metrics
 #' # Here convenient shortcuts are no longer usable.
@@ -133,11 +133,12 @@
 #'
 #' m11 = grid_metrics(las, .myMetrics)
 #' @seealso
+#' \link{cloud_metrics}
 #' \link{grid_metrics}
-#' \link{lasmetrics}
 #' \link{grid_hexametrics}
 #' \link{grid_metrics3d}
 #' \link{tree_metrics}
+#' \link{point_metrics}
 #' @rdname stdmetrics
 #' @export
 stdmetrics = function(x, y, z, i, rn, class, dz = 1, th = 2)

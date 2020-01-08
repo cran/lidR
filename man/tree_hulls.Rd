@@ -4,8 +4,14 @@
 \alias{tree_hulls}
 \title{Compute the hull of each tree.}
 \usage{
-tree_hulls(las, type = c("convex", "concave", "bbox"), concavity = 3,
-  length_threshold = 0, func = NULL, attribute = "treeID")
+tree_hulls(
+  las,
+  type = c("convex", "concave", "bbox"),
+  concavity = 3,
+  length_threshold = 0,
+  func = NULL,
+  attribute = "treeID"
+)
 }
 \arguments{
 \item{las}{An object of class \link[lidR:LAS-class]{LAS} or \link[lidR:LAScatalog-class]{LAScatalog}.}
@@ -19,7 +25,7 @@ in a relatively detailed shape, Infinity results in a convex hull.}
 threshold, no further detail is added. Higher values result in simpler shapes.}
 
 \item{func}{formula. An expression to be applied to each tree. It works like in \link{grid_metrics}
-\link{grid_metrics3d} or \link{tree_metrics} and computes, in addition to the hulls a set of metrics
+\link{voxel_metrics} or \link{tree_metrics} and computes, in addition to the hulls a set of metrics
 for each tree.}
 
 \item{attribute}{character. The attribute where the ID of each tree is stored. In lidR, the default is
@@ -62,7 +68,7 @@ Supported processing options for a \code{LAScatalog} (in bold). For more details
 always removed once processed and will never be returned either in R or in files.
 \item \strong{chunk alignment}: Align the processed chunks.
 \item \strong{progress}: Displays a progression estimation.
-\item \strong{output_files}: Supported templates are \code{\{XLEFT\}}, \code{\{XRIGHT\}},
+\item \strong{output files}: Supported templates are \code{\{XLEFT\}}, \code{\{XRIGHT\}},
 \code{\{YBOTTOM\}}, \code{\{YTOP\}}, \code{\{XCENTER\}}, \code{\{YCENTER\}} \code{\{ID\}} and,
 if chunk size is equal to 0 (processing by file), \code{\{ORIGINALFILENAME\}}.
 \item \strong{select}: Load only attributes of interest.

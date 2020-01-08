@@ -18,6 +18,13 @@ LASBUILDING           <- 6L
 LASLOWPOINT           <- 7L
 LASKEYPOINT           <- 8L
 LASWATER              <- 9L
+LASRAIL               <- 10L
+LASROADSURFACE        <- 11L
+LASWIREGUARD          <- 13L
+LASWIRECONDUCTOR      <- 14L
+LASTRANSMISSIONTOWER  <- 15L
+LASBRIGDE             <- 17L
+LASNOISE              <- 18L
 
 CHUNK_WAINTING        <- 0L
 CHUNK_OK              <- 1L
@@ -26,7 +33,7 @@ CHUNK_ERROR           <- 3L
 CHUNK_WARNING         <- 4L
 CHUNK_PROCESSING      <- 5L
 
-LASFIELDS             <- c("X", "Y", "Z", "Intensity",
+LASATTRIBUTES         <- c("X", "Y", "Z", "Intensity",
                            "ReturnNumber", "NumberOfReturns",
                            "ScanDirectionFlag", "EdgeOfFlightline",
                            "Classification",
@@ -36,6 +43,16 @@ LASFIELDS             <- c("X", "Y", "Z", "Intensity",
                            "ScannerChannel", "NIR",
                            "UserData", "gpstime", "PointSourceID",
                            "R", "G", "B")
+
+LASCATALOGATTRIBUTES <- c("File.Signature", "File.Source.ID", "GUID", "Version.Major",
+                          "Version.Minor", "System.Identifier", "Generating.Software",
+                          "File.Creation.Day.of.Year", "File.Creation.Year", "Header.Size",
+                          "Offset.to.point.data", "Number.of.variable.length.records",
+                          "Point.Data.Format.ID", "Point.Data.Record.Length", "Number.of.point.records",
+                          "X.scale.factor", "Y.scale.factor", "Z.scale.factor", "X.offset",
+                          "Y.offset", "Z.offset", "Max.X", "Min.X", "Max.Y", "Min.Y", "Max.Z",
+                          "Min.Z", "EPSG", "Number.of.1st.return", "Number.of.2nd.return",
+                          "Number.of.3rd.return", "Number.of.4th.return", "Number.of.5th.return")
 
 LIDRCONTEXTDSM <- "grid_canopy"
 LIDRCONTEXTSPI <- c("lasnormalize", "grid_terrain", "spatial_interpolation")

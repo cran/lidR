@@ -54,8 +54,9 @@ cluster_apply = function(.CLUSTER, .FUN, .PROCESSOPT, .OUTPUTOPT, .GLOBALS = NUL
 
   if (!manual && workers * threads > cores)
   {
-    verbose(glue::glue("Cannot nest {workers} future threads and {threads} OpenMP threads. Precedence given to future: OpenMP threads set to 1."))
-    threads <- 1L
+    # nocov because tested with a single core on CRAN
+    verbose(glue::glue("Cannot nest {workers} future threads and {threads} OpenMP threads. Precedence given to future: OpenMP threads set to 1.")) # nocov
+    threads <- 1L # nocov
   }
 
   verbose(glue::glue("Start processing {nclusters} chunks..."))
@@ -95,7 +96,7 @@ cluster_apply = function(.CLUSTER, .FUN, .PROCESSOPT, .OUTPUTOPT, .GLOBALS = NUL
       messages[j] <- state[["msg"]]
 
       # The state is unchanged: the chunk is still processing
-      if (states[j] == CHUNK_PROCESSING) next
+      if (states[j] == CHUNK_PROCESSING) next # nocov
 
       # The state changed: the chunk was processed. Update the progress
       percentage <-  engine_compute_progress(states)
@@ -120,6 +121,11 @@ cluster_apply = function(.CLUSTER, .FUN, .PROCESSOPT, .OUTPUTOPT, .GLOBALS = NUL
         }
       }
 
+      if (states[j] == CHUNK_ERROR & !abort) {
+        output[[j]] <- NULL
+        next
+      }
+
       # The state is NULL: do nothing
       if (states[j] == CHUNK_NULL) next
 
@@ -132,7 +138,9 @@ cluster_apply = function(.CLUSTER, .FUN, .PROCESSOPT, .OUTPUTOPT, .GLOBALS = NUL
 
   # Because of asynchronous computation, the loop may be ended
   # but not the computations. Wait until the end & check states.
+  # no cov because tested with a single core on CRAN
 
+  # nocov start
   while (any(states == CHUNK_PROCESSING))
   {
     i <- which(states == CHUNK_PROCESSING)
@@ -174,6 +182,8 @@ cluster_apply = function(.CLUSTER, .FUN, .PROCESSOPT, .OUTPUTOPT, .GLOBALS = NUL
 
   return(output)
 }
+# nocov end
+
 engine_eval_state <- function(future)
 {
   cluster_state <- list(state = CHUNK_PROCESSING, msg = "")
@@ -215,6 +225,7 @@ engine_progress_bar <- function(n, prgss = FALSE)
   if (!prgss)
     return(pb)
 
+  # nocov start
   if (!interactive())
     return(n)
 
@@ -225,7 +236,7 @@ engine_progress_bar <- function(n, prgss = FALSE)
 
   graphics::legend("topright", title = "Colors", legend = c("Processing", "Empty","Ok","Warning", "Error"), fill = c("cornflowerblue", "gray","green3", "orange", "red"), cex = 0.8)
 
-  return(pb)
+  return(pb) # nocov end
 }
 
 engine_update_progress <- function(pb, cluster, state, p, j)
@@ -233,6 +244,7 @@ engine_update_progress <- function(pb, cluster, state, p, j)
   if (is.null(pb))
     return(invisible(NULL))
 
+  # nocov start
   if (state == CHUNK_OK) { col <- "green3" ; sym <- "\u2713" }
   else if (state == CHUNK_NULL) { col <- "gray" ; sym <- "\u2205" }
   else if (state == CHUNK_WARNING) { col <- "orange" ; sym <- "\u26A0" }
@@ -258,7 +270,7 @@ engine_update_progress <- function(pb, cluster, state, p, j)
   else
     pb$update(p)
 
-  return(invisible())
+  return(invisible()) # nocov end
 }
 
 engine_save_logs <- function(cluster, index)

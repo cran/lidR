@@ -1,4 +1,156 @@
-## lidR v2.1.4 (Release date: )
+## lidR v2.2.0 (Release date: 2020-01-06)
+
+#### NEW FEATURES
+
+1. LAScatalog processing engine:
+    *  `catalog_apply()` gains an option `automerge = TRUE`. `catalog_apply()` used to return a `list` that had to be merged by the user. This new option allows for automatic merging. This is a fail-safe feature. In the worst case, if the user-defined function returns a non-supported list of objects that cannot be merged it falls back to the former behavior i.e. it returns a `list`. Thus there is no risk associated with adding the option `automerge = TRUE` but by defaut it is set to `FALSE` for retrocompatibility. This might be switched to `TRUE` in future releases.
+    
+    * `opt_output_file()` now interprets `*` as `{ORIGINALFILENAME}` for shorter syntax. The following is now accepted: 
+    
+    ```R
+    opt_output_file(ctg) <- "/home/user/data/norm/*_norm"  # {*} is valid as well
+    # instead of
+    opt_output_file(ctg) <- "/home/user/data/norm/{ORIGINALFILENAME}_norm"
+    ```
+    * The engine now supports "alternative directories". This is a very specific and undocumented feature useful in a single case of remote computing. More details on the [wiki page](https://github.com/Jean-Romain/lidR/wiki/Make-cheap-High-Performance-Computing-to-process-large-datasets).
+    
+    ```r
+    ctg = readLAScatalog("~/folder/LASfiles/")
+    ctg@input_options$alt_dir = c("/home/Alice/data/", "/home/Bob/remote/project1/data/")
+    ```
+    * LAScatalog modification constraints are now relaxed. It is now possible to add or modify an attribute if this attribute has a name that is not reserved.
+    
+    ```r
+    ctg$newattr <- 1 # is now allowed
+    ctg$GUID <- TRUE # is still forbidden
+    #> Erreur : LAScatalog data read from standard files cannot be modified 
+    ```
+    * The engine supports partial processing. It is possible to flag some files that will, or will not, be processed. These files are not removed from the LAScatalog. They are used to load a buffer, if required, for the files that are actually processed. To activate this option a new boolean attribute named `processed` can be added in the catalog. 
+    
+    ```r
+    ctg$processed <- TRUE
+    ctg$processed[3:5] <- FALSE
+    ```
+    
+2. 3D rendering:
+    * The argument `colorPalette` of the function `plot()` for `LAS` objects is now set to `"auto"` by default. This allows for this argument to not be specified even when plotting an attribute other than Z, and having an appropriate color palette by default. More interestingly, it will automatically apply a nice color scheme to the point cloud with the attribute 'Classification' following the ASPRS specifications. See [#275](https://github.com/Jean-Romain/lidR/issues/275).
+    
+    ```R
+    plot(las)
+    plot(las, color = "Intensity")
+    plot(las, color = "ReturnNumber")
+    plot(las, color = "Classification")
+    ```
+    * In `plot.lasmetrics3d()` the parameter `trim` is now set to `Inf` by default.
+    
+3. New function `point_metrics()` - very similar to `grid_metrics()` but at the point level. The 'metrics' family is now complete. `cloud_metrics()` computes user-defined metrics at the point cloud level. `grid_metrics()` and `hexbin_metrics()` compute user-defined metrics at the pixel level. `voxel_metrics` computes user-defined metrics at the voxel level. `point_metrics()` computes user-defined metrics at the point level.
+
+4. `lasnormalize()`:
+    * Gains an argument `use_class` to control the points used as ground.
+    * By default 'ground point' now includes points classified as water by default. This might be useful in regions with a lot of water because in this case `lasnormalize()` can take forever to run (see [#295](https://github.com/Jean-Romain/lidR/issues/295))).
+
+5. New function `sensor_tracking()` to retrieve the position of the sensor in the sky.
+
+6. New function `lasrangecorrection()` to normalize intensity using the sensor position (range correction)
+
+7. `catalog_select` now also allows files to process to be flagged interactively:
+
+    ```r
+    ctg <- catalog_select(ctg, method = "flag_processed")
+    ctg <- catalog_select(ctg, method = "flag_unprocessed")
+    ```
+    
+8. `grid_terrain()`
+    * Have a new argument `use_class` to control which points are considered as ground points
+    * With a `LAScatalog` it now uses the filter `-keep_class` by default respecting the classes given in `use_class`.
+
+#### CHANGES
+
+1. `LAS()` now rounds the values to 2 digits if no header is provided to fit with the default header automatically generated. This ensures that a perfectly valid  `LAS` object is built out of external data. This change is made by reference, meaning that the original dataset is also rounded.
+
+    ```r
+    pts <- data.frame(X = runif(10), Y = runif(10), Z = runif(10))
+    las <- LAS(pts) # 'las' contains rounded values but 'pts' as well to avoid data copying
+    ```
+
+2. `lasmetrics()` is deprecated. All `las*` functions return `LAS` objects except `lasmetrics()`. For consistency across the package `lasmetrics()` becomes `cloud_metrics()`.
+
+3. `grid_metrics3d()` and `grid_hexametrics()` are deprecated. They are renamed `voxel_metrics()` and `hexbin_metrics()` for naming consistency.
+
+4. The example dataset `Topography.laz` is now larger and include attributes gpstime, PointSourceID and some classified lakes.
+    
+#### ENHANCEMENTS
+
+1. Internally the package used a QuadTree as spatial index in versions <= 2.1.3. Spatial index has been rewritten and changed for a grid partition which is twice as fast as the former QuadTree. This change provides a significant boost (i.e. up to two times faster) to many algorithms of the package that rely on a spatial index. This includes `lmf()`, `shp_*()`, `wing2015()`, `pmf()`, `lassmooth()`, `tin()`, `pitfree()`. Benchmark on a Intel Core i7-5600U CPU @ 2.60GHz × 2.
+
+    ```r
+    # 1 x 1 km, 13 pts/m², 13.1 million points
+    set_lidr_threads(n)
+    tree_detection(las, lmf(3))
+    #> v2.1: 1 core: 80s - 4 cores: 38s
+    #> v2.2: 1 core: 38s - 4 cores: 20s
+   
+    # 500 x 500 m, 12 pt/m², 3.2 million points
+    lassnags(las, wing2015(neigh_radii = nr, BBPRthrsh_mat = bbpr_th))
+    #> v2.1: 1 core: 66s - 4 cores: 33s
+    #> v2.2: 1 core: 43s - 4 cores: 21s
+
+    # 250 x 250 m, 12 pt/m², 717.6 thousand points
+    lasdetectshape(las3, shp_plane())
+    #> v2.1 - 1 cores: 12s - 4 cores: 7s
+    #> v2.2 - 1 cores:  6s - 4 cores: 3s
+    ```
+    
+2. Internally the Delaunay triangulation has been rewritten with `boost` instead of relying on the `geometry` package. The Delaunay triangulation and the rasterization of the Delaunay triangulation are now written in C++ providing an important speed-up (up to three times faster) to `tin()`, `dsmtin()` and `pitfree()`. However, for this to work, the point cloud must be converted to integers. This implies that the scale factors and offset in the header must be properly populated, which might not be the case if users have modified these values manually or if using a point cloud coming from a format other than las/laz. Benchmark on an Intel Core i7-5600U CPU @ 2.60GHz × 2.
+
+    ```r
+    # 1.7 million ground points
+    set_lidr_threads(n)
+    grid_terrain(las, 0.5, tin())
+    #> v2.1: 1 core: 48s - 4 cores: 37s
+    #> v2.2: 1 core: 22s - 4 cores: 20s
+    
+    # 560 thousand first returns (1.6 pts/m²)
+    grid_canopy(las, res = 0.5, dsmtin())
+    #> v2.1: 1 core: 8s - 4 cores: 7s
+    #> v2.2: 1 core: 3s - 4 cores: 3s
+    
+    # 560 thousand first returns (1.6 pts/m²)
+    grid_canopy(las, res = 0.5, pitfree(c(0,2,5,10,15), c(0, 1.5)))
+    #> v2.1: 1 core: 30s - 4 cores: 28s
+    #> v2.2: 1 core: 11s - 4 cores: 9s
+    ```
+    
+3. There are more than 100 new unit tests in `testthat`. The coverage increased from 68 to 87%.
+
+4. The vignette named *Speed-up the computations on a LAScatalog* gains a section about the possible additional speed-up using the argument `select` from `readLAS()`.
+
+5. The vignette named *LAScatalog formal class* gains a section about partial processing.
+
+6. Harmonization and review of the sections 'Supported processing options' in the man pages.
+
+#### FIXES
+
+1. Several minor fixes in `lascheck()` for very improbable cases of `LAS` objects likely to have been modified manually.
+
+2. Fix colorization of boolean data when plotting an object of class `lasmetrics3d` (returned by `voxel_metrics()`) [#289](https://github.com/Jean-Romain/lidR/issues/289)
+
+3. The LAScatalog engine now calls `raster::writeRaster()` with `NAflag = -999999` because it seems that the default `-Inf` generates a lot of trouble on windows when building a virtual raster mosaic with `gdalUtils::gdalbuildvrt()`.
+
+4. `plot.LAS()` better handles the case when coloring with an attribute that has only two values: `NA` and one other value.
+
+5. `lasclip()` was not actually able to retrieve the attributes of the `Spatial*DataFrame` or `sf` equivalent when using `opt_output_file(ctg) <- "/dir/{PLOTID}"`.
+
+6. `lasmergespatial()` supports 'on disk' rasters [#285](https://github.com/Jean-Romain/lidR/issues/285) [#306](https://github.com/Jean-Romain/lidR/issues/306)
+
+7. `opt_stop_early()` was not actually working as expected. The processing was aborted without logs. It now prevent the catalog processing engine to stop
+even when an error occurs.
+
+8. In `tree_detection()` if no tree is found (e.g. in a lake) the function crashed. It now returns an empty `SpatialPointDataFrame`.
+
+9. The argument `keep_lowest` in `grid_terrain` returned dummy output full of NAs because NAs have the precedence on actual numbers.
+
+## lidR v2.1.4 (Release date: 2019-10-15)
 
 #### NEW FEATURES
 
@@ -257,7 +409,7 @@ local maxima and the search step is skipped (much faster)*. This is now true.
 - Fix: bug when merging rasters when some of then only have one cell
 - Fix: bug when printing a 0 point LAS object
 
-# lidR v2.0.0 (Release date: 2019-01-02)
+## lidR v2.0.0 (Release date: 2019-01-02)
 
 ### Why versions `> 2.0` are incompatible with versions `1.x.y`?
 

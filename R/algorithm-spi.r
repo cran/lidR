@@ -49,13 +49,16 @@
 #' plot_dtm3d(dtm)
 tin = function()
 {
-  f = function(what, where)
+  f = function(what, where, scales = c(0,0), offsets = c(0,0))
   {
     assert_is_valid_context(LIDRCONTEXTSPI, "tin")
-    z    <- interpolate_delaunay(what, where)
+    z    <- interpolate_delaunay(what, where, trim = 0, scales = scales, offsets = offsets)
     isna <- is.na(z)
     nnas <- sum(isna)
-    if (nnas > 0) z[isna] <- C_knnidw(where$X[!isna], where$Y[!isna], z[!isna], where$X[isna], where$Y[isna], 1, 1, getThread())
+    if (nnas > 0) {
+      verbose("Interpolating the points ouside the convex hull of the ground points using knnidw()")
+      z[isna] <- C_knnidw(where$X[!isna], where$Y[!isna], z[!isna], where$X[isna], where$Y[isna], 1, 1, getThread())
+    }
     return(z)
   }
 
@@ -89,7 +92,7 @@ tin = function()
 #' plot_dtm3d(dtm)
 knnidw = function(k = 10, p = 2)
 {
-  f = function(what, where)
+  f = function(what, where, scales = c(0,0), offsets = c(0,0))
   {
     assert_is_valid_context(LIDRCONTEXTSPI, "knnidw")
     return(interpolate_knnidw(what, where, k, p))
@@ -128,7 +131,7 @@ knnidw = function(k = 10, p = 2)
 #' plot_dtm3d(dtm)
 kriging = function(model = gstat::vgm(.59, "Sph", 874), k = 10L)
 {
-  f = function(what, where)
+  f = function(what, where, scales = c(0,0), offsets = c(0,0))
   {
     assert_is_valid_context(LIDRCONTEXTSPI, "kriging")
     return(interpolate_kriging(what, where, model, k))
@@ -146,7 +149,6 @@ interpolate_knnidw = function(points, coord, k, p)
 
 interpolate_kriging = function(points, coord, model, k)
 {
-  requireNamespace("gstat")
   X <- Y <- Z <- NULL
 
   if (!getOption("lidR.verbose"))
@@ -159,11 +161,49 @@ interpolate_kriging = function(points, coord, model, k)
   return(x$var1.pred)
 }
 
-interpolate_delaunay <- function(points, coord, trim = 0)
+interpolate_delaunay <- function(points, coord, trim = 0, scales = c(1,1), offsets = c(0,0), options = "QbB")
 {
-  P <- as.matrix(points)
-  X <- as.matrix(coord)
-  D <- tDelaunay(P, trim = trim)
-  Z <- tInterpolate(D, P, X, getThreads())
-  return(Z)
+  stopifnot(is.numeric(trim), length(trim) == 1L)
+  stopifnot(is.numeric(scales), length(scales) == 2L)
+  stopifnot(is.numeric(offsets), length(offsets) == 2L)
+  stopifnot(is.data.frame(coord))
+
+  boosted_triangulation <- TRUE
+
+  if (inherits(points, "LAS")) {
+    xscale  <- points@header@PHB[["X scale factor"]]
+    yscale  <- points@header@PHB[["Y scale factor"]]
+    xoffset <- points@header@PHB[["X offset"]]
+    yoffset <- points@header@PHB[["Y offset"]]
+    scales  <- c(xscale, yscale)
+    offsets <- c(xoffset, yoffset)
+    points  <- points@data
+  }
+
+  stopifnot(is.data.frame(points))
+
+  if (scales[1] != scales[2]) {
+    message("The Delaunay triangulation reverted to the old slow method because xy scale factors are different so the fast method cannot be applied.")
+    boosted_triangulation <- FALSE
+  }
+
+  X <- points$X[1]
+  Y <- points$Y[1]
+  x <- (X - offsets[1]) / scales[1]
+  y <- (Y - offsets[2]) / scales[2]
+
+  if (abs(x - round(x)) > 1e-5 | abs(y - round(y)) > 1e-5) {
+    message("The Delaunay triangulation reverted to the old slow method because xy coordinates were not convertible to integer values. xy scale factors and offsets are likely to be invalid")
+    boosted_triangulation <- FALSE
+  }
+
+  if (boosted_triangulation) {
+    return(C_interpolate_delaunay(points, coord, scales, offsets, trim, getThreads()))
+  }
+  else {
+    P <- as.matrix(points)
+    X <- as.matrix(coord)
+    D <- tDelaunay(P, trim = trim)
+    return(tInterpolate(D, P, X, getThreads()))
+  }
 }

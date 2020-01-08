@@ -101,7 +101,7 @@ ctg@polygons <- Sr@polygons
 ```
 
 
-A LAScatalog class is a representation in R of a file or a set of las files not loaded in memory. Indeed, a regular computer cannot load the entire point cloud in R if it covers a wide area. For very high density datasets it can even fail loading a single file (see also the "LAS formal class"" vignette). In lidR, we use a LAScatalog to process datasets that cannot fit in memory.
+A LAScatalog class is a representation in R of a file or a set of las files not loaded in memory. Indeed, a regular computer cannot load the entire point cloud in R if it covers a broad area. For very high density datasets it can even fail loading a single file (see also the "LAS formal class"" vignette). In lidR, we use a LAScatalog to process datasets that cannot fit in memory.
 
 ## Build a LAScatalog object reading a folder of las files
 
@@ -112,7 +112,7 @@ ctg <- readLAScatalog("path/to/las/files/big_file.las")
 ```
 
 ```{r}
-print(ctg)
+ctg
 ```
 
 ## Basic structure of a LAScatalog object
@@ -132,6 +132,12 @@ ctg$Min.Z <- 0
 ```
 
 Obviously it is always possible to modify an R object by bypassing such simple restrictions. In this case the user will break something internally and a correct output is not guaranteed.
+
+However it is possible to add and modify the attributes using a name that is nor reseved. The following is allowed:
+
+```{r}
+ctg$newattribute <- 0
+```
 
 ## Validation of LAScatalog object
 
@@ -201,6 +207,17 @@ plot(ctg, chunk = TRUE)
 
 opt_chunk_size(ctg) <- 900
 plot(ctg, chunk = TRUE)
+```
+
+## Partial processing
+
+From lidR v2.2.0 is it possible to flag some file that will not be processed but that will be used to load a buffer if required. In the following example only
+the central files will be processed but the others one were not removed and they will be used to buffer the processed files.
+
+```{r}
+ctg$processed <- FALSE
+ctg$processed[c(19:20, 41:44, 49:50)] <- TRUE
+plot(ctg)
 ```
 
 ## Some practical examples

@@ -52,12 +52,6 @@
 #' LASfile <- system.file("extdata", "Topography.laz", package="lidR")
 #' las <- readLAS(LASfile, select = "xyzrn")
 #'
-#' # Using the Cloth Simulation Filter
-#' # --------------------------------------
-#'
-#' las <- lasground(las, csf())
-#' plot(las, color = "Classification")
-#'
 #' # Using the Progressive Morphological Filter
 #' # --------------------------------------
 #'
@@ -65,6 +59,14 @@
 #' th  <- seq(0.1, 1.5, length.out = length(ws))
 #'
 #' las <- lasground(las, pmf(ws, th))
+#' plot(las, color = "Classification")
+#'
+#' #' # Using the Cloth Simulation Filter
+#' # --------------------------------------
+#'
+#' # (Parameters chosen mainly for speed)
+#' mycsf <- csf(TRUE, 1, 1, time_step = 1)
+#' las <- lasground(las, mycsf)
 #' plot(las, color = "Classification")
 lasground = function(las, algorithm, last_returns = TRUE)
 {
@@ -131,8 +133,7 @@ lasground.LAScluster = function(las, algorithm, last_returns = TRUE)
 lasground.LAScatalog = function(las, algorithm, last_returns = TRUE)
 {
   opt_select(las) <- "*"
-  options <- list(need_buffer = TRUE, drop_null = TRUE, need_output_file = TRUE)
+  options <- list(need_buffer = TRUE, drop_null = TRUE, need_output_file = TRUE, automerge = TRUE)
   output  <- catalog_apply(las, lasground, algorithm = algorithm,  last_returns = last_returns, .options = options)
-  output  <- catalog_merge_results(las, output, "las")
   return(output)
 }

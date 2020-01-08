@@ -12,6 +12,7 @@ class LAS
     NumericVector X;
     NumericVector Y;
     NumericVector Z;
+    NumericVector T;
     IntegerVector I;
     unsigned int ncpu;
     unsigned int npoints;
@@ -23,8 +24,8 @@ class LAS
     ~LAS();
 
     void new_filter(LogicalVector b);
-    void apply_filter();
-    IntegerVector index_filter();
+    //void apply_filter();
+    //IntegerVector index_filter();
 
     void filter_in_polygon(std::string wkt);
     void filter_local_maxima(NumericVector ws, double min_height, bool circular);
@@ -34,11 +35,13 @@ class LAS
 
     void z_open(double resolution);
     void z_smooth(double size, int method, int shape, double sigma);
+    void i_range_correction(DataFrame flightlines, double Rs, double f);
 
     NumericVector rasterize(S4 layout, double subcircle, int method);
 
     IntegerVector segment_snags(NumericVector neigh_radii, double low_int_thrsh, double uppr_int_thrsh, int pt_den_req, NumericMatrix BBPRthrsh_mat);
     IntegerVector segment_trees(double dt1, double dt2, double Zu, double R, double th_tree, double radius);
+    List knn_metrics(unsigned int k, DataFrame, DataFrame, SEXP call, SEXP env);
 
   private:
     static bool coplanar (arma::vec& latent, arma::mat& coeff, NumericVector& th) { return latent[1] > th[0]*latent[2] && th[1]*latent[1] > latent[0]; }

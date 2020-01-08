@@ -104,26 +104,23 @@ NumericVector C_rasterize(S4 las, S4 layout, double subcircle = 0, int method = 
   return pt.rasterize(layout, subcircle, method);
 }
 
-/*
- * ======= TRIANGULATION FUNCTIONS =========
- */
-
-
-#include "Triangulation.h"
-
 // [[Rcpp::export(rng = false)]]
-IntegerVector C_tsearch(IntegerMatrix D, NumericMatrix P, NumericMatrix X, int ncpu)
+List C_point_metrics(S4 las, unsigned int k, DataFrame sub, SEXP call, SEXP env, LogicalVector filter)
 {
-  Triangulator tri(D, P, ncpu);
-  return tri.search(X);
+  LAS pt(las);
+  pt.new_filter(filter);
+  DataFrame data = as<DataFrame>(las.slot("data"));
+  return pt.knn_metrics(k, data, sub, call, env);
 }
 
 // [[Rcpp::export(rng = false)]]
-NumericMatrix C_tinfo(IntegerMatrix D, NumericMatrix X)
+IntegerVector C_lasrangecorrection(S4 las, DataFrame flightlines, double Rs, double f)
 {
-  Triangulator tri(D, X);
-  return tri.info();
+  LAS pt(las);
+  pt.i_range_correction(flightlines, Rs, f);
+  return Rcpp::wrap(pt.I);
 }
+
 
 /*
  * ======= FAST BASE FUNCTIONS =========
@@ -198,8 +195,11 @@ SEXP fast_eigen_values(arma::mat A)
  * ======= BINARY SEARCH TREE FUNCTIONS =========
  */
 
-#include "QuadTree.h"
+//#include "QuadTree.h"
+#include "GridPartition.h"
 #include "Progress.h"
+
+typedef GridPartition SpatialIndex;
 
 // [[Rcpp::export(rng = false)]]
 Rcpp::List C_knn(NumericVector X, NumericVector Y, NumericVector x, NumericVector y, int k, int ncpu)
@@ -208,7 +208,7 @@ Rcpp::List C_knn(NumericVector X, NumericVector Y, NumericVector x, NumericVecto
   IntegerMatrix knn_idx(n, k);
   NumericMatrix knn_dist(n, k);
 
-  QuadTree tree(X,Y);
+  SpatialIndex tree(X,Y);
 
   #pragma omp parallel for num_threads(ncpu)
   for(unsigned int i = 0 ; i < n ; i++)
@@ -240,7 +240,7 @@ NumericVector C_knnidw(NumericVector X, NumericVector Y, NumericVector Z, Numeri
   unsigned int n = x.length();
   NumericVector iZ(n);
 
-  QuadTree tree(X,Y);
+  SpatialIndex tree(X,Y);
   Progress pb(n, "Inverse distance weighting: ");
 
   bool abort = false;
@@ -249,6 +249,8 @@ NumericVector C_knnidw(NumericVector X, NumericVector Y, NumericVector Z, Numeri
   for(unsigned int i = 0 ; i < n ; i++)
   {
     if (abort) continue;
+    if (pb.check_interrupt()) abort = true;
+    pb.increment();
 
     Point pt(x[i], y[i]);
     std::vector<Point*> pts;
@@ -281,8 +283,6 @@ NumericVector C_knnidw(NumericVector X, NumericVector Y, NumericVector Z, Numeri
 
     #pragma omp critical
     {
-      pb.increment();
-      if (pb.check_interrupt()) abort = true;
       iZ(i) = sum_zw/sum_w;
     }
   }
@@ -298,7 +298,7 @@ IntegerVector C_count_in_disc(NumericVector X, NumericVector Y, NumericVector x,
   unsigned int n = x.length();
   IntegerVector output(n);
 
-  QuadTree tree(X,Y);
+  SpatialIndex tree(X,Y);
 
   #pragma omp parallel for num_threads(ncpu)
   for(unsigned int i = 0 ; i < n ; i++)
@@ -324,7 +324,7 @@ IntegerVector C_circle_lookup(NumericVector X, NumericVector Y, double x, double
 {
   std::vector<int> id;
 
-  QuadTree tree(X,Y);
+  SpatialIndex tree(X,Y);
   std::vector<Point*> pts;
   Circle circ(x,y,r);
   tree.lookup(circ, pts);
@@ -340,8 +340,8 @@ IntegerVector C_knn3d_lookup(NumericVector X, NumericVector Y, NumericVector Z, 
 {
   std::vector<int> id;
 
-  // Creation of a QuadTree
-  QuadTree tree(X, Y, Z);
+  // Creation of a SpatialIndex
+  SpatialIndex tree(X, Y, Z);
 
   PointXYZ p(x,y,z);
   std::vector<PointXYZ> pts;

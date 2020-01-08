@@ -50,8 +50,8 @@ Supported processing options for a \code{LAScatalog} (in bold). For more details
 is always removed once processed and will never be returned either in R or in files.
 \item \strong{chunk alignment}: Align the processed chunks.
 \item \strong{progress}: Displays a progression estimation.
-\item \strong{output_files*}: Mandatory because the output is likely to be too big to be returned
- in R and needs to be written in las/laz files. Supported templates are \code{\{XLEFT\}}, \code{\{XRIGHT\}},
+\item \strong{output files*}: Mandatory because the output is likely to be too big to be returned
+in R and needs to be written in las/laz files. Supported templates are \code{\{XLEFT\}}, \code{\{XRIGHT\}},
 \code{\{YBOTTOM\}}, \code{\{YTOP\}}, \code{\{XCENTER\}}, \code{\{YCENTER\}} \code{\{ID\}} and, if
 chunk size is equal to 0 (processing by file), \code{\{ORIGINALFILENAME\}}.
 \item select: The function will write files equivalent to the original ones. Thus \code{select = "*"}
@@ -64,12 +64,6 @@ and cannot be changed.
 LASfile <- system.file("extdata", "Topography.laz", package="lidR")
 las <- readLAS(LASfile, select = "xyzrn")
 
-# Using the Cloth Simulation Filter
-# --------------------------------------
-
-las <- lasground(las, csf())
-plot(las, color = "Classification")
-
 # Using the Progressive Morphological Filter
 # --------------------------------------
 
@@ -77,5 +71,13 @@ ws  <- seq(3,12, 3)
 th  <- seq(0.1, 1.5, length.out = length(ws))
 
 las <- lasground(las, pmf(ws, th))
+plot(las, color = "Classification")
+
+#' # Using the Cloth Simulation Filter
+# --------------------------------------
+
+# (Parameters chosen mainly for speed)
+mycsf <- csf(TRUE, 1, 1, time_step = 1)
+las <- lasground(las, mycsf)
 plot(las, color = "Classification")
 }

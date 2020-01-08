@@ -10,7 +10,7 @@ tree_metrics(las, func = ~max(Z), attribute = "treeID")
 \item{las}{An object of class \link[lidR:LAS-class]{LAS} or \link[lidR:LAScatalog-class]{LAScatalog}.}
 
 \item{func}{formula. An expression to be applied to each tree. It works like in \link{grid_metrics}
-\link{grid_metrics3d} or \link{tree_hulls} and computes, in addition to tree locations a set of metrics
+\link{voxel_metrics} or \link{tree_hulls} and computes, in addition to tree locations a set of metrics
 for each tree.}
 
 \item{attribute}{character. The column name of the attribute containing tree IDs. Default is \code{"treeID"}}
@@ -61,7 +61,7 @@ Supported processing options for a \code{LAScatalog} (in bold). For more details
 always removed once processed and will never be returned either in R or in files.
 \item \strong{chunk alignment}: Align the processed chunks.
 \item \strong{progress}: Displays a progression estimation.
-\item \strong{output_files}: Supported templates are \code{\{XLEFT\}}, \code{\{XRIGHT\}},
+\item \strong{output files}: Supported templates are \code{\{XLEFT\}}, \code{\{XRIGHT\}},
 \code{\{YBOTTOM\}}, \code{\{YTOP\}}, \code{\{XCENTER\}}, \code{\{YCENTER\}} \code{\{ID\}} and,
 if chunk size is equal to 0 (processing by file), \code{\{ORIGINALFILENAME\}}.
 \item \strong{select}: Load only attributes of interest.
@@ -99,3 +99,12 @@ metrics = tree_metrics(las, ~myMetrics(Z, Intensity))
 # predefined metrics (see ?stdmetrics)
 metrics = tree_metrics(las, .stdtreemetrics)
 }
+\seealso{
+Other metrics: 
+\code{\link{cloud_metrics}()},
+\code{\link{grid_metrics}()},
+\code{\link{hexbin_metrics}()},
+\code{\link{point_metrics}()},
+\code{\link{voxel_metrics}()}
+}
+\concept{metrics}

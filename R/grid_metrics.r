@@ -120,6 +120,7 @@
 #' # ~50% faster and uses ~10x less memory
 #' las = readLAS(LASfile, filter = "-keep_first")
 #' metrics = grid_metrics(las, ~mean(Z), 20)
+#' @family metrics
 grid_metrics = function(las, func, res = 20, start = c(0,0), filter = NULL)
 {
   UseMethod("grid_metrics", las)
@@ -206,14 +207,16 @@ grid_metrics.LAScatalog = function(las, func, res = 20, start = c(0,0), filter =
     alignment <- list(res = r, start = start)
   }
 
+  if (opt_chunk_size(las) > 0 && opt_chunk_size(las) < 2*alignment$res)
+    stop("The chunk size is too small. Process aborted.", call. = FALSE)
+
   # Enforce some options
   opt_chunk_buffer(las) <- 0.1*alignment[["res"]]
 
   # Processing
   globals <- future::getGlobalsAndPackages(func)
-  options <- list(need_buffer = FALSE, drop_null = TRUE, globals = names(globals$globals), raster_alignment = alignment)
+  options <- list(need_buffer = FALSE, drop_null = TRUE, globals = names(globals$globals), raster_alignment = alignment, automerge = TRUE)
   output  <- catalog_apply(las, grid_metrics, func = func, res = res, start = start, filter = filter, .options = options)
-  output  <- catalog_merge_results(las, output, "raster", "grid_metrics")
   return(output)
 }
 

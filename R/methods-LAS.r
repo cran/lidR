@@ -32,9 +32,13 @@
 #' @param check logical. Conformity tests while building the object.
 #' @return An object of class \code{LAS}
 #' @export
-#' @describeIn LAS-class Create objects of class LAS
+#' @describeIn LAS-class creates objects of class LAS. The original data is updated by reference to
+#' clamp the coordinates with respect to the scale factor of the header. If header is not provided scale
+#' factor is set to 0.001
 LAS <- function(data, header = list(), proj4string = sp::CRS(), check = TRUE)
 {
+  .N <- X <- Y <- Z <- NULL
+
   if (is.data.frame(data))
     data.table::setDT(data)
 
@@ -42,6 +46,7 @@ LAS <- function(data, header = list(), proj4string = sp::CRS(), check = TRUE)
     stop("Invalid parameter data in constructor.")
 
   rlas::is_defined_coordinates(data, "stop")
+  rlas::is_valid_XYZ(data, "stop")
 
   if (is(header, "LASheader"))
     header <- as.list(header)
@@ -49,8 +54,19 @@ LAS <- function(data, header = list(), proj4string = sp::CRS(), check = TRUE)
   if (!is.list(header))
     stop("Wrong header object provided.")
 
-  if (length(header) == 0)
+  if (length(header) == 0) {
+    factor <- 0.001
     header <- rlas::header_create(data)
+    header[["X scale factor"]] <- factor
+    header[["Y scale factor"]] <- factor
+    header[["Z scale factor"]] <- factor
+    header[["X offset"]] <- round_any(header[["X offset"]], factor)
+    header[["Y offset"]] <- round_any(header[["Y offset"]], factor)
+    header[["Z offset"]] <- round_any(header[["Z offset"]], factor)
+    data[1:.N, `:=`(X = round_any(X, factor), Y = round_any(Y, factor), Z = round_any(Z, factor))]
+    message(glue::glue("Creation of a LAS object from data but without a header:
+    Scale factors were set to {factor} and XYZ coordinates were clamped to fit the scale factors."))
+  }
 
   header <- rlas::header_update(header, data)
 
@@ -71,7 +87,6 @@ LAS <- function(data, header = list(), proj4string = sp::CRS(), check = TRUE)
     rlas::is_valid_pointformat(header, "stop")
     rlas::is_valid_extrabytes(header, "stop")
 
-    rlas::is_valid_XYZ(data, "stop")
     rlas::is_valid_Intensity(data, "stop")
     rlas::is_valid_ReturnNumber(header, data, "stop")
     rlas::is_valid_NumberOfReturns(header, data, "stop")
@@ -173,7 +188,7 @@ setMethod("$<-", "LAS", function(x, name, value)
   if (!name %in% names(x@data))
     stop("Addition of a new column using $ is forbidden for LAS objects. See ?lasadddata", call. = FALSE)
 
-  if (name %in% LASFIELDS)
+  if (name %in% LASATTRIBUTES)
   {
     type1 <- storage.mode(x@data[[name]])
     type2 <- storage.mode(value)
@@ -195,7 +210,7 @@ setMethod("[[<-", c("LAS", "ANY", "missing", "ANY"),  function(x, i, j, value)
   if (!i %in% names(x@data))
     stop("Addition of a new column using [[ is forbidden for LAS objects. See ?lasadddata", call. = FALSE)
 
-  if (i %in% LASFIELDS)
+  if (i %in% LASATTRIBUTES)
   {
     type1 <- storage.mode(x@data[[i]])
     type2 <- storage.mode(value)
