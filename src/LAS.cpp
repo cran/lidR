@@ -54,7 +54,7 @@ void LAS::new_filter(LogicalVector b)
   else if (b.size() == (int)npoints)
     this->filter = Rcpp::as< std::vector<bool> >(b);
   else
-    Rcpp::stop("Internal error in 'new_filter"); // nocov
+    Rcpp::stop("Internal error in 'new_filter"); // # nocov
 }
 
 /*void LAS::apply_filter()
@@ -219,13 +219,17 @@ void LAS::z_open(double resolution)
 
 void LAS::i_range_correction(DataFrame flightlines, double Rs, double f)
 {
+  // Coordinates of the sensors
   NumericVector x = flightlines["X"];
   NumericVector y = flightlines["Y"];
   NumericVector z = flightlines["Z"];
   NumericVector t = flightlines["gpstime"];
 
-  double average_z_sensor = Rcpp::mean(z);
-  double R_control = mean(average_z_sensor - Z);
+  // Compute the median sensor elevation then average range for this sensor
+  // elevation. This gives a rough idea of the expected range and allows for
+  // detecting failure and bad computations
+  double median_z_sensor = Rcpp::median(z);
+  double R_control = mean(median_z_sensor - Z);
 
   NumericVector::iterator it;
   double dx, dy, dz, r, R;
@@ -236,49 +240,56 @@ void LAS::i_range_correction(DataFrame flightlines, double Rs, double f)
 
   Progress pbar(npoints, "Range computation");
 
+  // Loop on each point
   for (unsigned int k = 0 ; k < npoints ; k++)
   {
     pbar.increment();
     pbar.check_abort();
 
+    // The sensor positions were already sorted a R level
+    // For each point find the first element that is not less than the time t of the points
+    // This give the closest position of the sensor after (t1) the aqcuisition of the points (t)
     it = std::lower_bound(t.begin(), t.end(), T[k]);
 
-    // If the gpstime is the last one: no interpolation with the next one (edge of data)
+    // We now need the sensor position before (t0) the aqcuisition.
+
+    // If the sensor position is the first one: no sensor position exists before this one
+    // thus no interpolation possible. We use the next one.
     if (it == t.begin())
     {
-      j  = 0;
-      dx = X[k] - x[j];
-      dy = Y[k] - y[j];
-      dz = Z[k] - z[j];
+      j = 1;
     }
-    // If t2-t1 is too big it is two differents lines: no interpolation with the next one (edge of data)
+    // If t1-t0 is too big it is two differents flightlines. We are actually in the same case than
+    // above but in a new flightline. No interpolation with the previous one (edge of data).
+    // We use the next one
     else if (*it - *(it-1) > 30)
     {
-      j  = it - t.begin() - 1;
-      dx = X[k] - x[j];
-      dy = Y[k] - y[j];
-      dz = Z[k] - z[j];
+      j = it - t.begin();
     }
-    // General case with t2 > t > t1
+    // General case with t1 > t > t0. We have a sensor position after the aquisition of the point
+    // and it is not the first one. So we necessarily have a previous one. We can make the
+    // interpolation
     else
     {
-      j  = it - t.begin() - 1;
-      r  = 1 - (t[j+1]-T[k])/(t[j+1]-t[j]);
-
-      dx = X[k] - (x[j] + (x[j+1] - x[j])*r);
-      dy = Y[k] - (y[j] + (y[j+1] - y[j])*r);
-      dz = Z[k] - (z[j] + (z[j+1] - z[j])*r);
+      j = it - t.begin() - 1;
     }
 
-    R = std::sqrt(dx*dx + dy*dy + dz*dz);
+    if (j >= x.size()) throw Rcpp::exception("Internal error: access to coordinates beyond the limits of the array. Please report this bug.", false);
+    if (j < 0)         throw Rcpp::exception("Internal error: access to coordinates below 0 in the array. Please report this bug.", false);
+
+    r  = 1 - (t[j]-T[k])/(t[j]-t[j-1]);
+    dx = X[k] - (x[j-1] + (x[j] - x[j-1])*r);
+    dy = Y[k] - (y[j-1] + (y[j] - y[j-1])*r);
+    dz = Z[k] - (z[j-1] + (z[j] - z[j-1])*r);
+    R  = std::sqrt(dx*dx + dy*dy + dz*dz);
 
     if (R > 3 * R_control)
     {
-      Rprintf("An high range R has been computed relatively to the expected average range Rm = %.0lf\n", R_control);
-      Rprintf("Point number %d at (x,y,z,t) = (%.2lf, %.2lf, %.2lf, %.2lf)\n", k+1, X[k], Y[k], Z[k], T[k]);
-      Rprintf("Matched with sensor at (%.2lf, %.2lf, %.2lf, %.2lf)\n", x[j], y[j], z[j], t[j]);
-      Rprintf("The range computed was R = %.2lf\n", R, dx, dy, dz, t[j]);
-      Rprintf("Check the correctness of the sensor positions and the correctness of the gpstime either in the point cloud or in the sensor positions.\n");
+      REprintf("An high range R has been computed relatively to the expected average range Rm = %.0lf\n", R_control);
+      REprintf("Point number %d at (x,y,z,t) = (%.2lf, %.2lf, %.2lf, %.2lf)\n", k+1, X[k], Y[k], Z[k], T[k]);
+      REprintf("Matched with sensor between (%.2lf, %.2lf, %.2lf, %.2lf) and (%.2lf, %.2lf, %.2lf, %.2lf)\n", x[j], y[j], z[j], t[j], x[j+1], y[j+1], z[j+1], t[j+1]);
+      REprintf("The range computed was R = %.2lf\n", R, dx, dy, dz, t[j]);
+      REprintf("Check the correctness of the sensor positions and the correctness of the gpstime either in the point cloud or in the sensor positions.\n");
       throw Rcpp::exception("Unrealistic range: see message above", false);
     }
 
@@ -385,7 +396,7 @@ void LAS::filter_with_grid(S4 layout)
     if (x == xmax) col = ncols-1;
 
     if (row < 0 || row >= nrows || col < 0 || col >= ncols)
-      Rcpp::stop("C++ unexpected internal error in 'filter_with_grid': point out of raster."); // nocov
+      Rcpp::stop("C++ unexpected internal error in 'filter_with_grid': point out of raster."); // # nocov
 
     int cell = row * ncols + col;
 
@@ -481,7 +492,7 @@ void LAS::filter_in_polygon(std::string wkt)
     }
   }
   else
-    Rcpp::stop("Unexpected error in point in polygon: WKT is not a POLYGON or MULTIPOLYGON"); // nocov
+    Rcpp::stop("Unexpected error in point in polygon: WKT is not a POLYGON or MULTIPOLYGON"); // # nocov
 
   return;
 }
@@ -543,7 +554,7 @@ void LAS::filter_shape(int method, NumericVector th, int k)
 void LAS::filter_progressive_morphology(NumericVector ws, NumericVector th)
 {
   if (ws.size() != th.size())
-    Rcpp::stop("Internal error in 'filter_progressive_morphology'"); // nocov
+    Rcpp::stop("Internal error in 'filter_progressive_morphology'"); // # nocov
 
   for (int i = 0 ; i < ws.size() ; i++)
   {
@@ -844,9 +855,9 @@ IntegerVector LAS::segment_trees(double dt1, double dt2, double Zu, double R, do
     {
       if (p.check_interrupt())
       {
-        for (unsigned int i = 0 ; i < U.size() ; i++) delete U[i]; // nocov
-        delete dummy; // nocov
-        p.exit(); // nocov
+        for (unsigned int i = 0 ; i < U.size() ; i++) delete U[i]; // # nocov
+        delete dummy; // # nocov
+        p.exit(); // # nocov
       }
 
       p.update(ni-n);

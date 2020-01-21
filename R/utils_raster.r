@@ -112,11 +112,14 @@ rBuildVRT = function(file_list, vrt)
   }
 
   file_list <- unlist(file_list)
+  layers    <- names(raster::stack(file_list[1]))
   folder    <- dirname(file_list[1])
   file      <- paste0("/", vrt, ".vrt")
   vrt       <- paste0(folder, file)
   gdalUtils::gdalbuildvrt(file_list, vrt)
-  file_list <- raster::stack(vrt)
+  if (!file.exists(vrt)) return(unlist(file_list))
+  file_list <- raster::brick(vrt)
+  names(file_list) <- layers
 
   if (dim(file_list)[3] == 1)
     return(file_list[[1]])

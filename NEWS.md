@@ -1,3 +1,37 @@
+## lidR v2.2.1
+
+#### BREAKING CHANGE
+
+1. `imager` was used to drive the `mcwatershed()` algorithm. `imager` is an orphaned package that generated a warning on CRAN. Consequently `mcwatershed()` has been removed. In attempt to provide an informative message to users, the function still exists but generates an error. Anyway this method was weak and buggy and it was a good reason to remove it...
+
+2. In version 2.2.0 we missed to put the parameter `r` in `point_metrics()`. It is not yet supported but will be.
+
+#### NEW FEATURES
+
+1. LAScatalog processing engine:
+    * In `catalog_apply()` the options `automerge` now supports automerging of `sf` and `data.frame` objects.
+    * New function `catalog_sapply()` strictly equivalent to `catalog_apply()` but with the option `automerge = TRUE` enforced to simplify the output whenever it is possible.
+    
+### ENHANCEMENTS
+
+1. In the catalog processing engine, the graphical progression map is now able to plot the actual shape of the chunks. In the case of `lasclip` it means that discs and polygons are displayed instead of bounding boxes.
+
+2. Multi-layers VRTs are returned as `RasterBrick` instead of `RasterStack` for consistency with in memory raster that are returns as `RasterBrick`.
+
+3. `grid_` functions now try to preserve the layer names when returning a VRT built from files written on disk. This works only with file formats that support to store layer name (e.g. not `GTiff`).
+
+4. There are now more than 900 unit tests for a coverage of 91%.
+
+### FIXES
+
+1. Fix access to not mapped memory in one unit test (consequentless for users).
+
+2. In `lasclip()` the template `XCENTER` actually gave the Y coordinate. It is now the correct X coordinate of the center of the clipped region.
+
+3. In `lasclip()` the template `YCENTER` was not actually defined. It is now the correct Y coordinate of the center of the clipped region.
+
+4. Fix heap-buffer-overflow in `lasrangecorrection()`. The range was likely to be badly computed for points that have a gpstime later than the last sensor position
+
 ## lidR v2.2.0 (Release date: 2020-01-06)
 
 #### NEW FEATURES
