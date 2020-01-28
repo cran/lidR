@@ -157,7 +157,7 @@ readLAS.LAScluster = function(files, select = "*", filter = "")
     # We found a region with no actual data. The points all belong in the buffer
     # Return empty point cloud
     if (fast_countequal(las@data[["buffer"]], LIDRNOBUFFER) == 0)
-      las <- LAS(data.frame(X = numeric(0), Y = numeric(0), Z = numeric(0)))
+      las <- lasfilter(las, buffer == LIDRNOBUFFER)
   }
 
   return(las)

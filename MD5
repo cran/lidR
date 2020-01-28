@@ -1,7 +1,7 @@
 8f0e2cd40e05189ec81232da84bd6e1a *COPYING
-abf1f171343d9b54163cf1f45f8283dc *DESCRIPTION
+e0786601b2b0bbbacf6d225962096c05 *DESCRIPTION
 84ce4ed381637939500a02a199ae8d0a *NAMESPACE
-6c884e4da72ab8668c1ff35c8fb3a1de *NEWS.md
+e4a19a60eed647f6f30fbd949fb47ea3 *NEWS.md
 e6d5bdb2642ede0c58ebea23e04d9370 *R/Class-LAS.r
 f510d1d099853c73b8d8923ce814b146 *R/Class-LAScatalog.r
 78b6c4f3b10c980ecc494f61ebcf16de *R/Class-LAScluster.r
@@ -35,7 +35,7 @@ df6771a3e4891f26fb7532e8683e341e *R/grid_density.r
 86368eaafc57486afc847c6745a4e0e4 *R/grid_metrics.r
 4c74fb2072005ae3a28cd199abb8542c *R/grid_terrain.r
 eb3563d64a17823858ce41810b177187 *R/hexbin_metrics.r
-caaddfc4f8c0cb30891e73234da35030 *R/io_readLAS.r
+e30f9a19e4811da1dd378f66c618639a *R/io_readLAS.r
 8417d7c3cf2bd89132df7d05f8313828 *R/io_readLAScatalog.r
 8d4b09de6be89e6529e72794b9a2da65 *R/io_writeANY.r
 8e5342fe2afce2bbba03a3c1aaaa7a4b *R/io_writeLAS.r
@@ -61,7 +61,7 @@ ae9dc75f8054894a120017536a823ff5 *R/lastransform.r
 4d0532537ddc00479c1eefb23be8877a *R/lastrees.r
 72b87db0a1d89c7019ef45590d018c6a *R/lasupdateheader.r
 410e05e03dda11e01fb87a22e1ebdef3 *R/lasvoxelize.r
-c6a670d979541ad172c845a7fb28e318 *R/methods-LAS.r
+9b94c14809b5c646935ed43a3cc48702 *R/methods-LAS.r
 f6ab01c431593d3d28b01b0d77918d3a *R/methods-LAScatalog.r
 fac75c2b11b4e232d522c481c2c00456 *R/methods-LAScluster.r
 dfa9d69fa780c3a08d2874872548b905 *R/methods-LASheader.r
@@ -101,7 +101,7 @@ c34de5efc3df06f55918afacb2953d49 *inst/doc/lidR-LAScatalog-class.html
 36f6f4edc5a8f2f5c62b85d0752fc54e *inst/doc/lidR-catalog-apply-examples.html
 53430426e54a30006b0a57081f2a5e09 *inst/doc/lidR-computation-speed-LAScatalog.R
 6ed0329d918dc473971e511094f32361 *inst/doc/lidR-computation-speed-LAScatalog.Rmd
-33ffa18c427e048380274157dd02d992 *inst/doc/lidR-computation-speed-LAScatalog.html
+3766b3c8c20940a5bbbd0f9caddc79e9 *inst/doc/lidR-computation-speed-LAScatalog.html
 7ae0300dea70dd5e45b126e9e5b6139a *inst/extdata/Megaplot.lax
 426515372c557ab5e918410b724ca6f5 *inst/extdata/Megaplot.laz
 83c23ba8228b8256b1e724b114a0022b *inst/extdata/MixedConifer.lax
@@ -207,7 +207,7 @@ d6383f76e29e500db93e95e9dee425bf *man/wing2015.Rd
 487d53352e8ec1014f52fed5c13d282b *src/C_delaunay.cpp
 94c964e9aa4056e139e0c3c8685e4c2a *src/GridPartition.cpp
 f242a133c4b713c0fa4ae9ee92f170fd *src/GridPartition.h
-5a228e87700cb147481244e4ed93d621 *src/LAS.cpp
+731db2ba799d62637cb57a1b3515a2cd *src/LAS.cpp
 4eb0f1e69a983620fc0be970aeaf5f43 *src/LAS.h
 808ec13736e34a9ddc6772147f9bcdd5 *src/Makevars
 808ec13736e34a9ddc6772147f9bcdd5 *src/Makevars.win
@@ -221,8 +221,8 @@ d99ffb3bdf17b0fb0de283fcfecb91f0 *src/Shapes.h
 49940463bca67a58b6be54d6caba449a *src/myomp.h
 e5b7595922dbe2e0022d18123238767e *src/openmputils.cpp
 af5312ac45c4f8bdab580d8984e19bfa *tests/testthat.R
-1363578fad1c86ee37ba2a43c56402fa *tests/testthat/Rplots.pdf
-55b4273328149f02504012e3865f824f *tests/testthat/test-LAS.R
+b2cc16d65bcb4833630d8f7cc426c374 *tests/testthat/Rplots.pdf
+5d7a6ebf753774a343dabf3ff27521a7 *tests/testthat/test-LAS.R
 b9926df9cc130536d908156caf9a6335 *tests/testthat/test-LAScatalog.R
 63eab6ea858bf8e8ee83a11ac94e217e *tests/testthat/test-algorithm-dispatch.R
 baf63ac6257a32c8746dd56a08213840 *tests/testthat/test-assertions.R
