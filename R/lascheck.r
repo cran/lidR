@@ -260,6 +260,35 @@ lascheck.LAS = function(las)
 
   warn(msg)
 
+  h2("Checking flag attributes...")
+
+  msg = character(0)
+
+  if (!is.null(data[["Withheld_flag"]]))
+  {
+    s = sum(data[["Withheld_flag"]])
+
+    if (s > 0)
+      msg = c(msg, g("{s} points flagged 'withheld'."))
+  }
+
+  if (!is.null(data[["Synthetic_flag"]]))
+  {
+    s = sum(data[["Synthetic_flag"]])
+
+    if (s > 0)
+      msg = c(msg, g("{s} points flagged 'synthetic'."))
+  }
+
+  if (!is.null(data[["Keypoint_flag"]]))
+  {
+    s = sum(data[["Keypoint_flag"]])
+
+    if (s > 0)
+      msg = c(msg, g("{s} points flagged 'keypoint'."))
+  }
+
+  warn(msg)
 
   # ==== header ====
 
@@ -296,7 +325,7 @@ lascheck.LAS = function(las)
   lasproj = las@proj4string
   failure = FALSE
 
-  if (code != 0)
+  if (!head[["Global Encoding"]][["WKT"]] && code != 0)
   {
     codeproj = tryCatch(
     {
@@ -324,7 +353,7 @@ lascheck.LAS = function(las)
       ok()
   }
 
-  if (swkt != "")
+  if (head[["Global Encoding"]][["WKT"]] && swkt != "")
   {
     codeproj = tryCatch(sp::CRS(rgdal::showP4(swkt)), error = function(e) return(sp::CRS()))
 
@@ -347,7 +376,7 @@ lascheck.LAS = function(las)
       ok()
   }
 
-  if (code == 0 | swkt == "")
+  if (code == 0 & swkt == "")
   {
     if (!is.na(lasproj@projargs))
     { warn("A proj4string found but no CRS in the header") ; failure = TRUE }
@@ -406,7 +435,7 @@ lascheck.LAS = function(las)
       no()
   }
   else
-    no()
+    skip()
 
   h2("Checking normalization...")
 
@@ -477,7 +506,7 @@ lascheck.LAScatalog = function(las)
   ok    <- function()  {cat(green(" \u2713"))}
   fail  <- function(x) {cat("\n", red(g("   \u2717 {x}")))}
   warn  <- function(x) {cat("\n", orange(g("   \u26A0 {x}")))}
-  skip  <- function()  {cat(silver(g(" skipped")))}
+  #skip  <- function()  {cat(silver(g(" skipped")))}
   no    <- function()  {cat(red(g(" no")))}
   yes   <- function()  {cat(green(g(" yes")))}
   maybe <- function()  {cat(orange(g(" maybe")))}

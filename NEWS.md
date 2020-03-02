@@ -1,12 +1,54 @@
+## lidR v2.2.3
+
+#### FIXES
+
+1. This fix breaks backward compatibility. In `catalog_apply()` if `automerge = TRUE` and the output contains a `list` of strings the list was expected to be merged into a character vector. But actually, the raw list was returned, which was not the intended behavior. This appends with `Spatial*` and `sf` objects and with `data.frame`. This bug should not have affected too many people.
+
+    ```r
+    opt_output_files(ctg) <- paste0(tempdir(), "/{ORIGINALFILENAME}")
+    option <- list(automerge = TRUE)
+    ret <- catalog_apply(ctg, sptest, .options = option) # now returns a vector
+    print(ret) 
+    #> "/tmp/RtmpV4CQll/file38f1.txt" "/tmp/RtmpV4CQll/file38g.txt"  "/tmp/RtmpV4CQll/file38h.txt" "/tmp/RtmpV4CQll/file38i.txt"
+    ```
+    
+2. When using a `grid_*` function with a `RasterLayer` used as layout, if the layout was not empty or full of NAs, the values of the layout were transferred to the NA cells of the output [#318](https://github.com/Jean-Romain/lidR/issues/318).
+
+3. `lascheck()` no longer warns about "proj4string found but no CRS in the header". This was a false positive. Overall, CRS are better checked. 
+
+### ENHANCEMENTS
+
+1. `opt_output_files()` now prints a message when using the `ORIGINALFILENAME` template with a chunk size that is not 0 to inform users that it does not make sense.
+
+    ```r
+    opt_chunk_size(ctg) <- 800
+    opt_output_files(ctg) <- "{ORIGINALFILENAME}"
+    #> ORIGINALFILENAME template has been used but the chunk size is not 0. This template makes sense only when processing by file.
+    ```
+    
+2. Internally when building the chunks an informative error is now thrown when using the `ORIGINALFILENAME` template with a chunk size that is not 0 to inform users that it does not make sense instead of the former uninformative error, `Error in eval(parse(text = text, keep.source = FALSE), envir) : objet 'ORIGINALFILENAME' not found`.
+
+    ```r
+    #>  Erreur : The template {ORIGINALFILENAME} makes sense only when processing by file (chunk size = 0). It is undefined otherwise.
+    ```
+
+3. When using a "by file" processing strategy + a buffer around each file, up to 9 files may be read. Internally the chunks (`LAScluster`) are now built in such a way that the first file read is the main one (and not one of the "buffer file"). This way, if the 9 files do not have the same scales and the same offsets, the main file has precedence over the other ones when rescaling and re-offsetting on-the-fly. This reduces the risk of incompatibilities and preserves the original pattern when processing a LAScatalog.
+
+4. `grid_metrics()` now constructs a `RasterBrick` in a better way and this reduces the risk of bugs with users' functions that sometimes return 0 length objects. The `RasterBrick` will now be properly filled with `NAs`.
+
+5. `lascheck()` now reports information if some points are flagged 'withheld', 'synthetic' or 'keypoint'.
+
+6. We moved the internal logic of chunk realignment with a raster from `catalog_apply()` to the internal function `catalog_makecluster()`. This simplifies the source code, make it easier to maintain and test and will enable us to provide access, at the user level, to more internal functions in future releases.
+
 ## lidR v2.2.2
 
-### FIXES
+### FIXES (Release date: 2020-01-28)
 
 1. We introduced a bug in v2.2.0 in the catalog processing engine. Empty chunks triggered and error  `i[1] is 1 which is out of range [1,nrow=0]` internally. It now works again.
 
 2. Fix heap-buffer-overflow in `lasrangecorrection()` when throwing an error about invalid range.
 
-## lidR v2.2.1
+## lidR v2.2.1  (Release date: 2020-01-21)
 
 #### BREAKING CHANGE
 
