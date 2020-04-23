@@ -27,37 +27,37 @@
 
 #' Get or set the projection of a LAS* object
 #'
-#' Get or set the projection of a LAS* object with the function \code{projection}. Functions \code{epsg}
-#' and \code{wkt} are reserved for advanced users (see details).
+#' Get or set the projection of a LAS* object with the function `projection`. Functions `epsg`
+#' and `wkt` are reserved for advanced users (see details).
 #'
 #' There are two ways to store the CRS of a point cloud in a LAS file:
-#' \itemize{
-#' \item Store an EPSG code (for LAS 1.0 to 1.4)
-#' \item Store a WTK string (for LAS 1.4)
-#' }
-#' On the other hand, all spatial R packages use a \code{proj4string} to store the CRS. This is why
+#'
+#'    - Store an EPSG code (for LAS 1.0 to 1.4)
+#'    - Store a WTK string (for LAS 1.4)
+#'
+#' On the other hand, all spatial R packages use a `proj4string` to store the CRS. This is why
 #' the CRS is duplicated in a LAS object. The information belongs within the header in a format that
-#' can be written in a LAS file and in the slot \code{proj4string} in a format that can be understood
+#' can be written in a LAS file and in the slot `proj4string` in a format that can be understood
 #' by R packages.
-#' \itemize{
-#' \item \code{projection<-}: updates the CRS from a \code{proj4string}. It updates the header either
+#'
+#'    - `projection<-`: updates the CRS from a `proj4string`. It updates the header either
 #' with the EPSG code for LAS formats < 1.4 or with a WKT string for LAS format 1.4 and updates the
-#' \code{proj4string} slot. This function should always be preferred.
-#' \item \code{epsg<-}: updates the CRS from an EPSG code. It adds the EPSG code in the header and updates
-#' the \code{proj4string} slot.
-#' \item \code{wkt<-}: updates the CRS from a WKT string. It adds the WKT string in the header and updates
-#' the \code{proj4string} slot.
-#' \item \code{projection}: reads the \code{proj4string} from the \code{proj4string} slot.
-#' \item \code{epsg}: reads the epsg code from the header.
-#' \item \code{wkt}: reads the WKT string from the header.
-#' }
+#' `proj4string` slot. This function should always be preferred.
+#'    - `epsg<-`: updates the CRS from an EPSG code. It adds the EPSG code in the header and updates
+#' the `proj4string` slot.
+#'    - `wkt<-`: updates the CRS from a WKT string. It adds the WKT string in the header and updates
+#' the `proj4string` slot.
+#'    - `projection`: reads the `proj4string` from the `proj4string` slot.
+#'    - `epsg`: reads the epsg code from the header.
+#'    - `wkt`: reads the WKT string from the header.
+#'    - `crs` and `crs<-` are equivalent to `projection`
 #'
 #' @param object,x An object of class LAS or eventually LASheader (regular users don't need to manipulate
 #' LASheader objects).
 #' @param ... Unused.
 #' @param asText logical. If TRUE, the projection is returned as text. Otherwise a CRS object is returned.
-#' @param value A \code{CRS} object or a \code{proj4string} string for function\code{projection}.
-#' An EPSG code as integer for function \code{epsg}. A \code{WKT} string for function \code{wkt}.
+#' @param value A `CRS` object or a `proj4string` string for function`projection`.
+#' An EPSG code as integer for function `epsg`. A `WKT` string for function `wkt`.
 #'
 #' @export
 #' @examples
@@ -69,8 +69,11 @@
 #' projection(las) <- crs
 #' @importFrom raster projection<-
 #' @importFrom raster projection
+#' @importFrom raster crs<-
+#' @importFrom raster crs
 #' @name projection
 #' @rdname projection
+#' @md
 NULL
 
 #' @export
@@ -97,13 +100,10 @@ setGeneric("wkt<-", function(object, value)
 #' @rdname projection
 setMethod("projection", "LASheader", function(x, asText = TRUE)
 {
-  if (epsg(x) != 0L)
-  {
-    proj4 <- tryCatch(sp::CRS(paste0("+init=epsg:", epsg(x))), error = function(e) sp::CRS())
-    proj4@projargs <- gsub("\\+init=epsg:\\d+\\s", "", proj4@projargs)
-  }
-  else if (wkt(x) != "")
-    proj4 <- tryCatch(sp::CRS(rgdal::showP4(wkt(x))), error = function(e) sp::CRS())
+  if (use_epsg(x) && epsg(x) != 0L)
+    proj4 <- epsg2CRS(epsg(x))
+  else if (use_wktcs(x) && wkt(x) != "")
+    proj4 <- wkt2CRS(wkt(x))
   else
     proj4 <- sp::CRS()
 
@@ -111,6 +111,13 @@ setMethod("projection", "LASheader", function(x, asText = TRUE)
     return(proj4@projargs)
   else
     return(proj4)
+})
+
+#' @export
+#' @rdname projection
+setMethod("crs", "LASheader", function(x, asText = FALSE)
+{
+  return(projection(x, asText))
 })
 
 # ==== LASheader ====
@@ -126,6 +133,7 @@ setMethod("epsg", "LASheader", function(object, ...)
 #' @rdname projection
 setMethod("epsg<-", "LASheader", function(object, value)
 {
+  if (use_wktcs(object)) stop("This object is not in a format that supports EPSG code. Use a WKT string.", call. = FALSE)
   header <- as.list(object)
   header <- rlas::header_set_epsg(header, value)
   return(LASheader(header))
@@ -142,6 +150,7 @@ setMethod("wkt", "LASheader", function(object, ...)
 #' @rdname projection
 setMethod("wkt<-", "LASheader", function(object, value)
 {
+  if (!use_wktcs(object)) stop("This object is not in a format that supports WKT CRS. Use an EPSG code.", call. = FALSE)
   header <- as.list(object)
   header <- rlas::header_set_wktcs(header, value)
   return(LASheader(header))
@@ -154,6 +163,7 @@ setMethod("wkt<-", "LASheader", function(object, value)
 #' @rdname projection
 setMethod("projection<-", "LAS", function(x, value)
 {
+  # The input is a proj4string or a CRS from sp
   if (is(value, "CRS"))
     proj4 <- value@projargs
   else if (is.character(value))
@@ -161,15 +171,17 @@ setMethod("projection<-", "LAS", function(x, value)
   else
     stop("'value' is not a CRS or a string.")
 
+  # Extract epsg code if any
   epsg  <- sub("\\+init=epsg:(\\d+).*",  "\\1", proj4)
   epsg  <- suppressWarnings(as.integer(epsg))
+
+  # Remove +init=epsg:xxx if any
   proj4 <- sub("\\+init=epsg:\\d+\\s", "", proj4)
 
-  if (x@header@PHB[["Global Encoding"]][["WKT"]] == TRUE)
-  {
-    if (is.na(proj4))
-      return(x)
+  if (is.na(proj4)) return(x)
 
+  if (use_wktcs(x))
+  {
     wkt <- rgdal::showWKT(proj4)
     wkt(x@header) <- wkt
     x@proj4string <- sp::CRS(proj4)
@@ -177,12 +189,11 @@ setMethod("projection<-", "LAS", function(x, value)
   }
   else
   {
-    if (is.na(proj4))
-      return(x)
-
+    ## We were not able to extract the epsg code earlier, we can retrieve it with rgdal
     if (is.na(epsg))
       epsg <- rgdal::showEPSG(proj4)
 
+    # We are still unable to find an epsg code
     if (epsg == "OGRERR_UNSUPPORTED_SRS")
     {
       warning("EPSG code not found: header not updated. Try to use the function epsg() manually to ensure CRS will be written in file.", call. = FALSE)
@@ -201,6 +212,14 @@ setMethod("projection<-", "LAS", function(x, value)
 
 #' @export
 #' @rdname projection
+setMethod("crs<-", "LAS", function(x, ..., value)
+{
+  projection(x) <- value
+  return(x)
+})
+
+#' @export
+#' @rdname projection
 setMethod("epsg", "LAS", function(object)
 {
   return(epsg(object@header))
@@ -210,10 +229,9 @@ setMethod("epsg", "LAS", function(object)
 #' @rdname projection
 setMethod("epsg<-", "LAS", function(object, value)
 {
-  proj4 <- sp::CRS(glue::glue("+init=epsg:{value}"))
-  proj4 <- gsub("\\+init=epsg:\\d+\\s", "", proj4)
+  proj4 <- epsg2CRS(value, fail = TRUE)
   epsg(object@header) <- value
-  raster::projection(object)  <- proj4
+  object@proj4string <- proj4
   return(object)
 })
 
@@ -228,8 +246,74 @@ setMethod("wkt", "LAS", function(object)
 #' @rdname projection
 setMethod("wkt<-", "LAS", function(object, value)
 {
-  proj4 <- rgdal::showP4(value)
+  proj4 <- wkt2CRS(value, fail = TRUE)
   wkt(object@header) <- value
-  raster::projection(object)  <- proj4
+  object@proj4string <- proj4
   return(object)
 })
+
+
+use_wktcs <- function(x) {
+  UseMethod("use_wktcs", x)
+}
+
+use_wktcs.LAS <- function(x) {
+  return(x@header@PHB[["Global Encoding"]][["WKT"]])
+}
+
+use_wktcs.LASheader <- function(x) {
+  return(x@PHB[["Global Encoding"]][["WKT"]])
+}
+
+use_epsg <- function(x) {
+  UseMethod("use_epsg", x)
+}
+
+use_epsg.LAS <- function(x) {
+  return(!x@header@PHB[["Global Encoding"]][["WKT"]])
+}
+
+use_epsg.LASheader <- function(x) {
+  return(!x@PHB[["Global Encoding"]][["WKT"]])
+}
+
+epsg2proj <- function(epsg, fail = FALSE)
+{
+  tryCatch({
+    wkt <- rgdal::showWKT(glue::glue("+init=epsg:{epsg}"))
+    rgdal::showP4(wkt)
+  },
+  error = function(e)
+  {
+    if (!fail)
+      return(NA_character_)
+    else
+      stop("Invalid epsg code", call. = FALSE)
+  })
+}
+
+epsg2CRS <- function(epsg, fail = FALSE)
+{
+  proj <- epsg2proj(epsg, fail)
+  return(sp::CRS(proj))
+}
+
+wkt2proj <- function(wkt, fail = FALSE)
+{
+  tryCatch({
+    rgdal::showP4(wkt)
+  },
+  error = function(e)
+  {
+    if (!fail)
+        return(NA_character_)
+    else
+      stop("Invalid WKT", call. = FALSE)
+  })
+}
+
+wkt2CRS <- function(wkt, fail = FALSE)
+{
+  proj <- wkt2proj(wkt, fail)
+  return(sp::CRS(proj, doCheckCRSArgs = FALSE)) # doCheckCRSArgs = FALSE added in 2.2.4 after #323
+}

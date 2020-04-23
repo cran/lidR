@@ -93,21 +93,25 @@ ctg@polygons <- Sr@polygons
 opt_chunk_buffer(ctg) <- 0
 
 ## ---- fig.show='hold'---------------------------------------------------------
-opt_chunk_size(ctg) <- 0
+opt_chunk_size(ctg) <- 0 # Processing by files
 plot(ctg, chunk = TRUE)
 
-opt_chunk_size(ctg) <- 900
+opt_chunk_size(ctg) <- 900 # Processing chunks of 900 x 900
 plot(ctg, chunk = TRUE)
 
 ## ---- echo = FALSE------------------------------------------------------------
 opt_chunk_size(ctg) <- 0
 
 ## ---- fig.show='hold'---------------------------------------------------------
-opt_chunk_buffer(ctg) <- 0
+opt_chunk_buffer(ctg) <- 0 # No buffer
 plot(ctg, chunk = TRUE)
 
-opt_chunk_buffer(ctg) <- 200
+opt_chunk_buffer(ctg) <- 200 # 200 m buffer
 plot(ctg, chunk = TRUE)
+
+## ---- error=TRUE--------------------------------------------------------------
+opt_chunk_buffer(ctg) <- 0
+grid_terrain(ctg, 1, tin())
 
 ## ---- fig.show='hold'---------------------------------------------------------
 opt_chunk_size(ctg) <- 2000
@@ -347,7 +351,7 @@ opt_progress(ctg) <- FALSE
 routine <- function(chunk){ 
    las <- readLAS(chunk)               # read the chunk
    if (is.empty(las)) return(NULL)     # exit if empty
-   ttop <- find_trees(las, lmf(3)) # make any computation
+   ttop <- find_trees(las, lmf(3))     # make any computation
    ttop <- crop(ttop, extent(chunk))   # remove the buffer
    return(ttop)
 }
@@ -367,17 +371,17 @@ class(out)
 print(out)
 
 ## -----------------------------------------------------------------------------
-find_dead_trees <- function(las, param1, param2)
+find_deadtrees <- function(las, param1, param2)
 {
    if (is(las, "LAScatalog"))  {
       options <- list(automerge = TRUE, need_buffer = TRUE)
-      dead_trees <- catalog_apply(las, find_dead_trees, param1 = param1, param2 = param2, .options = options)
+      dead_trees <- catalog_apply(las, find_deadtrees, param1 = param1, param2 = param2, .options = options)
       return(dead_trees)
    }
    else if (is(las, "LAScluster")) {
       bbox <- extent(las)
       las <- readLAS(las)
-      dead_trees <- find_dead_trees(las, param1, param2)
+      dead_trees <- find_deadtrees(las, param1, param2)
       dead_trees <- raster::crop(dead_trees, bbox)
       return(dead_trees)
    }

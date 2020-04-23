@@ -66,14 +66,13 @@ catalog_makecluster = function(ctg, realignment = FALSE, plot = opt_progress(ctg
     if (realign)
     {
       res <- realignment$res
-      xscale <- ctg[["X.scale.factor"]]
-      yscale <- ctg[["Y.scale.factor"]]
+      xscale <- ctg[["X.scale.factor"]][processed]
+      yscale <- ctg[["Y.scale.factor"]][processed]
 
       new_xmin <- round_any(xmin, res)
       new_ymin <- round_any(ymin, res)
       new_xmax <- round_any(xmax, res)
       new_ymax <- round_any(ymax, res)
-
 
       resize_xmin = new_xmin < xmin - xscale | new_xmin > xmin + xscale
       resize_ymin = new_ymin < ymin - yscale | new_ymin > ymin + yscale
@@ -82,12 +81,14 @@ catalog_makecluster = function(ctg, realignment = FALSE, plot = opt_progress(ctg
 
       if (any(resize_xmin) || any(resize_ymin) || any(resize_xmax) || any(resize_ymax))
       {
-        xmin[resize_xmin] <- new_xmin[resize_xmin] - res
-        ymin[resize_ymin] <- new_ymin[resize_ymin] - res
-        xmax[resize_xmax] <- new_xmax[resize_xmax] + res
-        ymax[resize_ymax] <- new_ymax[resize_ymax] + res
+        xmin[resize_xmin] <- new_xmin[resize_xmin] - ifelse(new_xmin[resize_xmin] >= xmin[resize_xmin], res, 0)
+        ymin[resize_ymin] <- new_ymin[resize_ymin] - ifelse(new_ymin[resize_ymin] >= ymin[resize_ymin], res, 0)
+        xmax[resize_xmax] <- new_xmax[resize_xmax] + ifelse(new_xmax[resize_xmax] <= xmax[resize_xmax], res, 0)
+        ymax[resize_ymax] <- new_ymax[resize_ymax] + ifelse(new_ymax[resize_ymax] <= ymax[resize_ymax], res, 0)
 
-        message(glue::glue("The original tiling pattern does not match with the resolution {res}. Chunks were extended to avoid partial pixels."))
+        ns <- sum(resize_xmin | resize_ymin | resize_xmax | resize_ymax)
+        nt <- length(resize_xmin)
+        message(glue::glue("The tiling pattern does not match with the resolution {res}. {ns}/{nt} chunks were extended to avoid partial pixels."))
         realigned <- TRUE
       }
     }

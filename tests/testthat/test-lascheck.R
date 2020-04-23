@@ -23,6 +23,7 @@ las1@header@PHB[["Point Data Format ID"]] <- 25
 
 LASfile <- system.file("extdata", "extra_byte.laz", package = "rlas")
 las2     <- readLAS(LASfile, select = "xyz")
+las2@header@PHB$`Global Encoding`$WKT = TRUE
 wkt(las2) <- rgdal::showWKT(sp::CRS("+init=epsg:26917")@projargs)
 las2@proj4string <- sp::CRS()
 
@@ -63,5 +64,39 @@ test_that("lascheck works without error with LAScatalog", {
   expect_error(lascheck(ctg2), NA)
   sink(NULL)
 })
+
+test_that("lascheck CRS specific test", {
+
+  sink(tempfile())
+
+  las1 <- las0
+  epsg(las1) <- 2008
+  las1@header@PHB$`Global Encoding`$WKT <- TRUE
+
+  las2 <- las0
+  las2@header@PHB$`Global Encoding`$WKT = TRUE
+  wkt(las2) <- "PROJCS[\"RD_New\",GEOGCS[\"GCS_Amersfoort\",DATUM[\"D_Amersfoort\",SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Double_Stereographic\"],PARAMETER[\"False_Easting\",155000.0],PARAMETER[\"False_Northing\",463000.0],PARAMETER[\"Central_Meridian\",5.38763888888889],PARAMETER[\"Scale_Factor\",0.9999079],PARAMETER[\"Latitude_Of_Origin\",52.1561605555556],UNIT[\"Meter\",1.0]]"
+  las2@header@PHB$`Global Encoding`$WKT <- FALSE
+
+  expect_error(lascheck(las1), NA)
+  expect_error(lascheck(las2), NA)
+
+  epsg(las0) <- 2008
+  las0@proj4string <- sp::CRS()
+
+  expect_error(lascheck(las0), NA)
+
+  las0@header@VLR$GeoKeyDirectoryTag$tags[[1]]$`value offset` <- 200800
+
+  expect_error(lascheck(las0), NA)
+
+  las2@header@VLR$`WKT OGC CS`$`WKT OGC COORDINATE SYSTEM` <- "INVALID"
+  las2@header@PHB$`Global Encoding`$WKT <- TRUE
+
+  expect_error(lascheck(las2), NA)
+
+  sink(NULL)
+})
+
 
 
