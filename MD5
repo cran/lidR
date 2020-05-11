@@ -1,7 +1,7 @@
 8f0e2cd40e05189ec81232da84bd6e1a *COPYING
-64cf9a71ebaeaf2071256c90378e9610 *DESCRIPTION
+8801d491a7b115976492ff8d68e3f603 *DESCRIPTION
 a9d06c486651084174bf19dc273a11ad *NAMESPACE
-1338863e189c9640bf0d62c4732d1611 *NEWS.md
+ed929884db9f4ef056b896b882438293 *NEWS.md
 e6d5bdb2642ede0c58ebea23e04d9370 *R/Class-LAS.r
 f510d1d099853c73b8d8923ce814b146 *R/Class-LAScatalog.r
 78b6c4f3b10c980ecc494f61ebcf16de *R/Class-LAScluster.r
@@ -65,7 +65,7 @@ ae9dc75f8054894a120017536a823ff5 *R/lastransform.r
 f6ab01c431593d3d28b01b0d77918d3a *R/methods-LAScatalog.r
 fac75c2b11b4e232d522c481c2c00456 *R/methods-LAScluster.r
 dfa9d69fa780c3a08d2874872548b905 *R/methods-LASheader.r
-857f08d983b32716ecde73e5f1a572f9 *R/plot.r
+b9c6610ec359d98e246802e5a019bc57 *R/plot.r
 8b9dc873f90a5689311a3f8685fb8fbb *R/plot.s3.r
 9326bfa8f08d5b5a38221237db835700 *R/point_metrics.R
 530f4b11f0ddcef4f44a21d23675fa2e *R/print.r
@@ -84,7 +84,7 @@ d6a5088fbad6a106cf68afe5c27f0ec9 *R/tree_hulls.r
 01b92f91b3b12e243c88823913e24063 *R/utils_metrics.r
 758ec8b1171373299bb3caf7b2d08aa2 *R/utils_misc.r
 25728b485941602635f0c66d0b34ca05 *R/utils_raster.r
-860ef04031ad9680939965c54986aa22 *R/utils_threads.r
+46bb68843420459f7f832a3cb249dedd *R/utils_threads.r
 28909c42ac8ec8ae61c17f556d9b4e54 *R/utils_typecast.r
 4ae67f74f36125be3c549558ca2696e3 *R/voxel_metrics.r
 bfd3c7483ae6de1134dec35ec9334af5 *R/zzz.r
@@ -101,7 +101,7 @@ be72aae4cc578ef4ce9cc1649d48230b *inst/doc/lidR-LAScatalog-class.R
 b396091575627ce0a09a6fe5a9a09935 *inst/doc/lidR-catalog-apply-examples.html
 53430426e54a30006b0a57081f2a5e09 *inst/doc/lidR-computation-speed-LAScatalog.R
 6ed0329d918dc473971e511094f32361 *inst/doc/lidR-computation-speed-LAScatalog.Rmd
-b0a9c0c99b7191467ccca26574a16cec *inst/doc/lidR-computation-speed-LAScatalog.html
+5115ae2b31ab14ec279b54f23034de70 *inst/doc/lidR-computation-speed-LAScatalog.html
 7ae0300dea70dd5e45b126e9e5b6139a *inst/extdata/Megaplot.lax
 426515372c557ab5e918410b724ca6f5 *inst/extdata/Megaplot.laz
 83c23ba8228b8256b1e724b114a0022b *inst/extdata/MixedConifer.lax
@@ -221,7 +221,7 @@ d99ffb3bdf17b0fb0de283fcfecb91f0 *src/Shapes.h
 49940463bca67a58b6be54d6caba449a *src/myomp.h
 e5b7595922dbe2e0022d18123238767e *src/openmputils.cpp
 af5312ac45c4f8bdab580d8984e19bfa *tests/testthat.R
-eb3d67f7e5e1dfdcce6a418914f3c023 *tests/testthat/Rplots.pdf
+0d2e270a60789700be5bba6be0f7d105 *tests/testthat/Rplots.pdf
 697df28cf1ab78a24baf3a05fbd51f4b *tests/testthat/test-LAS.R
 b9926df9cc130536d908156caf9a6335 *tests/testthat/test-LAScatalog.R
 63eab6ea858bf8e8ee83a11ac94e217e *tests/testthat/test-algorithm-dispatch.R
@@ -289,6 +289,6 @@ d41d8cd98f00b204e9800998ecf8427e *tests/testthat/test-utils_threads.R
 de2b9566e4537e07072749d84c1f9556 *vignettes/lidR-LAS-class.Rmd
 41d143ad67495426ec9741b1077ccafb *vignettes/lidR-LAScatalog-class.Rmd
 39ee5c961a522cc6ae35f74aa77d9bb1 *vignettes/lidR-LAScatalog-engine.R
-9f8308fa104f79e3ba344207ce97ef3f *vignettes/lidR-LAScatalog-engine.html
+b757bd7aa32492293d9c8164c11b5b9f *vignettes/lidR-LAScatalog-engine.html
 919dd650b976aa1ad5e7708a44fd1583 *vignettes/lidR-catalog-apply-examples.Rmd
 6ed0329d918dc473971e511094f32361 *vignettes/lidR-computation-speed-LAScatalog.Rmd
