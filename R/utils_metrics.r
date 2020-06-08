@@ -92,11 +92,11 @@
 #' m5 = grid_metrics(las, .stdmetrics_i)
 #'
 #' # Compute the metrics only on first return
-#' first = lasfilterfirst(las)
+#' first = filter_first(las)
 #' m6 = grid_metrics(first, .stdmetrics_z)
 #'
 #' # Compute the metrics with a threshold at 2 meters
-#' over2 = lasfilter(las, Z > 2)
+#' over2 = filter_poi(las, Z > 2)
 #' m7 = grid_metrics(over2, .stdmetrics_z)
 #'
 #' # Works also with cloud_metrics and hexbin_metrics
@@ -135,8 +135,8 @@
 #' @seealso
 #' \link{cloud_metrics}
 #' \link{grid_metrics}
-#' \link{grid_hexametrics}
-#' \link{grid_metrics3d}
+#' \link{hexbin_metrics}
+#' \link{voxel_metrics}
 #' \link{tree_metrics}
 #' \link{point_metrics}
 #' @rdname stdmetrics
@@ -349,7 +349,7 @@ stdtreeapex <- function(x,y,z)
 }
 
 
-stdtreehullconvex = function(x,y, grp, ...)
+stdtreehullconvex = function(x,y,z,grp, ...)
 {
   if (length(x) < 4)
     return(NULL)
@@ -360,10 +360,12 @@ stdtreehullconvex = function(x,y, grp, ...)
   poly = sp::Polygon(P)
   poly = sp::Polygons(list(poly), ID = grp)
 
-  list(poly = list(poly))
+  j <- which.max(z)
+
+  list(XTOP = x[j], YTOP = y[j], ZTOP = z[j], poly = list(poly))
 }
 
-stdtreehullconcave = function(x,y, grp, concavity, length_threshold)
+stdtreehullconcave = function(x,y,z,grp, concavity, length_threshold)
 {
   if (length(x) < 4)
     return(NULL)
@@ -372,10 +374,12 @@ stdtreehullconcave = function(x,y, grp, concavity, length_threshold)
   poly = sp::Polygon(P)
   poly = sp::Polygons(list(poly), ID = grp)
 
-  list(poly = list(poly))
+  j <- which.max(z)
+
+  list(XTOP = x[j], YTOP = y[j], ZTOP = z[j], poly = list(poly))
 }
 
-stdtreehullbbox = function(x,y, grp, ...)
+stdtreehullbbox = function(x,y,z, grp, ...)
 {
   if (length(x) < 4)
     return(NULL)
@@ -391,7 +395,9 @@ stdtreehullbbox = function(x,y, grp, ...)
   poly = sp::Polygon(P)
   poly = sp::Polygons(list(poly), ID = grp)
 
-  list(poly = list(poly))
+  j <- which.max(z)
+
+  list(XTOP = x[j], YTOP = y[j], ZTOP = z[j], poly = list(poly))
 }
 
 #' @rdname stdmetrics

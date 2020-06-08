@@ -27,7 +27,7 @@
 
 #' Spatial Interpolation Algorithm
 #'
-#' This function is made to be used in \link{grid_terrain} or \link{lasnormalize}. It implements an algorithm
+#' This function is made to be used in \link{grid_terrain} or \link{normalize_height}. It implements an algorithm
 #' for spatial interpolation. Spatial interpolation is based on a Delaunay triangulation, which performs
 #' a linear interpolation within each triangle. There are usually a few points outside the convex hull,
 #' determined by the ground points at the very edge of the dataset, that cannot be interpolated with
@@ -57,24 +57,24 @@ tin = function()
     nnas <- sum(isna)
     if (nnas > 0) {
       verbose("Interpolating the points ouside the convex hull of the ground points using knnidw()")
-      z[isna] <- C_knnidw(where$X[!isna], where$Y[!isna], z[!isna], where$X[isna], where$Y[isna], 1, 1, getThread())
+      z[isna] <- C_knnidw(where$X[!isna], where$Y[!isna], z[!isna], where$X[isna], where$Y[isna], 1, 1, 25, getThread())
     }
     return(z)
   }
 
-  class(f) <- c("function", "SpatialInterpolation", "OpenMP",  "Algorithm", "lidR")
+  class(f) <- c(LIDRALGORITHMSPI, LIDRALGORITHMOPENMP)
   return(f)
 }
 
 #' Spatial Interpolation Algorithm
 #'
-#' This function is made to be used in \link{grid_terrain} or \link{lasnormalize}. It implements an algorithm
+#' This function is made to be used in \link{grid_terrain} or \link{normalize_height}. It implements an algorithm
 #' for spatial interpolation. Interpolation is done using a k-nearest neighbour (KNN) approach with
 #' an inverse-distance weighting (IDW).
 #'
-#' @param k numeric. Number of k-nearest neighbours. Default 10.
-#'
+#' @param k integer. Number of k-nearest neighbours. Default 10.
 #' @param p numeric. Power for inverse-distance weighting. Default 2.
+#' @param rmax numeric. Maximum radius where to search for knn. Default 50.
 #'
 #' @export
 #'
@@ -90,21 +90,25 @@ tin = function()
 #'
 #' plot(dtm, col = terrain.colors(50))
 #' plot_dtm3d(dtm)
-knnidw = function(k = 10, p = 2)
+knnidw = function(k = 10, p = 2, rmax = 50)
 {
+  k <- lazyeval::uq(k)
+  p <- lazyeval::uq(p)
+  rmax <- lazyeval::uq(rmax)
+
   f = function(what, where, scales = c(0,0), offsets = c(0,0))
   {
     assert_is_valid_context(LIDRCONTEXTSPI, "knnidw")
-    return(interpolate_knnidw(what, where, k, p))
+    return(interpolate_knnidw(what, where, k, p, rmax))
   }
 
-  class(f) <- c("SpatialInterpolation", "Algorithm", "OpenMP", "lidR", "function")
+  class(f) <- c(LIDRALGORITHMSPI, LIDRALGORITHMOPENMP)
   return(f)
 }
 
 #' Spatial Interpolation Algorithm
 #'
-#' This function is made to be used in \link{grid_terrain} or \link{lasground}. It implements an algorithm
+#' This function is made to be used in \link{grid_terrain} or \link{classify_ground}. It implements an algorithm
 #' for spatial interpolation. Spatial interpolation is based on universal kriging using the \link[gstat:krige]{krige}
 #' function from \code{gstat}. This method combines the KNN approach with the kriging approach. For each
 #' point of interest it kriges the terrain using the k-nearest neighbour ground points. This method
@@ -137,13 +141,13 @@ kriging = function(model = gstat::vgm(.59, "Sph", 874), k = 10L)
     return(interpolate_kriging(what, where, model, k))
   }
 
-  class(f) <- c( "function", "SpatialInterpolation", "Algorithm", "lidR")
+  class(f) <- LIDRALGORITHMSPI
   return(f)
 }
 
-interpolate_knnidw = function(points, coord, k, p)
+interpolate_knnidw = function(points, coord, k, p, rmax = 50)
 {
-  z <- C_knnidw(points$X, points$Y, points$Z, coord$X, coord$Y, k, p, getThread())
+  z <- C_knnidw(points$X, points$Y, points$Z, coord$X, coord$Y, k, p, rmax, getThread())
   return(z)
 }
 
@@ -187,12 +191,17 @@ interpolate_delaunay <- function(points, coord, trim = 0, scales = c(1,1), offse
     boosted_triangulation <- FALSE
   }
 
-  X <- points$X[1]
-  Y <- points$Y[1]
-  x <- (X - offsets[1]) / scales[1]
-  y <- (Y - offsets[2]) / scales[2]
+  # Check if coordinates actually match the resolution
+  # Check only 100 of them including the first one
+  n <- min(100, length(points$X)) - 1
+  s <- c(1, sample(2:length(points$X), n))
+  X <- points$X[s]
+  Y <- points$Y[s]
+  x <- fast_countunquantized(X, scales[1], offsets[1])
+  y <- fast_countunquantized(Y, scales[2], offsets[2])
 
-  if (abs(x - round(x)) > 1e-5 | abs(y - round(y)) > 1e-5) {
+  if (x > 0 | y > 0)
+  {
     message("The Delaunay triangulation reverted to the old slow method because xy coordinates were not convertible to integer values. xy scale factors and offsets are likely to be invalid")
     boosted_triangulation <- FALSE
   }

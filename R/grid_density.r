@@ -52,13 +52,20 @@
 #' d <- grid_density(las, 10)
 #' plot(d)
 #'
-#' las <- laspulse(las)
+#' las <- retrieve_pulses(las)
 #' d <- grid_density(las)
 #' plot(d)
 grid_density = function(las, res = 4)
 {
-  if (!"pulseID" %in% names(las@data))
-    return(grid_metrics(las, ~list(point_density = .N/res^2), res))
+  if (is(res, "RasterLayer"))
+    resolution = raster::res(res)[1]
   else
-    return(grid_metrics(las, ~list(point_density = .N/res^2, pulse_density = length(unique(pulseID))/res^2), res))
+    resolution = res
+
+  if (!"pulseID" %in% names(las@data))
+    X <- grid_metrics(las, ~list(point_density = .N), res)
+  else
+    X <- grid_metrics(las, ~list(point_density = .N, pulse_density = length(unique(pulseID))), res)
+
+  return(X/resolution^2)
 }

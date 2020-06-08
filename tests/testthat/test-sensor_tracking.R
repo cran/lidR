@@ -14,9 +14,31 @@ test_that("sensor_tracking works", {
 
   expect_is(flightlines, "SpatialPointsDataFrame")
   expect_equal(dim(flightlines), c(8,4))
-  expect_equal(names(flightlines), c("Z", "gpstime", "PointSourceID", "npulses"))
+  expect_equal(names(flightlines), c("Z", "gpstime", "PointSourceID", "SCORE"))
   expect_equal(mean(flightlines$Z), 3100, tol = 3)
-  expect_equal(crs(flightlines), crs(las))
+  expect_equal(flightlines@proj4string, crs(las))
+})
+
+test_that("track_sensor works with Roussel2020", {
+
+  flightlines <- track_sensor(las, Roussel2020(pmin = 10))
+
+  expect_is(flightlines, "SpatialPointsDataFrame")
+  expect_equal(dim(flightlines), c(8,4))
+  expect_equal(names(flightlines), c("Z", "gpstime", "PointSourceID", "SCORE"))
+  expect_equal(mean(flightlines$Z), 3100, tol = 3)
+  expect_equal(flightlines@proj4string, crs(las))
+})
+
+test_that("track_sensor works with Gatziolis2019", {
+
+  flightlines <- track_sensor(las, Gatziolis2019(deltaT = 0.5))
+
+  expect_is(flightlines, "SpatialPointsDataFrame")
+  expect_equal(dim(flightlines), c(9,4))
+  expect_equal(names(flightlines), c("Z", "gpstime", "PointSourceID", "SCORE"))
+  expect_equal(mean(flightlines$Z), 3100, tol = 3)
+  expect_equal(flightlines@proj4string, crs(las))
 })
 
 test_that("sensor_tracking returns an empty SpatialPointsDataFrame", {
@@ -25,7 +47,7 @@ test_that("sensor_tracking returns an empty SpatialPointsDataFrame", {
 
   expect_is(flightlines, "SpatialPointsDataFrame")
   expect_equal(dim(flightlines), c(0,4))
-  expect_equal(names(flightlines), c("Z", "gpstime", "PointSourceID", "npulses"))
+  expect_equal(names(flightlines), c("Z", "gpstime", "PointSourceID", "SCORE"))
 })
 
 test_that("sensor_tracking works with a LAScatalog", {
@@ -34,9 +56,9 @@ test_that("sensor_tracking works with a LAScatalog", {
 
   expect_is(flightlines, "SpatialPointsDataFrame")
   expect_equal(dim(flightlines), c(8,4))
-  expect_equal(names(flightlines), c("Z", "gpstime", "PointSourceID", "npulses"))
+  expect_equal(names(flightlines), c("Z", "gpstime", "PointSourceID", "SCORE"))
   expect_equal(mean(flightlines$Z), 3100, tol = 3)
-  expect_equal(crs(flightlines), crs(ctg))
+  expect_equal(flightlines@proj4string, crs(ctg))
 })
 
 test_that("sensor_tracking hangle errors", {
@@ -55,3 +77,4 @@ test_that("sensor_tracking hangle errors", {
   las2$PointSourceID[15] <- 5L
   expect_warning(sensor_tracking(las2, pmin = 15, thin_pulse_with_time = 0), "points with same gpstime")
 })
+

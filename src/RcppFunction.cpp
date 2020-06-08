@@ -104,13 +104,13 @@ NumericVector C_rasterize(S4 las, S4 layout, double subcircle = 0, int method = 
   return pt.rasterize(layout, subcircle, method);
 }
 
-// [[Rcpp::export(rng = false)]]
-List C_point_metrics(S4 las, unsigned int k, DataFrame sub, SEXP call, SEXP env, LogicalVector filter)
+// [[Rcpp::export]]
+List C_point_metrics(S4 las, unsigned int k, double r, int nalloc, SEXP call, SEXP env, LogicalVector filter)
 {
   LAS pt(las);
   pt.new_filter(filter);
   DataFrame data = as<DataFrame>(las.slot("data"));
-  return pt.knn_metrics(k, data, sub, call, env);
+  return pt.point_metrics(k, r, data, nalloc, call, env);
 }
 
 // [[Rcpp::export(rng = false)]]
@@ -120,6 +120,22 @@ IntegerVector C_lasrangecorrection(S4 las, DataFrame flightlines, double Rs, dou
   pt.i_range_correction(flightlines, Rs, f);
   return Rcpp::wrap(pt.I);
 }
+
+// [[Rcpp::export(rng = false)]]
+NumericVector C_lasrange(S4 las, DataFrame flightlines)
+{
+  LAS pt(las);
+  return pt.compute_range(flightlines);
+}
+
+//[[Rcpp::export(rng = false)]]
+LogicalVector C_local_maximum(S4 las, NumericVector ws, int ncpu)
+{
+  LAS pt(las, ncpu);
+  pt.filter_local_maxima(ws);
+  return Rcpp::wrap(pt.filter);
+}
+
 
 // [[Rcpp::export(rng = false)]]
 int C_check_gpstime(NumericVector t, IntegerVector rn)
@@ -195,10 +211,45 @@ int fast_countbelow(NumericVector x, double t)
 }
 
 // [[Rcpp::export(rng=false)]]
+void fast_quantization(NumericVector x, double scale, double offset)
+{
+  int X = 0;
+
+  for (NumericVector::iterator it = x.begin(), end = x.end() ; it != end ; ++it)
+  {
+    X = std::round((*it - offset)/scale);
+    *it = X * scale + offset;
+  }
+
+  return;
+}
+
+// [[Rcpp::export(rng=false)]]
+int fast_countunquantized(NumericVector x, double scale, double offset)
+{
+  int X = 0;
+  int k = 0;
+
+  for (NumericVector::iterator it = x.begin(), end = x.end() ; it != end ; ++it)
+  {
+    X = std::round((*it - offset)/scale);
+#ifdef _WIN32
+    if (std::abs(*it - (X * scale + offset)) > 1e-9) k++;
+#else
+    if (*it != X * scale + offset) k++;
+#endif
+  }
+
+  return k;
+}
+
+// [[Rcpp::export(rng=false)]]
 int fast_countover(NumericVector x, double t)
 {
   return std::count_if(x.begin(), x.end(), std::bind(std::greater<double>(), std::placeholders::_1, t));
 }
+
+
 
 // [[Rcpp::export(rng=false)]]
 NumericVector roundc(NumericVector x, int digit = 0)
@@ -277,10 +328,10 @@ Rcpp::List C_knn(NumericVector X, NumericVector Y, NumericVector x, NumericVecto
 }
 
 // [[Rcpp::export(rng = false)]]
-NumericVector C_knnidw(NumericVector X, NumericVector Y, NumericVector Z, NumericVector x, NumericVector y, int k, double p, int ncpu)
+NumericVector C_knnidw(NumericVector X, NumericVector Y, NumericVector Z, NumericVector x, NumericVector y, int k, double p, double rmax, int ncpu)
 {
   unsigned int n = x.length();
-  NumericVector iZ(n);
+  NumericVector iZ(n, NA_REAL);
 
   SpatialIndex tree(X,Y);
   Progress pb(n, "Inverse distance weighting: ");
@@ -296,7 +347,7 @@ NumericVector C_knnidw(NumericVector X, NumericVector Y, NumericVector Z, Numeri
 
     Point pt(x[i], y[i]);
     std::vector<Point*> pts;
-    tree.knn(pt, k, pts);
+    tree.knn(pt, k, rmax, pts);
 
     double sum_zw = 0;
     double sum_w  = 0;
@@ -376,6 +427,28 @@ IntegerVector C_circle_lookup(NumericVector X, NumericVector Y, double x, double
 
   return wrap(id);
 }
+
+// [[Rcpp::export(rng = false)]]
+IntegerVector C_orectangle_lookup(NumericVector X, NumericVector Y, double x, double y, double w, double h, double angle)
+{
+  std::vector<int> id;
+
+  double xmax = x+w/2;
+  double ymax = y+h/2;
+  double xmin = x-w/2;
+  double ymin = y-h/2;
+
+  SpatialIndex tree(X,Y);
+  std::vector<Point*> pts;
+  OrientedRectangle orect(xmin, xmax, ymin, ymax, angle);
+  tree.lookup(orect, pts);
+
+  for (size_t j = 0 ; j < pts.size() ; j++)
+    id.push_back(pts[j]->id + 1);
+
+  return wrap(id);
+}
+
 
 // [[Rcpp::export(rng = false)]]
 IntegerVector C_knn3d_lookup(NumericVector X, NumericVector Y, NumericVector Z, double x, double y, double z, int k)

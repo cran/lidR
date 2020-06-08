@@ -30,7 +30,7 @@
 
 #' Individual Tree Segmentation Algorithm
 #'
-#' This function is made to be used in \link{lastrees}. It implements an algorithm for tree
+#' This function is made to be used in \link{segment_trees}. It implements an algorithm for tree
 #' segmentation based on the Dalponte and Coomes (2016) algorithm (see reference).
 #' This is a seeds + growing region algorithm. This algorithm exists in the package \code{itcSegment}.
 #' This version has been written from the paper in C++. Consequently it is hundreds to millions times
@@ -40,11 +40,11 @@
 #'
 #' Because this algorithm works on a CHM only there is no actual need for a point cloud. Sometimes the
 #' user does not even have the point cloud that generated the CHM. \code{lidR} is a point cloud-oriented
-#' library, which is why this algorithm must be used in \link{lastrees} to merge the result with the point
+#' library, which is why this algorithm must be used in \link{segment_trees} to merge the result with the point
 #' cloud. However the user can use this as a stand-alone function like this:
 #' \preformatted{
 #'  chm = raster("file/to/a/chm/")
-#'  ttops = tree_detection(chm, lmf(3))
+#'  ttops = find_trees(chm, lmf(3))
 #'  crowns = dalponte2016(chm, ttops)()
 #' }
 #'
@@ -87,8 +87,8 @@
 #' ker <- matrix(1,3,3)
 #' chm <- raster::focal(chm, w = ker, fun = mean, na.rm = TRUE)
 #'
-#' ttops <- tree_detection(chm, lmf(4, 2))
-#' las   <- lastrees(las, dalponte2016(chm, ttops))
+#' ttops <- find_trees(chm, lmf(4, 2))
+#' las   <- segment_trees(las, dalponte2016(chm, ttops))
 #' plot(las, color = "treeID", colorPalette = col)
 dalponte2016 = function(chm, treetops, th_tree = 2, th_seed = 0.45, th_cr = 0.55, max_cr = 10, ID = "treeID")
 {
@@ -109,13 +109,52 @@ dalponte2016 = function(chm, treetops, th_tree = 2, th_seed = 0.45, th_cr = 0.55
   max_cr   <- lazyeval::uq(max_cr)
   ID       <- lazyeval::uq(ID)
 
-  f = function()
+  f = function(extent)
   {
     assert_is_valid_context(LIDRCONTEXTITS, "dalponte2016", null_allowed = TRUE)
 
-    X     <- match_chm_and_seeds(chm, treetops, ID)
+    if (nrow(treetops) == 0)
+    {
+      warning("No tree found", call. = FALSE)
+      crown <- chm
+      suppressWarnings(crown[] <- NA_integer_)
+      return(crown)
+    }
+
+    # If an extent is given we crop the CHM and the seed to this extent (LAScatalog processing)
+    if (!missing(extent))
+    {
+      assert_is_all_of(extent, "Extent")
+      chm <- raster::crop(chm, extent)
+      treetops <- raster::crop(treetops, extent)
+
+      # If no remaining seed, exit with with warning
+      if (is.null(treetops))
+      {
+        warning("No tree can be used as seed: all tree tops are outside the CHM", call. = FALSE)
+        crown <- chm
+        suppressWarnings(crown[] <- NA_integer_)
+        return(crown)
+      }
+    }
+
+    # Check if the seeds actually match with the CHM
+    X <- match_chm_and_seeds(chm, treetops, ID)
+
+    # If X contains 0 lengh results it means that CHM and seed do not match.
+    # an appropriated warning has been sent by match_chm_and_seeds and we return
+    # NAs so the function does not fail
+    if (length(X$cells) == 0L & length(X$ids) == 0L)
+    {
+      crown <- chm
+      suppressWarnings(crown[] <- NA_integer_)
+      return(crown)
+    }
+
+    # We are now sure we can perform the computation with seeds matching the CHM
+
     cells <- X$cells
-    ids   <- X$ids
+    ids   <- 1:length(X$ids)
 
     rtreetops   <- raster::raster(chm)
     rtreetops[] <- 0L
@@ -129,16 +168,17 @@ dalponte2016 = function(chm, treetops, th_tree = 2, th_seed = 0.45, th_cr = 0.55
     Maxima <- t(apply(Maxima, 2, rev))
 
     Crowns <- C_dalponte2016(Canopy, Maxima, th_seed, th_cr, th_tree, max_cr)
+
     Maxima[Maxima == 0L] <- NA_integer_
     Crowns[Crowns == 0L] <- NA_integer_
-
+    suppressWarnings(Crowns[] <- X$ids[Crowns[]])
     Crowns <- raster::raster(apply(Crowns,1,rev))
     raster::extent(Crowns) <- raster::extent(chm)
 
     return(Crowns)
   }
 
-  class(f) <- c("function", "RasterBased", "IndividualTreeSegmentation", "Algorithm", "lidR")
+  class(f) <- c(LIDRALGORITHMITS, LIDRALGORITHMRASTERBASED)
   return(f)
 }
 
@@ -147,7 +187,7 @@ dalponte2016 = function(chm, treetops, th_tree = 2, th_seed = 0.45, th_cr = 0.55
 
 #' Individual Tree Segmentation Algorithm
 #'
-#' This functions is made to be used in \link{lastrees}. It implements an algorithm for tree
+#' This functions is made to be used in \link{segment_trees}. It implements an algorithm for tree
 #' segmentation based on the Li et al. (2012) article (see reference). This method is a growing region
 #' method working at the point cloud level. It is an implementation, as strict as possible, made by
 #' the \code{lidR} author but with the addition of a parameter \code{hmin} to prevent over-segmentation
@@ -184,7 +224,7 @@ dalponte2016 = function(chm, treetops, th_tree = 2, th_seed = 0.45, th_cr = 0.55
 #' las <- readLAS(LASfile, select = "xyz", filter = "-drop_z_below 0")
 #' col <- pastel.colors(200)
 #'
-#' las <- lastrees(las, li2012(dt1 = 1.4))
+#' las <- segment_trees(las, li2012(dt1 = 1.4))
 #' plot(las, color = "treeID", colorPalette = col)
 li2012 = function(dt1 = 1.5, dt2 = 2, R = 2, Zu = 15, hmin = 2, speed_up = 10)
 {
@@ -214,7 +254,7 @@ li2012 = function(dt1 = 1.5, dt2 = 2, R = 2, Zu = 15, hmin = 2, speed_up = 10)
 
     if (las@header@PHB$`Max Z` < hmin)
     {
-      warning("'hmin' is higher than the highest point. No tree segmented.")
+      warning("'hmin' is higher than the highest point. No tree segmented.", call. = FALSE)
       return(rep(NA_integer_, nrow(las@data)))
     }
     else
@@ -223,7 +263,7 @@ li2012 = function(dt1 = 1.5, dt2 = 2, R = 2, Zu = 15, hmin = 2, speed_up = 10)
     }
   }
 
-  class(f) <- c("function", "PointCloudBased", "IndividualTreeSegmentation", "Algorithm", "lidR")
+  class(f) <- c(LIDRALGORITHMITS, LIDRALGORITHMPOINTCLOUDBASED)
 
   return(f)
 }
@@ -232,7 +272,7 @@ li2012 = function(dt1 = 1.5, dt2 = 2, R = 2, Zu = 15, hmin = 2, speed_up = 10)
 
 #' Individual Tree Segmentation Algorithm
 #'
-#' This functions is made to be used in \link{lastrees}. It implements an algorithm for tree
+#' This functions is made to be used in \link{segment_trees}. It implements an algorithm for tree
 #' segmentation based on the Silva et al. (2016) article (see reference). This is a simple method
 #' based on seed + voronoi tesselation (equivalent to nearest neighbour). This algorithm is implemented
 #' in the package \code{rLiDAR}. This version is \emph{not} the version from \code{rLiDAR}. It is
@@ -241,11 +281,11 @@ li2012 = function(dt1 = 1.5, dt2 = 2, R = 2, Zu = 15, hmin = 2, speed_up = 10)
 #'
 #' Because this algorithm works on a CHM only there is no actual need for a point cloud. Sometimes the
 #' user does not even have the point cloud that generated the CHM. \code{lidR} is a point cloud-oriented
-#' library, which is why this algorithm must be used in \link{lastrees} to merge the result into the point
+#' library, which is why this algorithm must be used in \link{segment_trees} to merge the result into the point
 #' cloud. However, the user can use this as a stand-alone function like this:
 #' \preformatted{
 #'  chm = raster("file/to/a/chm/")
-#'  ttops = tree_detection(chm, lmf(3))
+#'  ttops = find_trees(chm, lmf(3))
 #'  crowns = silva2016(chm, ttops)()
 #' }
 #'
@@ -283,8 +323,8 @@ li2012 = function(dt1 = 1.5, dt2 = 2, R = 2, Zu = 15, hmin = 2, speed_up = 10)
 #' ker <- matrix(1,3,3)
 #' chm <- raster::focal(chm, w = ker, fun = mean, na.rm = TRUE)
 #'
-#' ttops <- tree_detection(chm, lmf(4, 2))
-#' las   <- lastrees(las, silva2016(chm, ttops))
+#' ttops <- find_trees(chm, lmf(4, 2))
+#' las   <- segment_trees(las, silva2016(chm, ttops))
 #' plot(las, color = "treeID", colorPalette = col)
 silva2016 = function(chm, treetops, max_cr_factor = 0.6, exclusion = 0.3, ID = "treeID")
 {
@@ -301,15 +341,49 @@ silva2016 = function(chm, treetops, max_cr_factor = 0.6, exclusion = 0.3, ID = "
   exclusion      <- lazyeval::uq(exclusion)
   ID             <- lazyeval::uq(ID)
 
-  f = function()
+  f = function(extent)
   {
     assert_is_valid_context(LIDRCONTEXTITS, "silva2016", null_allowed = TRUE)
 
     . <- R <- X <- Y <- Z <- id <- d <- hmax <- NULL
 
+    if (nrow(treetops) == 0)
+    {
+      warning("No tree found", call. = FALSE)
+      crown <- chm
+      suppressWarnings(crown[] <- NA_integer_)
+      return(crown)
+    }
+
+    if (!missing(extent))
+    {
+      assert_is_all_of(extent, "Extent")
+      chm <- raster::crop(chm, extent)
+      treetops <- raster::crop(treetops, extent)
+
+      if (is.null(treetops))
+      {
+        warning("No tree can be used as seed: all tree tops are outside the CHM", call. = FALSE)
+        crown <- chm
+        suppressWarnings(crown[] <- NA_integer_)
+        return(crown)
+      }
+    }
+
     X     <- match_chm_and_seeds(chm, treetops, ID)
+
+    # If X contains 0 lengh results it means that CHM and seed do not match.
+    # an appropriated warning has been sent by match_chm_and_seeds and we return
+    # NAs so the function does not fail
+    if (length(X$cells) == 0L & length(X$ids) == 0L)
+    {
+      crown <- chm
+      suppressWarnings(crown[] <- NA_integer_)
+      return(crown)
+    }
+
     cells <- X$cells
-    ids   <- X$ids
+    ids   <- 1:length(X$ids)
 
     chmdt <- data.table::setDT(raster::as.data.frame(chm, xy = TRUE, na.rm = T))
     data.table::setnames(chmdt, names(chmdt), c("X", "Y", "Z"))
@@ -327,11 +401,11 @@ silva2016 = function(chm, treetops, max_cr_factor = 0.6, exclusion = 0.3, ID = "
     suppressWarnings(crown[] <- NA_integer_)
     cells   <- raster::cellFromXY(crown, chmdt[, .(X,Y)])
     suppressWarnings(crown[cells] <- chmdt[["id"]])
-
+    suppressWarnings(crown[] <- X$ids[crown[]])
     return(crown)
   }
 
-  class(f) <- c("function", "RasterBased", "IndividualTreeSegmentation", "OpenMP", "Algorithm", "lidR")
+  class(f) <- c(LIDRALGORITHMITS, LIDRALGORITHMRASTERBASED, LIDRALGORITHMOPENMP)
   return(f)
 }
 
@@ -339,7 +413,7 @@ silva2016 = function(chm, treetops, max_cr_factor = 0.6, exclusion = 0.3, ID = "
 
 #' Individual Tree Segmentation Algorithm
 #'
-#' This function is made to be used in \link{lastrees}. It implements an algorithm for tree
+#' This function is made to be used in \link{segment_trees}. It implements an algorithm for tree
 #' segmentation based on a watershed or a marker-controlled watershed.
 #' \itemize{
 #' \item \strong{Simple watershed} is based on the bioconductor package \code{EBIimage}. You need to install
@@ -351,11 +425,11 @@ silva2016 = function(chm, treetops, max_cr_factor = 0.6, exclusion = 0.3, ID = "
 #'
 #' Because this algorithm works on a CHM only there is no actual need for a point cloud. Sometimes the
 #' user does not even have the point cloud that generated the CHM. \code{lidR} is a point cloud-oriented
-#' library, which is why this algorithm must be used in \link{lastrees} to merge the result into the point
+#' library, which is why this algorithm must be used in \link{segment_trees} to merge the result into the point
 #' cloud. However, the user can use this as a stand-alone function like this:
 #' \preformatted{
 #'  chm = raster("file/to/a/chm/")
-#'  ttops = tree_detection(chm, lmf(3))
+#'  ttops = find_trees(chm, lmf(3))
 #'  crowns = watershed(chm)()
 #' }
 #'
@@ -386,7 +460,7 @@ silva2016 = function(chm, treetops, max_cr_factor = 0.6, exclusion = 0.3, ID = "
 #' chm <- grid_canopy(las, res = 0.5, p2r(0.3))
 #' ker <- matrix(1,3,3)
 #' chm <- raster::focal(chm, w = ker, fun = mean, na.rm = TRUE)
-#' las <- lastrees(las, watershed(chm))
+#' las <- segment_trees(las, watershed(chm))
 #'
 #' plot(las, color = "treeID", colorPalette = col)
 watershed = function(chm, th_tree = 2, tol = 1, ext = 1)
@@ -401,8 +475,9 @@ watershed = function(chm, th_tree = 2, tol = 1, ext = 1)
 
 #' @rdname watershed
 #' @export
+
 mcwatershed = function(chm, treetops, th_tree = 2, ID = "treeID")
-{
+{ # nocov start
   stop("The mcwatershed algorithm has been removed because it relied on the 'imager' package that is now an orphaned package on CRAN.", call. = FALSE)
 
   chm      <- lazyeval::uq(chm)
@@ -412,6 +487,7 @@ mcwatershed = function(chm, treetops, th_tree = 2, ID = "treeID")
 
   ws_generic(chm, th_tree = th_tree, treetops = treetops, ID = ID)
 }
+# nocov end
 
 ws_generic = function(chm, th_tree = 2, tol = 1, ext = 1, treetops = NULL, ID = "treeID")
 {
@@ -420,7 +496,7 @@ ws_generic = function(chm, th_tree = 2, tol = 1, ext = 1, treetops = NULL, ID = 
   assert_is_a_number(tol)
   assert_is_a_number(ext)
 
-  f = function()
+  f = function(extent)
   {
     assert_is_valid_context(LIDRCONTEXTITS, "watershed", null_allowed = TRUE)
 
@@ -428,13 +504,19 @@ ws_generic = function(chm, th_tree = 2, tol = 1, ext = 1, treetops = NULL, ID = 
     if (is.null(treetops))
     {
       if (!requireNamespace("EBImage", quietly = TRUE))
-        stop("'EBImage' package is needed for this function to work. Please read documentation.", call. = FALSE)
+        stop("'EBImage' package is needed for this function to work. Please read documentation.", call. = FALSE) # nocov
     }
     #else
     #{
     #  if (!requireNamespace("imager", quietly = TRUE))
     #    stop("'imager' package is needed for this function to work. Please read documentation.", call. = FALSE)
     #}
+
+    if (!missing(extent))
+    {
+      assert_is_all_of(extent, "Extent")
+      chm <- raster::crop(chm, extent)
+    }
 
     # Convert the CHM to a matrix
     Canopy <- raster::as.matrix(chm)
@@ -449,7 +531,7 @@ ws_generic = function(chm, th_tree = 2, tol = 1, ext = 1, treetops = NULL, ID = 
     # Marker-controlled watershed
     else
     {
-      stop("Internal error, you should not have reach this line of code", call. = FALSE)
+      stop("Internal error, you should not have reach this line of code", call. = FALSE) # nocov
       # X = match_chm_and_seeds(chm, treetops, ID)
       # cells = X$cells
       # ids = X$ids
@@ -474,6 +556,6 @@ ws_generic = function(chm, th_tree = 2, tol = 1, ext = 1, treetops = NULL, ID = 
     return(Crowns)
   }
 
-  class(f) <- c("function", "RasterBased", "IndividualTreeSegmentation", "Algorithm", "lidR")
+  class(f) <- c(LIDRALGORITHMITS, LIDRALGORITHMRASTERBASED)
   return(f)
 }

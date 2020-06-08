@@ -4,16 +4,17 @@
 \alias{point_metrics}
 \title{Point-based metrics}
 \usage{
-point_metrics(las, func, k, r, xyz = TRUE, filter = NULL)
+point_metrics(las, func, k, r, xyz = FALSE, filter = NULL, ...)
 }
 \arguments{
 \item{las}{An object of class LAS}
 
 \item{func}{formula. An expression to be applied to each cell (see section "Parameter func").}
 
-\item{k}{integer. k-nearest neighbours}
-
-\item{r}{numeric. radius of the neighborhood sphere (not supported yet).}
+\item{k, r}{integer and numeric respectively for k-nearest neighbours and radius of the neighborhood
+sphere. If k is given and r is missing, compute the with the knn, if r is given and k is missing
+computes with a sphere neighborhood, if k and r are given computes with the knn and a limit on the
+search distance.}
 
 \item{xyz}{logical. Coordinates of each point are returned in addition to each metric. If
 \code{filter = NULL} coordinates are references to the original coordinates and do not occupy additional
@@ -21,6 +22,8 @@ memory. If \code{filter != NULL} it obviously takes memory.}
 
 \item{filter}{formula of logical predicates. Enables the function to run only on points of interest
 in an optimized way. See also examples.}
+
+\item{...}{unused.}
 }
 \description{
 Computes a series of user-defined descriptive statistics for a LiDAR dataset for each point. This
@@ -70,7 +73,7 @@ las = readLAS(LASfile, filter = "-thin_with_grid 2")
 
 # Computes the eigenvalues of the covariance matrix of the neighbouring
 # points and applies a test on these values. This function simulates the
-# 'shp_plane()' algorithm from 'lasdetectshape()'
+# 'shp_plane()' algorithm from 'segment_shape()'
 plane_metrics1 = function(x,y,z, th1 = 25, th2 = 6) {
   xyz <- cbind(x,y,z)
   cov_m <- cov(xyz)
@@ -84,7 +87,7 @@ M <- point_metrics(las, ~plane_metrics1(X,Y,Z), k = 25)
 #> Computed in 6.3 seconds
 
 # We can verify that it returns the same as 'shp_plane'
-las <- lasdetectshape(las, shp_plane(k = 25), "planar")
+las <- segment_shape(las, shp_plane(k = 25), "planar")
 #> Computed in 0.1 second
 
 all.equal(M$planar, las$planar)
@@ -125,7 +128,7 @@ M1 <- point_metrics(las, ~plane_metrics2(X,Y,Z), k = 25, filter = ~ReturnNumber 
 dim(M1) # 13894 instead of 17182 previously.
 
 # is a memory-optimized equivalent to:
-first = lasfilterfirst(las)
+first = filter_first(las)
 M2 <- point_metrics(first, ~plane_metrics2(X,Y,Z), k = 25)
 all.equal(M1, M2)
 }

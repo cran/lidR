@@ -70,6 +70,9 @@ data = data.table::data.table(
               906.61, 440.83, 887.34, 860.37, 747.1, 808.75, 194.76, 734.21, 
               838.34, 834.76, 758.91, 771.76, 670.1, 810.94, 761.53, 109.26, 
               303.94, 349.94, 799.8, 737.01, 593.91),
+  Version.Major = 1,
+  Version.Minor = 2,
+  Point.Data.Format.ID = 1,
   filename = paste0("path/to/las/files/file", 1:62, ".las")
 )
 
@@ -88,6 +91,7 @@ ctg@proj4string <- Sr@proj4string
 ctg@plotOrder <- Sr@plotOrder
 ctg@data <- data
 ctg@polygons <- Sr@polygons
+ctg@data$Number.of.point.records <- 11234567
 
 ## -----------------------------------------------------------------------------
 ctg
@@ -96,7 +100,7 @@ ctg
 ctg$newattribute <- 0
 
 ## -----------------------------------------------------------------------------
-lascheck(ctg)
+las_check(ctg)
 
 ## ---- fig.width=4, fig.height=4-----------------------------------------------
 plot(ctg)

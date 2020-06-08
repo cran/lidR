@@ -93,7 +93,8 @@ plot.lasmetrics3d = function(x, y, color = "Z", colorPalette = height.colors(50)
 #' to a scene with a point cloud plotted with the function plot from lidR, the functions \code{add_*}
 #' take as first argument the output of the plot function (see examples), because the plot function
 #' does not plot the actual coordinates of the point cloud, but offsetted values. See function
-#' \link[lidR:plot]{plot} and its argument \code{clear_artifacts} for more details.
+#' \link[lidR:plot]{plot} and its argument \code{clear_artifacts} for more details. It works only
+#' with \code{rgl} i.e. \code{backend = "rgl"} which is the default.
 #'
 #' @param dtm An object of the class \code{RasterLayer}
 #' @param bg The color for the background. Default is black.
@@ -115,7 +116,7 @@ plot.lasmetrics3d = function(x, y, color = "Z", colorPalette = height.colors(50)
 #' las = readLAS(LASfile)
 #'
 #' dtm = grid_terrain(las, algorithm = tin())
-#' ttops <- tree_detection(las, lmf(ws = 5))
+#' ttops <- find_trees(las, lmf(ws = 5))
 #'
 #' plot_dtm3d(dtm)
 #'

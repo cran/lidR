@@ -133,6 +133,30 @@ test_that("lasclip clips point with SpatialPoints on LAS and LAScatalog", {
   expect_equal(discs1, discs2)
 })
 
+test_that("lasclip clips a transect on LAS and LAScatalog", {
+
+  p1 = bbox(las)[,1]
+  p2 = bbox(las)[,2]
+  tr1 = clip_transect(las, p1, p2, 2, xz = FALSE)
+  tr2 = clip_transect(ctg, p1, p2, 2, xz = FALSE)
+
+  expect_equal(tr1, tr2)
+})
+
+test_that("lasclip clips a reorients the point cloud on LAS and LAScatalog", {
+
+  p1 = bbox(las)[,1]
+  p2 = bbox(las)[,2]
+  tr1 = clip_transect(las, p1, p2, 2, xz = TRUE)
+  tr2 = clip_transect(ctg, p1, p2, 2, xz = TRUE)
+
+  expect_equal(tr1, tr2)
+  expect_equal(mean(tr1$Y), 0, tol = 0.5)
+
+  opt_output_files(ctg) <- tempfile()
+  expect_error(clip_transect(ctg, p1, p2, 2, xz = TRUE), " not available yet")
+})
+
 test_that("lasclip throw error with points and no radius", {
 
   xc <- c(684800, 684850)
@@ -153,9 +177,11 @@ test_that("lasclip throw error with lines", {
   S1 = Lines(list(Sl1), ID="a")
   S2 = Lines(list(Sl2), ID="b")
   Sl = SpatialLines(list(S1,S2))
+  sfline = sf::st_as_sf(Sl)
 
   expect_error(lasclip(las, S2), "Geometry type Lines not supported")
   expect_error(lasclip(las, Sl), "Geometry type SpatialLines not supported")
+  expect_error(lasclip(las, sfline), "Incorrect geometry type")
 })
 
 
@@ -234,6 +260,16 @@ test_that("lasclip supports multiple queries", {
   expect_equal(nrow(polys1[[2]]@data), 230L)
   expect_equal(polys1[[1]]@proj4string, las@proj4string)
   expect_equal(polys1, polys2)
+})
+
+test_that("lasclip throw error for invalid multiple queries", {
+
+  # Multiple disc
+  xc <- c(684800, 684850)
+  yc <- c(5017850, 5017900)
+  r  <- 10:13
+
+  expect_error(lasclipCircle(las, xc, yc, r), "xcenter and radius have different lengths")
 })
 
 test_that("lasclip returns an empty point cloud for empty multiple queries", {
@@ -350,7 +386,28 @@ test_that("clip writes file following LAScatalog options", {
 
   opt_output_files(ctg2) <- paste0(tmp, "/{PlotID}")
   ctg3 = lasclip(ctg2, P, radius = 10)
-
   expect_equal(normalizePath(ctg3@data$filename), normalizePath(paste0(tmp, "/plot", 1:2, ".las")))
+
+  wkt1 <- "MULTIPOLYGON (((684950.8 5017989, 685003.3 5017962, 684938.5 5017905, 684950.8 5017989)), ((684796.2 5017963, 684921.6 5017977, 684899.2 5017806, 684780.7 5017795, 684796.2 5017963), (684899.4 5017924, 684851.7 5017945, 684863.7 5017857, 684899.4 5017924)))"
+  P <- rgeos::readWKT(wkt1)
+  P <- sp::disaggregate(P)
+  P <- sp::SpatialPolygonsDataFrame(P, data.frame(PlotID = 1:2))
+  P <- sf::st_as_sf(P)
+
+  opt_output_files(ctg2) <- paste0(tmp, "/{ID}_plot{PlotID}")
+  ctg4 = lasclip(ctg2, P, radius = 10)
+
+  expect_equal(normalizePath(ctg4@data$filename), normalizePath(paste0(tmp, "/", 1:2, "_plot", 1:2, ".las")))
 })
 
+
+test_that("clip throw an error with invalid template", {
+
+  tmp  <- tempdir()
+
+  ctg2 <- ctg
+  opt_output_files(ctg2)    <- paste0(tmp, "/file_{1:3}")
+  opt_laz_compression(ctg2) <- TRUE
+
+  expect_error(lasclipRectangle(ctg2, 684850, 5017850, 684900, 5017900), "Ill-formed template string in the catalog")
+})

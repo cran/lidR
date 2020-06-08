@@ -43,7 +43,7 @@
 #'
 #' @template param-las
 #' @param func formula. An expression to be applied to each tree. It works like in \link{grid_metrics}
-#' \link{voxel_metrics} or \link{tree_hulls} and computes, in addition to tree locations a set of metrics
+#' \link{voxel_metrics} or \link{delineate_crowns} and computes, in addition to tree locations a set of metrics
 #' for each tree.
 #' @param attribute character. The column name of the attribute containing tree IDs. Default is \code{"treeID"}
 #'
@@ -95,7 +95,7 @@ tree_metrics.LAS = function(las, func = ~list(Z = max(Z)), attribute = "treeID")
 {
   assert_is_a_string(attribute)
 
-  if (!attribute %in% names(las@data)) stop("The trees are not segmented yet. Please see function 'lastrees'.")
+  if (!attribute %in% names(las@data)) stop("The trees are not segmented yet. See function 'segment_trees'.")
 
   is_formula <- tryCatch(lazyeval::is_formula(func), error = function(e) FALSE)
   if (!is_formula) func <- lazyeval::f_capture(func)

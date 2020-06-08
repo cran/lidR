@@ -29,14 +29,14 @@
 
 #' Point Cloud Decimation Algorithm
 #'
-#' This function is made to be used in \link{lasfilterdecimate}. It implements an algorithm that
+#' This function is made to be used in \link{decimate_points}. It implements an algorithm that
 #' randomly removes points or pulses to reach the desired density over the whole area (see
 #' \code{\link[lidR:area]{area}}).
 #'
 #' @param density numeric. The desired output density.
 #'
 #' @param use_pulse logical. Decimate by removing random pulses instead of random points (requires running
-#' \link{laspulse} first)
+#' \link{retrieve_pulses} first)
 #'
 #' @export
 #'
@@ -47,7 +47,7 @@
 #' las = readLAS(LASfile, select = "xyz")
 #'
 #' # Reach a pulse density of 1 on the overall dataset
-#' thinned1 = lasfilterdecimate(las, random(1))
+#' thinned1 = decimate_points(las, random(1))
 #' plot(grid_density(las))
 #' plot(grid_density(thinned1))
 random = function(density, use_pulse = FALSE)
@@ -82,13 +82,13 @@ random = function(density, use_pulse = FALSE)
     }
   }
 
-  class(f) <- c("function", "PointCloudDecimation", "Algorithm", "lidR")
+  class(f) <- LIDRALGORITHMDEC
   return(f)
 }
 
 #' Point Cloud Decimation Algorithm
 #'
-#' This function is made to be used in \link{lasfilterdecimate}. It implements an algorithm that
+#' This function is made to be used in \link{decimate_points}. It implements an algorithm that
 #' creates a grid with a given resolution and filters the point cloud by randomly selecting some
 #' points in each cell. It is designed to produce point clouds that have uniform densities throughout
 #' the coverage area. For each cell, the proportion of points or pulses that will be retained is computed
@@ -103,7 +103,7 @@ random = function(density, use_pulse = FALSE)
 #' @param res numeric. The resolution of the grid used to filter the point cloud
 #'
 #' @param use_pulse logical. Decimate by removing random pulses instead of random points (requires running
-#' \link{laspulse} first)
+#' \link{retrieve_pulses} first)
 #'
 #' @export
 #'
@@ -114,7 +114,7 @@ random = function(density, use_pulse = FALSE)
 #' las = readLAS(LASfile, select = "xyz")
 #'
 #' # Select points randomly to reach an homogeneous density of 1
-#' thinned = lasfilterdecimate(las, homogenize(1,5))
+#' thinned = decimate_points(las, homogenize(1,5))
 #' plot(grid_density(thinned))
 homogenize = function(density, res = 5, use_pulse = FALSE)
 {
@@ -150,13 +150,13 @@ homogenize = function(density, res = 5, use_pulse = FALSE)
       return(las@data[, .I[.selected_pulses(1:.N, n)], by = cells]$V1)
   }
 
-  class(f) <- c("function", "PointCloudDecimation", "Algorithm", "lidR")
+  class(f) <- LIDRALGORITHMDEC
   return(f)
 }
 
 #' Point Cloud Decimation Algorithm
 #'
-#' This function is made to be used in \link{lasfilterdecimate}. It implements an algorithm that
+#' This function is made to be used in \link{decimate_points}. It implements an algorithm that
 #' creates a grid with a given resolution and filters the point cloud by selecting the highest point
 #' within each cell.
 #'
@@ -171,7 +171,7 @@ homogenize = function(density, res = 5, use_pulse = FALSE)
 #' las = readLAS(LASfile, select = "xyz")
 #'
 #' # Select the highest point within each cell of an overlayed grid
-#' thinned = lasfilterdecimate(las, highest(4))
+#' thinned = decimate_points(las, highest(4))
 #' plot(thinned)
 highest = function(res = 1)
 {
@@ -187,7 +187,7 @@ highest = function(res = 1)
     return(C_highest(las, layout))
   }
 
-  class(f) <- c("function", "PointCloudDecimation", "Algorithm", "lidR")
+  class(f) <- LIDRALGORITHMDEC
   return(f)
 }
 

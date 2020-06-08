@@ -40,14 +40,14 @@ las@data$R <- 0
 las@data$R <- NULL
 
 ## -----------------------------------------------------------------------------
-las  <- lasadddata(las, 1:81590, "ID")
-las2 <- lasfilter(las, ID > 50000)
+las  <- add_attribute(las, 1:81590, "ID")
+las2 <- filter_poi(las, ID > 50000)
 
 ## -----------------------------------------------------------------------------
-las  <- lasaddextrabytes(las, 1:81590, "ID", "An ID for each point")
+las  <- add_lasattribute(las, 1:81590, "ID", "An ID for each point")
 
 ## -----------------------------------------------------------------------------
-lascheck(las)
+las_check(las)
 
 ## ----echo = FALSE, rgl=TRUE, dev='png'----------------------------------------
 LASfile <- system.file("extdata", "MixedConifer.laz", package="lidR")

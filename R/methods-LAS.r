@@ -55,18 +55,25 @@ LAS <- function(data, header = list(), proj4string = sp::CRS(), check = TRUE)
     stop("Wrong header object provided.")
 
   if (length(header) == 0) {
-    factor <- 0.001
+    xyzfactor <- 0.001
     header <- rlas::header_create(data)
-    header[["X scale factor"]] <- factor
-    header[["Y scale factor"]] <- factor
-    header[["Z scale factor"]] <- factor
-    header[["X offset"]] <- round_any(header[["X offset"]], factor)
-    header[["Y offset"]] <- round_any(header[["Y offset"]], factor)
-    header[["Z offset"]] <- round_any(header[["Z offset"]], factor)
-    if (nrow(data) > 0) {
-      data[1:.N, `:=`(X = round_any(X, factor), Y = round_any(Y, factor), Z = round_any(Z, factor))]
+    header[["X scale factor"]] <- xyzfactor
+    header[["Y scale factor"]] <- xyzfactor
+    header[["Z scale factor"]] <- xyzfactor
+    xoffset <- floor(header[["X offset"]])
+    yoffset <- floor(header[["Y offset"]])
+    zoffset <- 0
+    header[["X offset"]] <- xoffset
+    header[["Y offset"]] <- yoffset
+    header[["Z offset"]] <- zoffset
+
+    if (nrow(data) > 0)
+    {
+      fast_quantization(data[["X"]], xyzfactor, xoffset)
+      fast_quantization(data[["Y"]], xyzfactor, yoffset)
+      fast_quantization(data[["Z"]], xyzfactor, zoffset)
       message(glue::glue("Creation of a LAS object from data but without a header:
-      Scale factors were set to {factor} and XYZ coordinates were clamped to fit the scale factors."))
+      Scale factors were set to {xyzfactor} and XYZ coordinates were quantized to fit the scale factors."))
     }
   }
 
@@ -189,7 +196,7 @@ setMethod("extent", "LAS",
 setMethod("$<-", "LAS", function(x, name, value)
 {
   if (!name %in% names(x@data))
-    stop("Addition of a new column using $ is forbidden for LAS objects. See ?lasadddata", call. = FALSE)
+    stop("Addition of a new column using $ is forbidden for LAS objects. See ?add_attribute", call. = FALSE)
 
   if (name %in% LASATTRIBUTES)
   {
@@ -211,7 +218,7 @@ setMethod("$<-", "LAS", function(x, name, value)
 setMethod("[[<-", c("LAS", "ANY", "missing", "ANY"),  function(x, i, j, value)
 {
   if (!i %in% names(x@data))
-    stop("Addition of a new column using [[ is forbidden for LAS objects. See ?lasadddata", call. = FALSE)
+    stop("Addition of a new column using [[ is forbidden for LAS objects. See ?add_attribute", call. = FALSE)
 
   if (i %in% LASATTRIBUTES)
   {

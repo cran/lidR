@@ -27,10 +27,8 @@
 
 #' Summary and Print for \code{LAS*} objects
 #'
-#' @param object,x A \code{LAS*} object
+#' @param object,x A \code{LAS*} object or other lidR related objects.
 #' @param ... Unused
-#'
-#' @return NULL, used for its side-effect of printing information
 setGeneric("print", function(x, ...)
   standardGeneric("print"))
 
@@ -63,9 +61,13 @@ setMethod("show", "LAS", function(object)
   npoints   <- nrow(object@data)
   npoints.h <- npoints
   dpts      <- if (area > 0) npoints/area else 0
-  attr      <- names(object@data)
+  #attr      <- names(object@data)
   ext       <- sp::bbox(object)
   phb       <- object@header@PHB
+  major     <- phb[["Version Major"]]
+  minor     <- phb[["Version Minor"]]
+  version   <- paste(major, minor, sep = ".")
+  format    <- phb[["Point Data Format ID"]]
 
   units <- regmatches(object@proj4string@projargs, regexpr("(?<=units=).*?(?=\\s)", object@proj4string@projargs, perl = TRUE))
   units <- if (length(units) == 0) "units" else units
@@ -95,15 +97,14 @@ setMethod("show", "LAS", function(object)
     npoints.h   <- round(npoints/(1000^3), 2)
   }
 
-  cat("class        : LAS (", phb$`File Signature`, " v", phb$`Version Major`, ".", phb$`Version Minor`, ")\n", sep = "")
-  cat("point format : ", phb$`Point Data Format ID`, "\n", sep = "")
+  cat("class        : ", class(object), " (v", version, " format ", format, ")\n", sep = "")
   cat("memory       :", size, "\n")
-  cat("extent       :", ext[1,1], ", ", ext[1,2], ", ", ext[2,1], ", ", ext[2,2], " (xmin, xmax, ymin, ymax)\n", sep = "")
+  cat("extent       : ", ext[1,1], ", ", ext[1,2], ", ", ext[2,1], ", ", ext[2,2], " (xmin, xmax, ymin, ymax)\n", sep = "")
   cat("coord. ref.  :", object@proj4string@projargs, "\n")
   cat("area         : ", area.h, " ", areaprefix, units, "\u00B2\n", sep = "")
   cat("points       :", npoints.h, pointprefix, "points\n")
   cat("density      : ", round(dpts, 2), " points/", units, "\u00B2\n", sep = "")
-  cat("names        :", attr, "\n")
+  #cat("names        :", attr, "\n")
 
   return(invisible(object))
 })
@@ -119,6 +120,10 @@ setMethod("show", "LAScatalog", function(object)
   units       <- if (length(units) == 0) "units" else units
   areaprefix  <- ""
   pointprefix <- ""
+  major       <- sort(unique(object[["Version.Major"]]))
+  minor       <- sort(unique(object[["Version.Minor"]]))
+  version     <- paste(major, minor, sep = ".", collapse = " and ")
+  format      <- paste(sort(unique(object[["Point.Data.Format.ID"]])), collapse = " and ")
 
   if (area > 1000*1000/2)
   {
@@ -142,49 +147,49 @@ setMethod("show", "LAScatalog", function(object)
     npoints.h   <- round(npoints/(1000^3), 2)
   }
 
-  cat("class       : ", class(object), "\n", sep = "")
-  cat("extent      :", ext@xmin, ",", ext@xmax, ",", ext@ymin, ",", ext@ymax, "(xmin, xmax, ymin, ymax)\n")
+  cat("class       : ", class(object), " (v", version, " format ", format, ")\n", sep = "")
+  cat("extent      : ", ext@xmin, ", ", ext@xmax, ", ", ext@ymin, ", ", ext@ymax, " (xmin, xmax, ymin, ymax)\n", sep = "")
   cat("coord. ref. :", object@proj4string@projargs, "\n")
   cat("area        : ", area.h, " ", areaprefix, units, "\u00B2\n", sep = "")
   cat("points      :", npoints.h, pointprefix, "points\n")
   cat("density     : ", round(npoints/area, 1), " points/", units, "\u00B2\n", sep = "")
   cat("num. files  :", dim(object@data)[1], "\n")
-
   return(invisible(object))
 })
 
 #' @rdname print
 setMethod("summary", "LAScatalog", function(object, ...)
 {
+  inmemory <- if (opt_output_files(object) == "") "in memory" else "on disk"
+  w2w  <- if (opt_wall_to_wall(object)) "guaranteed" else "not guaranteed"
+  merging <- if (opt_merge(object)) "enabled" else "disable"
+
   show(object)
-  byfile <- opt_chunk_is_file(object)
-  save   <- opt_output_files(object) != ""
-  laz    <- opt_laz_compression(object)
+  cat("proc. opt.  : buffer: ", opt_chunk_buffer(object), " | chunk: ", opt_chunk_size(object), "\n", sep = "")
+  cat("input opt.  : select: ", opt_select(object), " | filter: ", opt_filter(object), "\n", sep = "")
+  cat("output opt. : ", inmemory, " | w2w ", w2w, " | merging ", merging, "\n", sep = "")
+  cat("drivers     :\n")
 
-  cat("Summary of the processing options:\n")
+  drivers <- object@output_options$drivers
+  dnames <- names(drivers)
+  for (i in 1:length(drivers))
+  {
+    driver <- drivers[[i]]
+    params <- driver$param
+    pnames <- names(params)
+    cat(" -", dnames[i], ": ")
+    if (length(params) > 0)
+    {
+      for (j in 1:length(params))
+        cat(pnames[j], "=", params[[j]], " ")
+    }
+    else
+    {
+      cat("no parameter")
+    }
+    cat("\n")
 
-  if (byfile)
-    cat("  - Catalog will be processed by file respecting the original tiling pattern\n")
-  else
-    cat("  - Catalog will be processed by chunks of size:", opt_chunk_size(object), "\n")
-
-  cat("Summary of the output options:\n")
-
-  if (!save)
-    cat("  - Outputs will be returned in R objects.\n")
-  else
-    cat("  - Outputs will be written in files:", opt_output_files(object), "\n")
-
-  if (!laz & save)
-    cat("  - If outputs are LAS objects, they will not be compressed (.las)\n")
-  else if (laz & save)
-    cat("  - If outputs are LAS objects, they will be compressed (.laz)\n")
-
-  cat("Summary of the input options:\n")
-
-  cat("  - readLAS will be called with the following select option:", opt_select(object), "\n")
-  cat("  - readLAS will be called with the following filter option:", opt_filter(object), "\n")
-
+  }
   return(invisible(object))
 })
 
@@ -296,3 +301,67 @@ setMethod("show", "LAScluster", function(object)
 
   return(invisible(object))
 })
+
+
+#' @export
+#' @method print lidRAlgorithm
+#' @rdname print
+print.lidRAlgorithm = function(x, ...)
+{
+  e <- environment(x)
+  params <- ls(e)
+  params <- Filter(function(i) !is.algorithm(get(i,e)), params)
+  omp <- if (is.parallelised(x)) "yes" else "no"
+
+  if (is(x, LIDRDSM))
+  { use = "digital surface model" ; with = LIDRCONTEXTDSM }
+  else if (is (x, LIDRDEC))
+  { use = "point cloud thinning" ; with = LIDRCONTEXTDEC }
+  else if (is (x, LIDRGND))
+  { use = "ground classification" ; with = LIDRCONTEXTGND }
+  else if (is (x, LIDRITD))
+  { use = "individual tree detection" ; with = LIDRCONTEXTITD }
+  else if (is (x, LIDRITS))
+  { use = "individual tree segmentation" ; with = LIDRCONTEXTITS }
+  else if (is (x, LIDRNIT))
+  { use = "intensity normalisation" ; with = LIDRCONTEXTNIT }
+  else if (is (x, LIDRSNG))
+  { use = "snag segmentation" ; with = LIDRCONTEXTSNG }
+  else if (is (x, LIDRTRK))
+  { use = "sensor tracking" ; with = LIDRCONTEXTTRK }
+  else if (is (x, LIDRSHP))
+  { use = "shape segmentation" ; with = LIDRCONTEXTSHP }
+  else if (is (x, LIDRSPI))
+  {  use = "spatial interpolation" ; with = LIDRCONTEXTSPI }
+  else
+  { use = "unknown" ; with = "unknown" } # nocov
+
+  with = paste(with, collapse = " or ")
+
+  cat("Object of class lidR algorithm\n")
+  cat("Algorithm for:", use, "\n")
+  cat("Designed to be used with:", with, "\n")
+  cat("Native C++ parallelization:", omp, "\n")
+  cat("Parameters: ")
+
+  if (length(params) == 0L)
+  {
+    cat("none\n")
+    return(invisible(x))
+  }
+  else
+    cat("\n")
+
+  for (param in params)
+  {
+    v = get(param, e)
+    if (is.numeric(v) | is.complex(v) | is.logical(v) | is.character(v))
+      cat(" - ", param, " = " , v, " <", class(v), ">\n", sep = "")
+    else if (is.null(v))
+      cat(" - ", param, " = NULL <NULL>\n", sep = "")
+    else
+      cat(" - ", param, " <", class(v), ">\n", sep = "")
+  }
+
+  return(invisible(x))
+}

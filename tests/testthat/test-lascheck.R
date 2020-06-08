@@ -7,6 +7,7 @@ las1 <- las0
 las1@data <- data.table::copy(las0@data)
 
 las1@data[1, X := NA_real_]
+las1@data[1, Z := -5]
 las1@data[5,] = las1@data[6,]
 las1@data[7,1:2] = las1@data[6, 1:2]
 las1@data[5:7, Classification := 2L]
@@ -98,5 +99,48 @@ test_that("lascheck CRS specific test", {
   sink(NULL)
 })
 
+test_that("lascheck quantization specific test", {
 
+  sink(tempfile())
 
+  x = las0@data[["X"]][5]
+  y = las0@data[["Y"]][5]
+  z = las0@data[["Z"]][5]
+
+  las0@header@PHB$`Min X` <- las0@header@PHB$`Min X` + 0.0001
+  las0@header@PHB$`Max Y` <- las0@header@PHB$`Max Y` + 0.0001
+  las0@header@PHB$`Max Z` <- las0@header@PHB$`Max Z` + 0.0001
+  las0@data[["X"]][5] <- x + 0.00123
+  las0@data[["Y"]][5] <- y + 0.000123
+  las0@data[["Z"]][5] <- z + 0.0000123
+
+  expect_error(las_check(las0), NA)
+
+  sink(NULL)
+})
+
+test_that("las_check performs a deep inspection of a LAScatalog", {
+
+  sink(tempfile())
+
+  o1 = las_check(ctg1, print = FALSE, deep = TRUE)
+  o2 = las_check(ctg1, print = TRUE, deep = TRUE)
+
+  sink(NULL)
+
+  expect_equal(o1,o2)
+  expect_equal(length(o1), 3L)
+})
+
+test_that("las_check returns a list of troubleshooting", {
+
+  report = las_check(las1, FALSE)
+
+  expect_is(report, "list")
+  expect_equal(names(report), c("warnings", "errors"))
+
+  report = las_check(ctg1, FALSE)
+
+  expect_is(report, "list")
+  expect_equal(names(report), c("warnings", "errors"))
+})

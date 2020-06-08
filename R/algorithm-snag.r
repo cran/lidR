@@ -28,7 +28,7 @@
 
 #' Snags Segmentation Algorithm
 #'
-#' This function is made to be used in \link{lassnags}. It implements an algorithms for snags segmentation
+#' This function is made to be used in \link{segment_snags}. It implements an algorithms for snags segmentation
 #' based on Wing et al (2015) (see references). This is an automated filtering algorithm that utilizes
 #' three dimensional neighborhood lidar point-based intensity and density statistics to remove lidar
 #' points associated with live trees and retain lidar points associated with snags.
@@ -89,13 +89,13 @@
 #'                           nrow =3, ncol = 4)
 #'
 #' # Run snag classification and assign classes to each point
-#' las <- lassnags(las, wing2015(neigh_radii = c(1.5, 1, 2), BBPRthrsh_mat = bbpr_thresholds))
+#' las <- segment_snags(las, wing2015(neigh_radii = c(1.5, 1, 2), BBPRthrsh_mat = bbpr_thresholds))
 #'
 #' # Plot it all, tree and snag points...
 #' plot(las, color="snagCls", colorPalette = rainbow(5))
 #'
 #' # Filter and plot snag points only
-#' snags <- lasfilter(las, snagCls > 0)
+#' snags <- filter_poi(las, snagCls > 0)
 #' plot(snags, color="snagCls", colorPalette = rainbow(5)[-1])
 #'
 #' # Wing et al's (2015) methods ended with performing tree segmentation on the
@@ -133,7 +133,7 @@ wing2015 = function(neigh_radii = c(1.5,1,2), low_int_thrsh = 50, uppr_int_thrsh
     return(C_Wing2015(las, neigh_radii, low_int_thrsh, uppr_int_thrsh, pt_den_req, BBPRthrsh_mat, getThread()))
   }
 
-  class(f) <- c("function", "SnagsSegmentation", "OpenMP", "Algorithm", "lidR")
+  class(f) <- c(LIDRALGORITHMSNG, LIDRALGORITHMOPENMP)
 
   return(f)
 }

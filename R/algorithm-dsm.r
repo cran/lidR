@@ -105,7 +105,7 @@ p2r = function(subcircle = 0, na.fill = NULL)
       data.table::setnames(where, names(where), c("X", "Y"))
       where  <- where[sp::point.in.polygon(where$X, where$Y, hull[,1], hull[,2], TRUE) > 0]
 
-      lidR.context <- "spatial_interpolation"
+      lidR.context <- "p2r"
       cells <- raster::cellFromXY(layout, where)
       layout[cells] <- na.fill(grid, where)
 
@@ -115,7 +115,7 @@ p2r = function(subcircle = 0, na.fill = NULL)
     return(dsm)
   }
 
-  class(f) <- c("function", "DigitalSurfaceModel", "Algorithm", "lidR")
+  class(f) <- LIDRALGORITHMDSM
   return(f)
 }
 
@@ -148,7 +148,7 @@ p2r = function(subcircle = 0, na.fill = NULL)
 #' # Potentially complex concave subset of point cloud
 #' x = c(481340, 481340, 481280, 481300, 481280, 481340)
 #' y = c(3812940, 3813000, 3813000, 3812960, 3812940, 3812940)
-#' las2 = lasclipPolygon(las,x,y)
+#' las2 = clip_polygon(las,x,y)
 #' plot(las2)
 #'
 #' # Since the TIN interpolation is done within the convex hull of the point cloud
@@ -215,7 +215,7 @@ dsmtin = function(max_edge = 0)
 #' # Potentially complex concave subset of point cloud
 #' x = c(481340, 481340, 481280, 481300, 481280, 481340)
 #' y = c(3812940, 3813000, 3813000, 3812960, 3812940, 3812940)
-#' las2 = lasclipPolygon(las,x,y)
+#' las2 = clip_polygon(las,x,y)
 #' plot(las2)
 #'
 #' # Since the TIN interpolation is done within the convex hull of the point cloud
@@ -324,6 +324,6 @@ pitfree <- function(thresholds = c(0, 2, 5, 10, 15), max_edge = c(0, 1), subcirc
     return(z)
   }
 
-  class(f) <- c("function", "DigitalSurfaceModel", "OpenMP", "Algorithm", "lidR")
+  class(f) <- c(LIDRALGORITHMDSM, LIDRALGORITHMOPENMP)
   return(f)
 }

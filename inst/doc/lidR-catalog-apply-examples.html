@@ -301,35 +301,35 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 
-<p>The following demonstrates how to write your own functions that are fully applicable on a wide catalog of point clouds and based on the available <code>lidR</code> tools. We will create a simple <code>lasfilternoise</code> function. This example should not be considered as the reference method for filtering noise, but rather as a demonstration to help understand the logic behind the design of lidR, and as a full example of how to create a user-defined function that is fully operational. The code design is the one used internally in lidR and relies on S3 method dispatch. For more details, we recommend reading the chapter about <a href="http://adv-r.had.co.nz/S3.html">S3 method dispatch</a> from the <a href="http://adv-r.had.co.nz/">Advanced R</a> book.</p>
-<div id="create-a-generic-lasfilternoise-function" class="section level2">
-<h2>Create a generic <code>lasfilternoise</code> function</h2>
-<p>First we create a generic function <code>lasfilternoise</code> that will be usable on different classes.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1">lasfilternoise =<span class="st"> </span><span class="cf">function</span>(las, ...)</a>
+<p>The following demonstrates how to write your own functions that are fully applicable on a wide catalog of point clouds and based on the available <code>lidR</code> tools. We will create a simple <code>filter_noise</code> function. This example should not be considered as the reference method for filtering noise, but rather as a demonstration to help understand the logic behind the design of lidR, and as a full example of how to create a user-defined function that is fully operational. The code design is the one used internally in lidR and relies on S3 method dispatch. For more details, we recommend reading the chapter about <a href="http://adv-r.had.co.nz/S3.html">S3 method dispatch</a> from the <a href="http://adv-r.had.co.nz/">Advanced R</a> book.</p>
+<div id="create-a-generic-filter_noise-function" class="section level2">
+<h2>Create a generic <code>filter_noise</code> function</h2>
+<p>First we create a generic function <code>filter_noise</code> that will be usable on different classes.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1">filter_noise =<span class="st"> </span><span class="cf">function</span>(las, ...)</a>
 <a class="sourceLine" id="cb1-2" data-line-number="2">{</a>
-<a class="sourceLine" id="cb1-3" data-line-number="3">  <span class="kw">UseMethod</span>(<span class="st">&quot;lasfilternoise&quot;</span>, las)</a>
+<a class="sourceLine" id="cb1-3" data-line-number="3">  <span class="kw">UseMethod</span>(<span class="st">&quot;filter_noise&quot;</span>, las)</a>
 <a class="sourceLine" id="cb1-4" data-line-number="4">}</a></code></pre></div>
 </div>
-<div id="create-a-lasfilternoise-for-las-objects" class="section level2">
-<h2>Create a <code>lasfilternoise</code> for <code>LAS</code> objects</h2>
-<p>A simple (perhaps too simplistic) way to detect outliers is to measure the 95th percentile of height in 10 x 10-m pixels (area-based approach) and then remove the points that are above the 95th percentile in each pixel plus, for example, 20%. This can easily be built in lidR using <code>grid_metrics</code>, <code>lasmergespatial</code> and <code>lasfilter</code>, and should work either on a normalized or a raw point cloud. Let’s create a function method <code>lasfilternoise</code> for LAS objects:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1">lasfilternoise.LAS =<span class="st"> </span><span class="cf">function</span>(las, sensitivity)</a>
+<div id="create-a-filter_noise-for-las-objects" class="section level2">
+<h2>Create a <code>filter_noise</code> for <code>LAS</code> objects</h2>
+<p>A simple (perhaps too simplistic) way to detect outliers is to measure the 95th percentile of height in 10 x 10-m pixels (area-based approach) and then remove the points that are above the 95th percentile in each pixel plus, for example, 20%. This can easily be built in lidR using <code>grid_metrics</code>, <code>merge_spatial</code> and <code>filter_poi</code>, and should work either on a normalized or a raw point cloud. Let’s create a function method <code>filter_noise</code> for LAS objects:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1">filter_noise.LAS =<span class="st"> </span><span class="cf">function</span>(las, sensitivity)</a>
 <a class="sourceLine" id="cb2-2" data-line-number="2">{</a>
 <a class="sourceLine" id="cb2-3" data-line-number="3">  p95 &lt;-<span class="st"> </span><span class="kw">grid_metrics</span>(las, <span class="op">~</span><span class="kw">quantile</span>(Z, <span class="dt">probs =</span> <span class="fl">0.95</span>), <span class="dv">10</span>)</a>
-<a class="sourceLine" id="cb2-4" data-line-number="4">  las &lt;-<span class="st"> </span><span class="kw">lasmergespatial</span>(las, p95, <span class="st">&quot;p95&quot;</span>)</a>
-<a class="sourceLine" id="cb2-5" data-line-number="5">  las &lt;-<span class="st"> </span><span class="kw">lasfilter</span>(las, Z <span class="op">&lt;</span><span class="st"> </span>p95<span class="op">*</span>sensitivity)</a>
+<a class="sourceLine" id="cb2-4" data-line-number="4">  las &lt;-<span class="st"> </span><span class="kw">merge_spatial</span>(las, p95, <span class="st">&quot;p95&quot;</span>)</a>
+<a class="sourceLine" id="cb2-5" data-line-number="5">  las &lt;-<span class="st"> </span><span class="kw">filter_poi</span>(las, Z <span class="op">&lt;</span><span class="st"> </span>p95<span class="op">*</span>sensitivity)</a>
 <a class="sourceLine" id="cb2-6" data-line-number="6">  las<span class="op">$</span>p95 &lt;-<span class="st"> </span><span class="ot">NULL</span></a>
 <a class="sourceLine" id="cb2-7" data-line-number="7">  <span class="kw">return</span>(las)</a>
 <a class="sourceLine" id="cb2-8" data-line-number="8">}</a></code></pre></div>
 <p>This function is fully functional on a point cloud loaded in memory</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">las &lt;-<span class="st"> </span><span class="kw">readLAS</span>(<span class="st">&quot;file.las&quot;</span>)</a>
-<a class="sourceLine" id="cb3-2" data-line-number="2">las &lt;-<span class="st"> </span><span class="kw">lasfilternoise</span>(las, <span class="dt">sensitivity =</span> <span class="fl">1.2</span>)</a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">las &lt;-<span class="st"> </span><span class="kw">filter_noise</span>(las, <span class="dt">sensitivity =</span> <span class="fl">1.2</span>)</a>
 <a class="sourceLine" id="cb3-3" data-line-number="3"><span class="kw">writeLAS</span>(las, <span class="st">&quot;denoised-file.las&quot;</span>)</a></code></pre></div>
 </div>
-<div id="extend-the-lasfilternoise-function-to-a-lascatalog" class="section level2">
-<h2>Extend the <code>lasfilternoise</code> function to a <code>LAScatalog</code></h2>
-<p>Users can access the catalog processing engine with the function <code>catalog_apply</code> i.e. the engine used internally. It can be applied to any function over an entire catalog. Here we will apply our custom <code>lasfilternoise</code> function. To use our function <code>lasfilternoise</code> on a LAScatalog we must create a compatible function (see documentation of <code>catalog_apply</code>). In the lidR package we usually create an intermediate method. Here <code>lasfilternoise</code> for <code>LAScluster</code> objects (see also the documentation for <code>catalog_apply</code>):</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1">lasfilternoise.LAScluster =<span class="st"> </span><span class="cf">function</span>(las, sensitivity)</a>
+<div id="extend-the-filter_noise-function-to-a-lascatalog" class="section level2">
+<h2>Extend the <code>filter_noise</code> function to a <code>LAScatalog</code></h2>
+<p>Users can access the catalog processing engine with the function <code>catalog_apply</code> i.e. the engine used internally. It can be applied to any function over an entire catalog. Here we will apply our custom <code>filter_noise</code> function. To use our function <code>filter_noise</code> on a LAScatalog we must create a compatible function (see documentation of <code>catalog_apply</code>). In the lidR package we usually create an intermediate method. Here <code>filter_noise</code> for <code>LAScluster</code> objects (see also the documentation for <code>catalog_apply</code>):</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1">filter_noise.LAScluster =<span class="st"> </span><span class="cf">function</span>(las, sensitivity)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2">{</a>
 <a class="sourceLine" id="cb4-3" data-line-number="3">  <span class="co"># The function is automatically fed with LAScluster objects</span></a>
 <a class="sourceLine" id="cb4-4" data-line-number="4">  <span class="co"># Here the input 'las' will a LAScluster</span></a>
@@ -337,16 +337,16 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb4-6" data-line-number="6">  las &lt;-<span class="st"> </span><span class="kw">readLAS</span>(las)                          <span class="co"># Read the LAScluster</span></a>
 <a class="sourceLine" id="cb4-7" data-line-number="7">  <span class="cf">if</span> (<span class="kw">is.empty</span>(las)) <span class="kw">return</span>(<span class="ot">NULL</span>)              <span class="co"># Exit early (see documentation)</span></a>
 <a class="sourceLine" id="cb4-8" data-line-number="8">  </a>
-<a class="sourceLine" id="cb4-9" data-line-number="9">  las &lt;-<span class="st"> </span><span class="kw">lasfilternoise</span>(las, sensitivity)      <span class="co"># Filter the noise</span></a>
-<a class="sourceLine" id="cb4-10" data-line-number="10">  las &lt;-<span class="st"> </span><span class="kw">lasfilter</span>(las, buffer <span class="op">==</span><span class="st"> </span><span class="dv">0</span>)           <span class="co"># Don't forget to remove the buffer</span></a>
+<a class="sourceLine" id="cb4-9" data-line-number="9">  las &lt;-<span class="st"> </span><span class="kw">filter_noise</span>(las, sensitivity)      <span class="co"># Filter the noise</span></a>
+<a class="sourceLine" id="cb4-10" data-line-number="10">  las &lt;-<span class="st"> </span><span class="kw">filter_poi</span>(las, buffer <span class="op">==</span><span class="st"> </span><span class="dv">0</span>)           <span class="co"># Don't forget to remove the buffer</span></a>
 <a class="sourceLine" id="cb4-11" data-line-number="11">  <span class="kw">return</span>(las)                                  <span class="co"># Return the filtered point cloud</span></a>
 <a class="sourceLine" id="cb4-12" data-line-number="12">}</a></code></pre></div>
-<p>This function can be used in <code>catalog_apply</code>. We can then create a method <code>lasfilternoise</code> for a <code>LAScatalog</code>:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1">lasfilternoise.LAScatalog =<span class="st"> </span><span class="cf">function</span>(las, sensitivity)</a>
+<p>This function can be used in <code>catalog_apply</code>. We can then create a method <code>filter_noise</code> for a <code>LAScatalog</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1">filter_noise.LAScatalog =<span class="st"> </span><span class="cf">function</span>(las, sensitivity)</a>
 <a class="sourceLine" id="cb5-2" data-line-number="2">{</a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">   <span class="kw">catalog_apply</span>(las, lasfilternoise, <span class="dt">sensitivity =</span> sensitivity)</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">   <span class="kw">catalog_apply</span>(las, filter_noise, <span class="dt">sensitivity =</span> sensitivity)</a>
 <a class="sourceLine" id="cb5-4" data-line-number="4">}</a></code></pre></div>
-<p>And it just works. This function <code>lasfilternoise</code> is now fully compatible with the catalog processing engine and supports all the options of the engine.</p>
+<p>And it just works. This function <code>filter_noise</code> is now fully compatible with the catalog processing engine and supports all the options of the engine.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" data-line-number="1">myproject &lt;-<span class="st"> </span><span class="kw">catalog</span>(<span class="st">&quot;folder/to/lidar/data/&quot;</span>)</a>
 <a class="sourceLine" id="cb6-2" data-line-number="2"></a>
 <a class="sourceLine" id="cb6-3" data-line-number="3"><span class="kw">opt_filter</span>(myproject)       &lt;-<span class="st"> &quot;-drop_z_below 0&quot;</span></a>
@@ -355,17 +355,17 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb6-6" data-line-number="6"><span class="kw">opt_cores</span>(myproject)        &lt;-<span class="st"> </span><span class="dv">2</span></a>
 <a class="sourceLine" id="cb6-7" data-line-number="7"><span class="kw">opt_output_files</span>(myproject) &lt;-<span class="st"> &quot;folder/to/lidar/data/denoised/{ORIGINALFILENAME}_denoised&quot;</span></a>
 <a class="sourceLine" id="cb6-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb6-9" data-line-number="9">output &lt;-<span class="st"> </span><span class="kw">lasfilternoise</span>(myproject, <span class="dt">tolerance =</span> <span class="fl">1.2</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb6-9" data-line-number="9">output &lt;-<span class="st"> </span><span class="kw">filter_noise</span>(myproject, <span class="dt">tolerance =</span> <span class="fl">1.2</span>)</a></code></pre></div>
 </div>
 <div id="finalize-the-functions" class="section level2">
 <h2>Finalize the functions</h2>
-<p>As is, the function <code>lasfilternoise.LAScatalog</code> is not actually complete. Indeed:</p>
+<p>As is, the function <code>filter_noise.LAScatalog</code> is not actually complete. Indeed:</p>
 <ol style="list-style-type: decimal">
 <li>The processing options were not checked. For example, this function should not allow the output to be returned into R otherwise the whole point cloud will be returned.</li>
-<li>The output is a list of written files that can be simplified into a LAScatalog.</li>
+<li>The output is a list of written files that can be simplified into a <code>LAScatalog</code>.</li>
 </ol>
 <p>In lidR the functions usually look like this:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1">lasfilternoise.LAScatalog =<span class="st"> </span><span class="cf">function</span>(las, sensitivity)</a>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1">filter_noise.LAScatalog =<span class="st"> </span><span class="cf">function</span>(las, sensitivity)</a>
 <a class="sourceLine" id="cb7-2" data-line-number="2">{</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3">   <span class="kw">opt_select</span>(las) &lt;-<span class="st">  &quot;*&quot;</span>         <span class="co"># Do not respect the select argument by overwriting it</span></a>
 <a class="sourceLine" id="cb7-4" data-line-number="4"></a>
@@ -374,7 +374,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb7-7" data-line-number="7">       <span class="dt">need_buffer =</span> <span class="ot">TRUE</span>,         <span class="co"># Throw an error if buffer is 0</span></a>
 <a class="sourceLine" id="cb7-8" data-line-number="8">       <span class="dt">automerge =</span> <span class="ot">TRUE</span>)           <span class="co"># Automatically merge the output list (here into a LAScatalog)</span></a>
 <a class="sourceLine" id="cb7-9" data-line-number="9">   </a>
-<a class="sourceLine" id="cb7-10" data-line-number="10">   output  &lt;-<span class="st"> </span><span class="kw">catalog_apply</span>(las, lasfilternoise, <span class="dt">sensitivity =</span> sensitivity, <span class="dt">.options =</span> options)</a>
+<a class="sourceLine" id="cb7-10" data-line-number="10">   output  &lt;-<span class="st"> </span><span class="kw">catalog_apply</span>(las, filter_noise, <span class="dt">sensitivity =</span> sensitivity, <span class="dt">.options =</span> options)</a>
 <a class="sourceLine" id="cb7-11" data-line-number="11">   <span class="kw">return</span>(output)</a>
 <a class="sourceLine" id="cb7-12" data-line-number="12">}</a></code></pre></div>
 <p>Now you know how to build your custom functions that work either on a LAS or a LAScatalog object.</p>

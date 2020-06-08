@@ -125,6 +125,7 @@
 #' \item \strong{drivers}: list. This contains all the drivers required to seamlessly write Raster*,
 #' Spatial*, LAS objects. It is recommended that only advanced users change this option. A dedicated
 #' page describes the drivers in \link{lidR-LAScatalog-drivers}.
+#' \item \strong{merge}: boolean. Multiple objects are merged into a single one at the end of the processing.
 #' }
 #'
 #' @section Input options:
@@ -188,7 +189,7 @@
 #' opt_chunk_size(ctg) <- 0
 #' opt_output_files(ctg) <- "path/to/folder/{ORIGINALFILENAME}_norm"
 #' opt_laz_compression(ctg) <- TRUE
-#' new_ctg <- lasnormalize(ctg, tin())
+#' new_ctg <- normalize_height(ctg, tin())
 #'
 #' # The user has access to the catalog engine through the function catalog_apply
 #' output <- catalog_apply(ctg, FUN, ...)
@@ -260,7 +261,8 @@ setMethod("initialize", "LAScatalog", function(.Object)
 
   .Object@output_options <- list(
     output_files = "",
-    drivers = drivers
+    drivers = drivers,
+    merge = TRUE
   )
 
   .Object@input_options <- list(

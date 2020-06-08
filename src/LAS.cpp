@@ -225,16 +225,13 @@ void LAS::i_range_correction(DataFrame flightlines, double Rs, double f)
   NumericVector z = flightlines["Z"];
   NumericVector t = flightlines["gpstime"];
 
+  double i;
+
   // Compute the median sensor elevation then average range for this sensor
   // elevation. This gives a rough idea of the expected range and allows for
   // detecting failure and bad computations
   double median_z_sensor = Rcpp::median(z);
   double R_control = mean(median_z_sensor - Z);
-
-  NumericVector::iterator it;
-  double dx, dy, dz, r, R;
-  double i;
-  int j;
 
   IntegerVector Inorm(X.size());
 
@@ -246,67 +243,13 @@ void LAS::i_range_correction(DataFrame flightlines, double Rs, double f)
     pbar.increment();
     pbar.check_abort();
 
-    // The sensor positions were already sorted a R level
-    // For each point find the first element that is not less than the time t of the points
-    // This give the closest position of the sensor after (t1) the aqcuisition of the points (t)
-    it = std::lower_bound(t.begin(), t.end(), T[k]);
-
-    // We now need the sensor position before (t0) the aqcuisition.
-
-    // If the sensor position is the first one: no sensor position exists before this one
-    // thus no interpolation possible. We use the next one.
-    if (it == t.begin())
-    {
-      j = 1;
-    }
-    // If the sensor position not found: no sensor position exists after this one
-    // thus no interpolation possible. We use the last one.
-    else if (it == t.end())
-    {
-      j = x.size() - 1;
-    }
-    // If t1-t0 is too big it is two differents flightlines. We must hold this case by chosing
-    // if we use the previous point or this one.
-    else if (std::abs(*it - *(it-1)) > 30)
-    {
-      // If t is closer to the previous one
-      if (std::abs(T[k] - *(it-1)) < std::abs(T[k] - *(it+1)))
-        j = it - t.begin() - 1;
-      else
-        j = it - t.begin() + 1;
-    }
-    // General case with t1 > t > t0. We have a sensor position after the aquisition of the point
-    // and it is not the first one. So we necessarily have a previous one. We can make the
-    // interpolation
-    else
-    {
-      j = it - t.begin();
-    }
-
-    if (j >= x.size()) throw Rcpp::exception("Internal error: access to coordinates beyond the limits of the array. Please report this bug.", false);
-    if (j <= 0)        throw Rcpp::exception("Internal error: access to coordinates below 0 in the array. Please report this bug.", false);
-
-    r  = 1 - (t[j]-T[k])/(t[j]-t[j-1]);
-    dx = X[k] - (x[j-1] + (x[j] - x[j-1])*r);
-    dy = Y[k] - (y[j-1] + (y[j] - y[j-1])*r);
-    dz = Z[k] - (z[j-1] + (z[j] - z[j-1])*r);
-    R  = std::sqrt(dx*dx + dy*dy + dz*dz);
-
-    if (R > 3 * R_control)
-    {
-      REprintf("An high range R has been computed relatively to the expected average range Rm = %.0lf\n", R_control);
-      REprintf("Point number %d at (x,y,z,t) = (%.2lf, %.2lf, %.2lf, %.2lf)\n", k+1, X[k], Y[k], Z[k], T[k]);
-      REprintf("Matched with sensor between (%.2lf, %.2lf, %.2lf, %.2lf) and (%.2lf, %.2lf, %.2lf, %.2lf)\n", x[j-1], y[j-1], z[j-1], t[j-1], x[j], y[j], z[j], t[j]);
-      REprintf("The range computed was R = %.2lf\n", R, dx, dy, dz, t[j]);
-      REprintf("Check the correctness of the sensor positions and the correctness of the gpstime either in the point cloud or in the sensor positions.\n");
-      throw Rcpp::exception("Unrealistic range: see message above", false);
-    }
+    double R = range(x, y, z, t, k, R_control);
 
     i = I[k] * std::pow((R/Rs),f);
 
     if (i > 65535)
     {
-      Rf_warningcall(R_NilValue, "Normalized intensity does not fit in 16 bit. Value clamped to 2^16.");
+      Rf_warningcall(R_NilValue, "Normalized intensity does not fit in 16 bits. Value clamped to 2^16.");
       i = 65535;
     }
 
@@ -316,6 +259,102 @@ void LAS::i_range_correction(DataFrame flightlines, double Rs, double f)
   I = Inorm;
 
   return;
+}
+
+double LAS::range(NumericVector &x, NumericVector &y , NumericVector &z, NumericVector &t,  int k, double R_control)
+{
+  NumericVector::iterator it;
+  double dx, dy, dz, r, R;
+  double i;
+  int j = 0;
+
+  // The sensor positions were already sorted a R level
+  // For each point find the first element that is not less than the time t of the points
+  // This give the closest position of the sensor after (t1) the aqcuisition of the points (t)
+  it = std::lower_bound(t.begin(), t.end(), T[k]);
+
+  // We now need the sensor position before (t0) the aqcuisition.
+
+  // If the sensor position is the first one: no sensor position exists before this one
+  // thus no interpolation possible. We use the next one.
+  if (it == t.begin())
+  {
+    j = 1;
+  }
+  // If the sensor position not found: no sensor position exists after this one
+  // thus no interpolation possible. We use the last one.
+  else if (it == t.end())
+  {
+    j = x.size() - 1;
+  }
+  // If t1-t0 is too big it is two differents flightlines. We must hold this case by chosing
+  // if we use the previous point or this one.
+  else if (std::abs(*it - *(it-1)) > 30)
+  {
+    // If t is closer to the previous one
+    if (std::abs(T[k] - *(it-1)) < std::abs(T[k] - *(it+1)))
+      j = it - t.begin() - 1;
+    else
+      j = it - t.begin() + 1;
+  }
+  // General case with t1 > t > t0. We have a sensor position after the aquisition of the point
+  // and it is not the first one. So we necessarily have a previous one. We can make the
+  // interpolation
+  else
+  {
+    j = it - t.begin();
+  }
+
+  if (j >= x.size()) throw Rcpp::exception("Internal error: access to coordinates beyond the limits of the array. Please report this bug.", false);
+  if (j <= 0)        throw Rcpp::exception("Internal error: access to coordinates below 0 in the array. Please report this bug.", false);
+
+  r  = 1 - (t[j]-T[k])/(t[j]-t[j-1]);
+  dx = X[k] - (x[j-1] + (x[j] - x[j-1])*r);
+  dy = Y[k] - (y[j-1] + (y[j] - y[j-1])*r);
+  dz = Z[k] - (z[j-1] + (z[j] - z[j-1])*r);
+
+  R  = std::sqrt(dx*dx + dy*dy + dz*dz);
+
+  if (R > 3 * R_control)
+  {
+    REprintf("An high range R has been computed relatively to the expected average range Rm = %.0lf\n", R_control);
+    REprintf("Point number %d at (x,y,z,t) = (%.2lf, %.2lf, %.2lf, %.2lf)\n", k+1, X[k], Y[k], Z[k], T[k]);
+    REprintf("Matched with sensor between (%.2lf, %.2lf, %.2lf, %.2lf) and (%.2lf, %.2lf, %.2lf, %.2lf)\n", x[j-1], y[j-1], z[j-1], t[j-1], x[j], y[j], z[j], t[j]);
+    REprintf("The range computed was R = %.2lf\n", R, dx, dy, dz, t[j]);
+    REprintf("Check the correctness of the sensor positions and the correctness of the gpstime either in the point cloud or in the sensor positions.\n");
+    throw Rcpp::exception("Unrealistic range: see message above", false);
+  }
+
+  return R;
+}
+
+NumericVector LAS::compute_range(DataFrame flightlines)
+{
+  // Coordinates of the sensors
+  NumericVector x = flightlines["X"];
+  NumericVector y = flightlines["Y"];
+  NumericVector z = flightlines["Z"];
+  NumericVector t = flightlines["gpstime"];
+
+  // Compute the median sensor elevation then average range for this sensor
+  // elevation. This gives a rough idea of the expected range and allows for
+  // detecting failure and bad computations
+  double median_z_sensor = Rcpp::median(z);
+  double R_control = mean(median_z_sensor - Z);
+
+  NumericVector R(npoints);
+
+  Progress pbar(npoints, "Range computation");
+
+  // Loop on each point
+  for (unsigned int k = 0 ; k < npoints ; k++)
+  {
+    pbar.increment();
+    pbar.check_abort();
+    R[k] = range(x, y, z, t, k, R_control);
+  }
+
+  return R;
 }
 
 void LAS::filter_local_maxima(NumericVector ws, double min_height, bool circular)
@@ -349,6 +388,95 @@ void LAS::filter_local_maxima(NumericVector ws, double min_height, bool circular
     {
       Circle circ(X[i], Y[i], hws);
       tree.lookup(circ, pts);
+    }
+
+    // Get the highest Z in the windows
+    double Zmax = std::numeric_limits<double>::min();
+    Point* p = pts[0];
+    for (unsigned int j = 0 ; j < pts.size() ; j++)
+    {
+      if(Z[pts[j]->id] > Zmax)
+      {
+        p = pts[j];
+        Zmax = Z[p->id];
+      }
+    }
+
+    // The central pixel is the highest, it is a LM
+    #pragma omp critical
+    {
+      if (Z[i] == Zmax && X[i] == p->x && Y[i] == p->y)
+        filter[i] = true;
+    }
+  }
+
+  if (abort) throw Rcpp::internal::InterruptedException();
+
+  return;
+}
+
+void LAS::filter_local_maxima(NumericVector ws)
+{
+  bool abort = false;
+  int mode;
+  double radius = 0;
+  double hwidth = 0;
+  double hheight = 0;
+  double orientation = 0;
+
+  if (ws.length() == 1)
+  {
+    mode = 1; // circular windows
+    radius = ws[0]/2;
+  }
+  else if (ws.length() == 2)
+  {
+    mode = 2;  // rectangular windows
+    hwidth = ws[0]/2;
+    hheight = ws[1]/2;
+  }
+  else if (ws.length() == 3)
+  {
+    mode = 3;  // rectangular oriented windows
+    hwidth = ws[0]/2;
+    hheight = ws[1]/2;
+    orientation = ws[2];
+  }
+  else
+    Rcpp::stop("C++ unexpected internal error in 'filter_local_maxima': invalid windows."); // # nocov
+
+  SpatialIndex tree(X,Y);
+  Progress pb(npoints, "Local maximum filter: ");
+
+  #pragma omp parallel for num_threads(ncpu)
+  for (unsigned int i = 0 ; i < npoints ; i++)
+  {
+    if (abort) continue;
+    if (pb.check_interrupt()) abort = true;
+    pb.increment();
+
+    // Get the points within a windows centered on the current point
+    std::vector<Point*> pts;
+    switch(mode)
+    {
+      case 1: {
+        Circle circ(X[i], Y[i], radius);
+        tree.lookup(circ, pts);
+        break;
+      }
+      case 2: {
+        Rectangle rect(X[i] - hwidth, X[i] + hwidth, Y[i] - hheight, Y[i] + hheight);
+        tree.lookup(rect, pts);
+        break;
+      }
+      case 3: {
+        double hwidth = ws[0]/2;
+        double hheight = ws[1]/2;
+        double orientation = ws[2];
+        OrientedRectangle orect(X[i] - hwidth, X[i] + hwidth, Y[i] - hheight, Y[i] + hheight, orientation);
+        tree.lookup(orect, pts);
+        break;
+      }
     }
 
     // Get the highest Z in the windows
@@ -1048,61 +1176,250 @@ NumericVector LAS::rasterize(S4 layout, double subcircle, int method)
   return raster;
 }
 
-List LAS::knn_metrics(unsigned int k, DataFrame data, DataFrame sub, SEXP call, SEXP env)
+List LAS::point_metrics(unsigned int k, double r, DataFrame data, int nalloc, SEXP call, SEXP env)
 {
+  // @k is the k of knn
+  // @r is the radius
+  // @data contains all the attributes of the LAS object so we are capable
+  //       of copying the value in temporary memory
+  // @n is the length of the vectors initially allocated to store the neighborhood
+  // @call is the user-defined expression to apply on each neighborhood
+  // @env is the environnement where Rf_eval eval the call
+
+  // Are we searching the k nearest neiborhood or a sphere neighborhood or both?
+  int mode = 0;
+  if (k == 0 && r > 0)
+    mode = 1;
+  else if (k > 0 && r == 0)
+    mode = 0;
+  else if (k > 0 && r > 0)
+    mode = 2;
+  else
+    Rcpp::stop("Internal error: invalid argument k or r");
+
+  // Do we need to manage dynamic memory? Yes if not pure knn
+  bool dynamic_memory_realloc = mode > 0;
+
+  // Create an Rcpp object to handle the SEXP easily otherwise we have to use R's C API...
+  Rcpp::Environment callenv = as<Rcpp::Environment>(env);
+
+  // Retrieve the names of the attributes
+  std::vector<std::string> names = as<std::vector<std::string> >(data.names());
+
+  // Need some iterator to loop on the DataFrame columns
+  Rcpp::DataFrame::iterator it1;
+  Rcpp::DataFrame::iterator it2;
+  std::vector<std::string>::iterator it3;
+
+  // Need a physical DataFrame to handle a reference to the data of the environement 'env'.
+  // Not mandatory stricly speaking but easier to handle this stuff with Rcpp than R's C API
+  DataFrame proxy;
+
+  // We populate the environement by creating new vector of size nalloc binded to
+  // the original names in the LAS object + a shallow copy in the DataFrame 'proxy'.
+  it3 = names.begin();
+  for (it1 = data.begin() ; it1 != data.end() ; ++it1)
+  {
+    switch( TYPEOF(*it1) )
+    {
+      case REALSXP: {
+        Rcpp::NumericVector tmp(nalloc);
+        proxy.push_back(tmp);
+        callenv.assign(*it3, tmp);
+        break;
+      }
+      case INTSXP: {
+        Rcpp::IntegerVector tmp(nalloc);
+        proxy.push_back(tmp);
+        callenv.assign(*it3, tmp);
+        break;
+      }
+      case LGLSXP: {
+        Rcpp::LogicalVector tmp(nalloc);
+        proxy.push_back(tmp);
+        callenv.assign(*it3, tmp);
+        break;
+      }
+      default: {
+        Rcpp::stop("Incompatible type encountered: integer, double and bool are the only supported types.");
+      }
+    }
+
+    ++it3;
+  }
+
+  // Number of points actually processed considering the filter.
+  // The output is allocated using this number
   int nprocessed = std::count(filter.begin(), filter.end(), true);
-  int j = 0;
   List output(nprocessed);
+
+  // Current index in the output
+  int j = 0;
+
+  // Construction of a spatial index to make the queries
   SpatialIndex tree(X,Y,Z,filter);
   Progress pb(npoints, "Metrics computation: ");
+
+  // Error handling variables
   bool abort = false;
   int pOutError = 0;
 
-  for(unsigned int i = 0 ; i < npoints ; ++i) {
+  // This is the size of memory used to store the neighborhood
+  int si = nalloc; // initially allocated
+  int sc = si;     // current
+  int sn = si;     // new
+
+  if (!dynamic_memory_realloc && si != k) Rcpp::stop("Internal error: k elements should have been allocated.");
+
+  //Rprintf("Memory allocated to store the neighborhood: %d\n", si);
+
+  // Loop through each points
+  for(unsigned int i = 0 ; i < npoints ; ++i)
+  {
     if (abort) continue;
     if (pb.check_interrupt()) abort = true;
     pb.increment();
     if (!filter[i]) continue;
 
-
-    PointXYZ p(X[i], Y[i], Z[i]);
     std::vector<PointXYZ> pts;
-    tree.knn(p, k, pts);
 
-    Rcpp::DataFrame::iterator it2 = sub.begin();
-    for (Rcpp::DataFrame::iterator it1 = data.begin() ; it1 != data.end() ; ++it1) {
-      switch( TYPEOF(*it1) ) {
+    if (mode == 0)
+    {
+      // Query the knn neighborhood
+      PointXYZ p(X[i], Y[i], Z[i]);
+      tree.knn(p, k, pts);
+
+      // No need to reallocate the memory because it is always of size k
+    }
+    else
+    {
+      if (mode == 1)
+      {
+        // Query the sphere neighborhood
+        Sphere sp(X[i], Y[i], Z[i], r);
+        tree.lookup(sp, pts);
+      }
+      else
+      {
+        // Query the knn + sphere limit
+        PointXYZ p(X[i], Y[i], Z[i]);
+        tree.knn(p, k, r, pts);
+      }
+
+      // This is the new size of the memory used to store the neighborhood
+      sn = pts.size();
+
+      // If we have found more points in the neighborhood than we have memory allocated: we need
+      // to resize the memory. We resize x2 so we are sure that will occur only one or two times.
+      if (sn > si)
+      {
+        si = (sn < 2*si) ? 2*si : sn;
+        //Rprintf("Realloc from %d to %d at point %d because neigborhood of size %d\n", nalloc, si, i, sn);
+        nalloc = si;
+        sc = sn;
+        proxy = DataFrame::create();
+
+        it3 = names.begin();
+        for (it1 = data.begin() ; it1 != data.end() ; ++it1)
+        {
+          switch( TYPEOF(*it1) )
+          {
+            case REALSXP: {
+              Rcpp::NumericVector tmp(nalloc);
+              proxy.push_back(tmp);
+              callenv.assign(*it3, tmp);
+              SETLENGTH(wrap(tmp), sc);
+              break;
+            }
+            case INTSXP: {
+              Rcpp::IntegerVector tmp(nalloc);
+              proxy.push_back(tmp);
+              callenv.assign(*it3, tmp);
+              SETLENGTH(wrap(tmp), sc);
+              break;
+            }
+            case LGLSXP: {
+              Rcpp::LogicalVector tmp(nalloc);
+              proxy.push_back(tmp);
+              callenv.assign(*it3, tmp);
+              SETLENGTH(wrap(tmp), sc);
+              break;
+            }
+            default: {
+              Rcpp::stop("Incompatible SEXP encountered; only accepts DataFrame with REALSXPs, INTSXPs and LGLSXPs"); // # nocov
+            }
+          }
+
+          ++it3;
+        }
+
+      }
+      // If we have found less points in the neighborhood than we have memory allocated: resize memory
+      else
+      {
+        sc = sn;
+        for (it1 = proxy.begin() ; it1 != proxy.end() ; ++it1)
+          SETLENGTH(*it1, sc);
+      }
+    }
+
+
+    // At this stage the environnment env should contains vectors named like into the LAS
+    // object and these vector are longer or equal to the number of points in the neihborhood.
+    // But at the R level they are of the good lenght because we used SETLENGTH.
+    it2 = proxy.begin();
+    for (it1 = data.begin() ; it1 != data.end() ; ++it1)
+    {
+      switch( TYPEOF(*it1) )
+      {
         case REALSXP: {
           Rcpp::NumericVector tmp1 = Rcpp::as<Rcpp::NumericVector>(*it1);
           Rcpp::NumericVector tmp2 = Rcpp::as<Rcpp::NumericVector>(*it2);
-          for(unsigned int i = 0 ; i < k ; ++i) tmp2[i] = tmp1[pts[i].id];
+          for(unsigned int i = 0 ; i < sc ; ++i) tmp2[i] = tmp1[pts[i].id];
           break;
         }
         case INTSXP: {
           Rcpp::IntegerVector tmp1 = Rcpp::as<Rcpp::IntegerVector>(*it1);
           Rcpp::IntegerVector tmp2 = Rcpp::as<Rcpp::IntegerVector>(*it2);
-          for(unsigned int i = 0 ; i < k ; ++i) tmp2[i] = tmp1[pts[i].id];
+          for(unsigned int i = 0 ; i < sc ; ++i) tmp2[i] = tmp1[pts[i].id];
           break;
         }
         case LGLSXP: {
           Rcpp::LogicalVector tmp1 = Rcpp::as<Rcpp::LogicalVector>(*it1);
           Rcpp::LogicalVector tmp2 = Rcpp::as<Rcpp::LogicalVector>(*it2);
-          for(unsigned int i = 0 ; i < k ; ++i) tmp2[i] = tmp1[pts[i].id];
+          for(unsigned int i = 0 ; i < sc ; ++i) tmp2[i] = tmp1[pts[i].id];
           break;
         }
         default: {
-          Rcpp::stop("Incompatible SEXP encountered; only accepts DataFrame with REALSXPs, INTSXPs and LGLSXPs");
+          Rcpp::stop("Incompatible SEXP encountered; only accepts DataFrame with REALSXPs, INTSXPs and LGLSXPs"); // # nocov
         }
       }
-      ++it2;
+
+      ++it2; ++it3;
     }
 
     output[j] = R_tryEvalSilent(call, env, &pOutError);
 
     if (pOutError == 1)
+    {
+      // Restore the TRUELENGTH otherwise memory leak
+      if (dynamic_memory_realloc)
+      {
+        for (it1 = proxy.begin() ; it1 != proxy.end() ; ++it1)
+          SETLENGTH(*it1, si);
+      }
+
       throw Rcpp::exception(R_curErrorBuf(), false);
+    }
 
     j++;
+  }
+
+  // Restore the TRUELENGTH otherwise memory leak
+  if (dynamic_memory_realloc)
+  {
+    for (it1 = proxy.begin() ; it1 != proxy.end() ; ++it1)
+      SETLENGTH(*it1, si);
   }
 
   return output;

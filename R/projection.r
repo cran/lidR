@@ -52,7 +52,7 @@
 #'    - `wkt`: reads the WKT string from the header.
 #'    - `crs` and `crs<-` are equivalent to `projection`
 #'
-#' @param object,x An object of class LAS or eventually LASheader (regular users don't need to manipulate
+#' @param object,x,obj An object of class LAS or eventually LASheader (regular users don't need to manipulate
 #' LASheader objects).
 #' @param ... Unused.
 #' @param asText logical. If TRUE, the projection is returned as text. Otherwise a CRS object is returned.
@@ -86,10 +86,10 @@ setGeneric("epsg", function(object, ...)
 setGeneric("epsg<-", function(object, value)
   standardGeneric("epsg<-"))
 
-#' @export
-#' @rdname projection
-setGeneric("wkt", function(object, ...)
-  standardGeneric("wkt"))
+# @export
+# @rdname projection
+#setGeneric("wkt", function(object, ...)
+#  standardGeneric("wkt"))
 
 #' @export
 #' @rdname projection
@@ -140,10 +140,11 @@ setMethod("epsg<-", "LASheader", function(object, value)
 })
 
 #' @export
+#' @importFrom sp wkt
 #' @rdname projection
-setMethod("wkt", "LASheader", function(object, ...)
+setMethod("wkt", "LASheader", function(obj)
 {
-  return(rlas::header_get_wktcs(as.list(object)))
+  return(rlas::header_get_wktcs(as.list(obj)))
 })
 
 #' @export
@@ -158,6 +159,18 @@ setMethod("wkt<-", "LASheader", function(object, value)
 
 
 # ==== LAS ====
+
+#' @export
+#' @rdname projection
+setMethod("projection", "LAS", function(x, asText = TRUE)
+{
+  proj4 <- x@proj4string
+
+  if (asText)
+    return(proj4@projargs)
+  else
+    return(proj4)
+})
 
 #' @export
 #' @rdname projection
@@ -212,6 +225,13 @@ setMethod("projection<-", "LAS", function(x, value)
 
 #' @export
 #' @rdname projection
+setMethod("crs", "LAS", function(x, asText = FALSE)
+{
+  return(projection(x, asText))
+})
+
+#' @export
+#' @rdname projection
 setMethod("crs<-", "LAS", function(x, ..., value)
 {
   projection(x) <- value
@@ -236,10 +256,11 @@ setMethod("epsg<-", "LAS", function(object, value)
 })
 
 #' @export
+#' @importFrom sp wkt
 #' @rdname projection
-setMethod("wkt", "LAS", function(object)
+setMethod("wkt", "LAS", function(obj)
 {
-  return(wkt(object@header))
+  return(wkt(obj@header))
 })
 
 #' @export
@@ -252,6 +273,74 @@ setMethod("wkt<-", "LAS", function(object, value)
   return(object)
 })
 
+# ===== LAScatalog =======
+
+#' @export
+#' @rdname projection
+setMethod("projection", "LAScatalog", function(x, asText = TRUE)
+{
+  proj4 <- x@proj4string
+
+  if (asText)
+    return(proj4@projargs)
+  else
+    return(proj4)
+})
+
+#' @export
+#' @rdname projection
+setMethod("crs", "LAScatalog", function(x, asText = FALSE)
+{
+  return(projection(x, asText))
+})
+
+# ===== INTERNAL TOOLS =======
+
+#' Datum transformation for LAS objects
+#'
+#' A version of \link[rgdal:spTransform]{spTransform} for \link[lidR:LAS-class]{LAS} objects.
+#' Returns transformed coordinates of a \code{LAS} object from the projection of the object to the
+#' the projection given by arguments.
+#'
+#' @param x An object of class \link[lidR:LAS-class]{LAS}
+#' @param CRSobj logical. Object of class \link[sp:CRS-class]{CRS} or of class character, in which
+#' case it is converted to \link[sp:CRS-class]{CRS}.
+#' @param ... ignored
+#'
+#' @return An object of class \link[lidR:LAS-class]{LAS} with coordinates XY transformed to the new
+#' coordinate reference system. The header has been update by add the ESPG code or a WKT OGC CS string
+#' as a function of the defined Global Encoding WKT bit (see LAS specifications).
+#'
+#' @examples
+#' LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
+#' las <- readLAS(LASfile, select = "xyzrn")
+#' crs <- sp::CRS("+init=epsg:26918")
+#'
+#' las <- spTransform(las, crs)
+#' @importMethodsFrom sp spTransform
+#' @noRd
+setMethod("spTransform", signature("LAS", "CRS"), function(x, CRSobj, ...)
+{
+  if (is.na(sp::proj4string(x)))
+    stop("No transformation possible from NA reference system")
+
+  # Tranform the point coordinates
+  spts <- sp::SpatialPoints(coordinates(x))
+  spts@proj4string <- crs(x)
+  spts <- sp::spTransform(spts, CRSobj)
+
+  # Update the LAS object
+  x@data[["X"]] <- spts@coords[,1]
+  x@data[["Y"]] <- spts@coords[,2]
+  x <- lasupdateheader(x)
+
+  # Update the offsets
+  x@header@PHB[["X offset"]] <- min(x$X)
+  x@header@PHB[["Y offset"]] <- min(x$Y)
+
+  crs(x) <- CRSobj
+  return(x)
+})
 
 use_wktcs <- function(x) {
   UseMethod("use_wktcs", x)
@@ -279,7 +368,8 @@ use_epsg.LASheader <- function(x) {
 
 epsg2proj <- function(epsg, fail = FALSE)
 {
-  tryCatch({
+  tryCatch(
+  {
     wkt <- rgdal::showWKT(glue::glue("+init=epsg:{epsg}"))
     rgdal::showP4(wkt)
   },
@@ -294,13 +384,38 @@ epsg2proj <- function(epsg, fail = FALSE)
 
 epsg2CRS <- function(epsg, fail = FALSE)
 {
-  proj <- epsg2proj(epsg, fail)
-  return(sp::CRS(proj))
+  # patch starting from rgdal 1.5-8
+  if (utils::packageVersion("rgdal") > "1.4.8" && rgdal::new_proj_and_gdal())
+  {
+    SRS_string = paste0("EPSG:", epsg)
+
+    crs <- tryCatch(
+    {
+      sp::CRS(SRS_string = SRS_string)
+    },
+    error = function(e)
+    {
+      if (!fail)
+        return(sp::CRS(NA_character_))
+      else
+        stop("Invalid epsg code", call. = FALSE)
+    })
+
+    return(crs)
+  }
+  else
+  {
+    proj <- epsg2proj(epsg, fail)
+    crs <- sp::CRS(proj)
+  }
+
+  return(crs)
 }
 
 wkt2proj <- function(wkt, fail = FALSE)
 {
-  tryCatch({
+  tryCatch(
+  {
     rgdal::showP4(wkt)
   },
   error = function(e)
@@ -314,6 +429,28 @@ wkt2proj <- function(wkt, fail = FALSE)
 
 wkt2CRS <- function(wkt, fail = FALSE)
 {
-  proj <- wkt2proj(wkt, fail)
-  return(sp::CRS(proj, doCheckCRSArgs = FALSE)) # doCheckCRSArgs = FALSE added in 2.2.4 after #323
+  # patch starting from rgdal 1.5-8
+  if (utils::packageVersion("rgdal") > "1.4.8" && rgdal::new_proj_and_gdal())
+  {
+    crs <- tryCatch(
+    {
+        sp::CRS(SRS_string = wkt)
+    },
+    error = function(e)
+    {
+      if (!fail)
+        return(sp::CRS(NA_character_))
+      else
+        stop("Invalid WKT string", call. = FALSE)
+    })
+
+    return(crs)
+  }
+  else
+  {
+    proj <- wkt2proj(wkt, fail)
+    crs <- sp::CRS(proj, doCheckCRSArgs = FALSE) # doCheckCRSArgs = FALSE added in 2.2.4 after #323
+  }
+
+  return(crs)
 }

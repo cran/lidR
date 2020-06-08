@@ -45,10 +45,11 @@
 #' loaded and '*' is the wildcard that enables everything to be loaded from the LAS file. \cr
 #' Note that x, y, z are implicit and always loaded. 'xyzia' is equivalent to 'ia'.\cr\cr
 #' \strong{Filter:} the 'filter' argument allows filtering of the point cloud while reading files.
-#' This is much more efficient than \link{lasfilter} in many ways. If the desired filters are known
+#' This is much more efficient than \link{filter_poi} in many ways. If the desired filters are known
 #' before reading the file, the internal filters should always be preferred. The available filters are
-#' those from \code{LASlib} and can be found by running the following command: rlas:::lasfilterusage().
-#' (see also \link[rlas:read.las]{rlas::read.las})
+#' those from \code{LASlib} and can be found by running the following command: \code{readLAS(filter = "-help")}.
+#' (see also \link[rlas:read.las]{rlas::read.las}). From \code{rlas} v1.4.0 the transformation commands
+#' can also be passed via the argument filter.
 #'
 #' @param files characters. Path(s) to one or several a file(s). Can also be a
 #' \link[lidR:LAScatalog-class]{LAScatalog} object.
@@ -100,18 +101,19 @@ readLASheader = function(file)
 }
 
 #' @export
-readLAS.LAScatalog = function(files, select = "*", filter = "")
+readLAS.LAScatalog = function(files, select, filter)
 {
-  assert_is_a_string(select)
-  assert_is_a_string(filter)
+  if (missing(select)) select <- opt_select(files)
+  if (missing(filter)) filter <- opt_filter(files)
+
   return(readLAS(files@data$filename, select, filter))
 }
 
 #' @export
-readLAS.LAScluster = function(files, select = "*", filter = "")
+readLAS.LAScluster = function(files, select = NULL, filter = NULL)
 {
-  assert_is_a_string(select)
-  assert_is_a_string(filter)
+  if (!is.null(select)) warning("Argument 'select' is not used with a LAScluster. Use opt_select() with the LAScatalog instead.", call. = FALSE)
+  if (!is.null(filter)) warning("Argument 'filter' is not used with a LAScluster. Use opt_filter() with the LAScatalog instead.", call. = FALSE)
 
   if (!all(file.exists(files@files)) && all(files@alt_dir != "")) {
     for (alt_dir in files@alt_dir) {
@@ -157,7 +159,7 @@ readLAS.LAScluster = function(files, select = "*", filter = "")
     # We found a region with no actual data. The points all belong in the buffer
     # Return empty point cloud
     if (fast_countequal(las@data[["buffer"]], LIDRNOBUFFER) == 0)
-      las <- lasfilter(las, buffer == LIDRNOBUFFER)
+      las <- filter_poi(las, buffer == LIDRNOBUFFER)
   }
 
   return(las)
@@ -212,7 +214,32 @@ streamLAS.character = function(x, ofile, select = "*", filter = "", filter_wkt =
   }
 
   header <- rlas::read.lasheader(ifiles[1])
-  data   <- rlas:::stream.las(ifiles, ofile, select, filter, filter_wkt)
+
+  # More than one file we need to check the compatibility
+  if (length(ifiles) > 1)
+  {
+    for (file in ifiles)
+    {
+      temp.header <- rlas::read.lasheader(file)
+
+      if (temp.header[["Point Data Format ID"]] != header[["Point Data Format ID"]] )
+        stop("Different files have different Point Data Format ID and are incompatible.", call. = FALSE)
+
+      if (temp.header[["X scale factor"]] != header[["X scale factor"]] )
+        warning("Different files have different X scale factors and are incompatible. The first file has precedence and data were rescaled.", call. = FALSE)
+
+      if (temp.header[["Y scale factor"]] != header[["Y scale factor"]] )
+        warning("Different files have different Y scale factors and are incompatible. The first file has precedence and data were rescaled.", call. = FALSE)
+
+      if (temp.header[["Z scale factor"]] != header[["Z scale factor"]] )
+        warning("Different files have different Z scale factors and are incompatible. The first file has precedence and data were rescaled.", call. = FALSE)
+
+      if (rlas::header_get_epsg(header) != rlas::header_get_epsg(temp.header))
+        warning("Different files have diferent CRS and are incompatible. The CRS of the first file has been retained.", call. = FALSE)
+    }
+  }
+
+  data <- rlas:::stream.las(ifiles, ofile, select, filter, filter_wkt)
 
   if (is.null(data))
     return(invisible())
