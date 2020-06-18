@@ -29,7 +29,7 @@
 
 #' Read .las or .laz files
 #'
-#' Reads .las or .laz files into an object of class \link[lidR:LAS-class]{LAS}. If several files are read at
+#' Reads .las or .laz files into an object of class \link[=LAS-class]{LAS}. If several files are read at
 #' once the returned LAS object is considered as one LAS file. The optional parameters enable the user
 #' to save a substantial amount of memory by choosing to load only the attributes or points of interest.
 #' The LAS formats 1.1 to 1.4 are supported. Point Data Record Format 0,1,2,3,5,6,7,8 are supported.
@@ -48,11 +48,11 @@
 #' This is much more efficient than \link{filter_poi} in many ways. If the desired filters are known
 #' before reading the file, the internal filters should always be preferred. The available filters are
 #' those from \code{LASlib} and can be found by running the following command: \code{readLAS(filter = "-help")}.
-#' (see also \link[rlas:read.las]{rlas::read.las}). From \code{rlas} v1.4.0 the transformation commands
+#' (see also \link[rlas:read.las]{rlas::read.las}). From \code{rlas} v1.3.6 the transformation commands
 #' can also be passed via the argument filter.
 #'
 #' @param files characters. Path(s) to one or several a file(s). Can also be a
-#' \link[lidR:LAScatalog-class]{LAScatalog} object.
+#' \link[=LAScatalog-class]{LAScatalog} object.
 #' @param select character. Read only attributes of interest to save memory (see details).
 #' @param filter character. Read only points of interest to save memory (see details).
 #'
@@ -72,13 +72,19 @@
 #' las = readLAS(LASfile, select = "* -i -a")
 readLAS = function(files, select = "*", filter = "")
 {
+  if (filter == "-h" | filter == "-help")
+  {
+    rlas:::lasfilterusage()
+    return(invisible())
+  }
+
   UseMethod("readLAS", files)
 }
 
 
 #' Read a .las or .laz file header
 #'
-#' Reads a .las or .laz file header into an object of class \link[lidR:LASheader-class]{LASheader}.
+#' Reads a .las or .laz file header into an object of class \link[=LASheader-class]{LASheader}.
 #' This function strictly reads the header while the function \link{readLAS} can alter the header to
 #' fit the actual data loaded.
 #'

@@ -469,8 +469,8 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb13-12" data-line-number="12"><span class="co"># The output has been modified by these options and it now gives</span></a>
 <a class="sourceLine" id="cb13-13" data-line-number="13"><span class="co"># the paths to the written files (here shapefiles)</span></a>
 <a class="sourceLine" id="cb13-14" data-line-number="14">trees</a>
-<a class="sourceLine" id="cb13-15" data-line-number="15"><span class="co">#&gt; [1] &quot;/tmp/RtmpCSXqAo/tree_coordinate_481250_3812750.shp&quot;</span></a>
-<a class="sourceLine" id="cb13-16" data-line-number="16"><span class="co">#&gt; [2] &quot;/tmp/RtmpCSXqAo/tree_coordinate_481250_3813000.shp&quot;</span></a></code></pre></div>
+<a class="sourceLine" id="cb13-15" data-line-number="15"><span class="co">#&gt; [1] &quot;/tmp/RtmpqRK57n/tree_coordinate_481250_3812750.shp&quot;</span></a>
+<a class="sourceLine" id="cb13-16" data-line-number="16"><span class="co">#&gt; [2] &quot;/tmp/RtmpqRK57n/tree_coordinate_481250_3813000.shp&quot;</span></a></code></pre></div>
 <p>There is one file per chunk and thus processing by file with the template <code>{ORIGINALFILENAME}</code> or its shortcut <code>{*}</code> may be suitable to further match the output files with the point cloud files. However, depending on the size of the file and the capacity of the computer it is not always possible (see section “Control of the chunk size”).</p>
 <p>In the previous example, several shapefiles were written on disk and there is no way to combine them into a single light R object. But sometimes it is possible to return a light object that aggregates all the written files. For rasters, for example, it is possible to build a virtual raster mosaic. The engine automatically does this when it is possible.</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="co"># Force the results to be written on disk</span></a>
@@ -488,7 +488,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <a class="sourceLine" id="cb14-13" data-line-number="13"><span class="co">#&gt; resolution : 1, 1  (x, y)</span></a>
 <a class="sourceLine" id="cb14-14" data-line-number="14"><span class="co">#&gt; extent     : 481260, 481350, 3812921, 3813011  (xmin, xmax, ymin, ymax)</span></a>
 <a class="sourceLine" id="cb14-15" data-line-number="15"><span class="co">#&gt; crs        : +proj=utm +zone=12 +datum=NAD83 +units=m +no_defs </span></a>
-<a class="sourceLine" id="cb14-16" data-line-number="16"><span class="co">#&gt; source     : /tmp/RtmpCSXqAo/grid_canopy.vrt </span></a>
+<a class="sourceLine" id="cb14-16" data-line-number="16"><span class="co">#&gt; source     : /tmp/RtmpqRK57n/grid_canopy.vrt </span></a>
 <a class="sourceLine" id="cb14-17" data-line-number="17"><span class="co">#&gt; names      : layer </span></a>
 <a class="sourceLine" id="cb14-18" data-line-number="18"><span class="co">#&gt; values     : 0, 32.07  (min, max)</span></a></code></pre></div>
 <p>There are two special cases. The first one is when raster files are written. They are merged into a valid <code>RasterLayer</code> using a virtual mosaic. The second one is when LAS or LAZ files are written on disk. They are merged into a <code>LAScatalog</code>.</p>
