@@ -2,8 +2,8 @@ Package: lidR
 Type: Package
 Title: Airborne LiDAR Data Manipulation and Visualization for Forestry
         Applications
-Version: 3.0.2
-Date: 2020-06-22
+Version: 3.0.3
+Date: 2020-07-28
 Authors@R: c(
     person("Jean-Romain", "Roussel", email = "jean-romain.roussel.1@ulaval.ca", role = c("aut", "cre", "cph")),
     person("David", "Auty", email = "", role = c("aut", "ctb"), comment = "Reviews the documentation"),
@@ -26,7 +26,7 @@ Imports: data.table (>= 1.12.0), future, gdalUtils, geometry, glue,
 Suggests: EBImage, concaveman, crayon, gstat, hexbin, mapview, mapedit,
         progress, testthat (>= 2.1.0), knitr, rmarkdown, covr
 LazyData: true
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 LinkingTo: BH (>= 1.72.0),Rcpp,RcppArmadillo
 Encoding: UTF-8
 ByteCompile: true
@@ -63,7 +63,7 @@ Collate: 'Class-LASheader.R' 'Class-LAS.R' 'Class-LAScatalog.R'
         'utils_threads.R' 'utils_typecast.R' 'voxel_metrics.R'
         'voxelize_points.R' 'zzz.R'
 NeedsCompilation: yes
-Packaged: 2020-07-04 12:33:43 UTC; jr
+Packaged: 2020-08-02 11:01:00 UTC; jr
 Author: Jean-Romain Roussel [aut, cre, cph],
   David Auty [aut, ctb] (Reviews the documentation),
   Florian De Boissieu [ctb] (Fixed bugs and improved catalog features),
@@ -75,4 +75,4 @@ Author: Jean-Romain Roussel [aut, cre, cph],
     track_sensor())
 Maintainer: Jean-Romain Roussel <jean-romain.roussel.1@ulaval.ca>
 Repository: CRAN
-Date/Publication: 2020-07-05 04:50:29 UTC
+Date/Publication: 2020-08-03 06:30:10 UTC

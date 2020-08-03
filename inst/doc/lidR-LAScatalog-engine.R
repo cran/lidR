@@ -4,6 +4,7 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 rgl::setupKnitr()
+rgdal::set_thin_PROJ6_warnings(TRUE)
 library(lidR)
 
 ## ---- echo = FALSE------------------------------------------------------------
