@@ -1,10 +1,15 @@
 ## ----setup, include = FALSE---------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.width = 2.5,
+  fig.height = 2.5,
+  dev.args = list(pointsize = 9)
 )
 rgl::setupKnitr()
 rgdal::set_thin_PROJ6_warnings(TRUE)
+options(rmarkdown.html_vignette.check_title = FALSE)
+
 library(lidR)
 
 ## ---- echo = FALSE------------------------------------------------------------

@@ -6,60 +6,14 @@ GridPartition::GridPartition(const Rcpp::NumericVector x, const Rcpp::NumericVec
 
   npoints = x.size();
 
-  depth = 0;
+  int depth = 0;
   depth = std::floor(std::log(npoints)/std::log(4));
-  depth = (depth >= 1) ? depth : 1;
+  depth = (depth >= 0) ? depth : 0;
   depth = (depth >= 8) ? 8 : depth;
 
   ncols = 1 << depth;
   nrows = 1 << depth;
-  use3D = false;
-  xmin  = Rcpp::min(x);
-  xmax  = Rcpp::max(x);
-  ymin  = Rcpp::min(y);
-  ymax  = Rcpp::max(y);
 
-  if ((xmax - xmin) == 0) {
-    xmin -= (ymax - ymin)/2;
-    xmax += (ymax - ymin)/2;
-  }
-
-  if ((ymax - ymin) == 0) {
-    ymin -= (xmax - xmin)/2;
-    ymax += (xmax - xmin)/2;
-  }
-
-  xmin -= 1;
-  xmax += 1;
-  ymin -= 1;
-  ymax += 1;
-
-  xres  = (xmax - xmin) / (double)ncols;
-  yres  = (ymax - ymin) / (double)nrows;
-  area  = ncols * nrows * xres * yres;
-
-  registry.resize((ncols+1)*(nrows+1));
-
-  for (int i = 0 ; i < x.size() ; i++) {
-    Point p(x[i],y[i], i);
-    if (!insert(p)) Rcpp::stop("Internal error in GridPartition. Point not inserted.");
-  }
-}
-
-GridPartition::GridPartition(const Rcpp::NumericVector x, const Rcpp::NumericVector y, const std::vector<bool>& f)
-{
-  if (x.size() != y.size()) Rcpp::stop("Internal error in GridPartition. x and y have different sizes.");
-  if (x.size() != (int)f.size()) Rcpp::stop("Internal error in GridPartition. x and f have different sizes.");
-
-  npoints = std::count(f.begin(), f.end(), true);
-
-  depth = 0;
-  depth = std::floor(std::log(npoints)/std::log(4));
-  depth = (depth >= 1) ? depth : 1;
-  depth = (depth >= 8) ? 8 : depth;
-
-  ncols = 1 << depth;
-  nrows = 1 << depth;
   use3D = false;
 
   xmin  =  std::numeric_limits<double>::infinity();
@@ -91,9 +45,67 @@ GridPartition::GridPartition(const Rcpp::NumericVector x, const Rcpp::NumericVec
 
   xres  = (xmax - xmin) / (double)ncols;
   yres  = (ymax - ymin) / (double)nrows;
+
   area  = ncols * nrows * xres * yres;
 
-  registry.resize((ncols+1)*(nrows+1));
+  registry.resize(ncols*nrows);
+
+  for (int i = 0 ; i < x.size() ; i++) {
+    Point p(x[i],y[i], i);
+    if (!insert(p)) Rcpp::stop("Internal error in GridPartition. Point not inserted.");
+  }
+}
+
+GridPartition::GridPartition(const Rcpp::NumericVector x, const Rcpp::NumericVector y, const std::vector<bool>& f)
+{
+  if (x.size() != y.size()) Rcpp::stop("Internal error in GridPartition. x and y have different sizes.");
+  if (x.size() != (int)f.size()) Rcpp::stop("Internal error in GridPartition. x and f have different sizes.");
+
+  npoints = std::count(f.begin(), f.end(), true);
+
+  int depth = 0;
+  depth = std::floor(std::log(npoints)/std::log(4));
+  depth = (depth >= 0) ? depth : 0;
+  depth = (depth >= 8) ? 8 : depth;
+
+  ncols = 1 << depth;
+  nrows = 1 << depth;
+
+  use3D = false;
+
+  xmin  =  std::numeric_limits<double>::infinity();
+  xmax  = -std::numeric_limits<double>::infinity();
+  ymin  =  std::numeric_limits<double>::infinity();
+  ymax  = -std::numeric_limits<double>::infinity();
+
+  for (auto i = 0 ; i < x.size() ; i++) {
+    if (x[i] < xmin) xmin = x[i];
+    if (x[i] > xmax) xmax = x[i];
+    if (y[i] < ymin) ymin = y[i];
+    if (y[i] > ymax) ymax = y[i];
+  }
+
+  if ((xmax - xmin) == 0) {
+    xmin -= (ymax - ymin)/2;
+    xmax += (ymax - ymin)/2;
+  }
+
+  if ((ymax - ymin) == 0) {
+    ymin -= (xmax - xmin)/2;
+    ymax += (xmax - xmin)/2;
+  }
+
+  xmin -= 1;
+  xmax += 1;
+  ymin -= 1;
+  ymax += 1;
+
+  xres  = (xmax - xmin) / (double)ncols;
+  yres  = (ymax - ymin) / (double)nrows;
+
+  area  = ncols * nrows * xres * yres;
+
+  registry.resize(ncols*nrows);
 
   for (auto i = 0 ; i < x.size() ; i++) {
     if (f[i]) {

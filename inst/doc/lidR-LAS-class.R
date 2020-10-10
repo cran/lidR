@@ -4,6 +4,7 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 rgl::setupKnitr()
+options(rmarkdown.html_vignette.check_title = FALSE)
 library(lidR)
 
 ## -----------------------------------------------------------------------------

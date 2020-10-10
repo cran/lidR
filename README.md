@@ -2,7 +2,7 @@
 lidR <img src="https://raw.githubusercontent.com/Jean-Romain/lidR/master/man/figures/logo200x231.png" align="right"/>
 ======================================================================================================
 ![license](https://img.shields.io/badge/Licence-GPL--3-blue.svg) 
-[![Travis build status](https://travis-ci.org/Jean-Romain/lidR.svg?branch=master)](https://travis-ci.com/Jean-Romain/lidR)
+[![R build status](https://github.com/Jean-Romain/lidR/workflows/R-CMD-check/badge.svg)](https://github.com/Jean-Romain/lidR/actions)
 [![Codecov test coverage](https://codecov.io/gh/Jean-Romain/lidR/branch/master/graph/badge.svg)](https://codecov.io/gh/Jean-Romain/lidR?branch=master)
 
 R package for Airborne LiDAR Data Manipulation and Visualization for Forestry Applications
@@ -98,7 +98,7 @@ plot(chm, col = col)
 
 **lidR** is developed openly at [Laval University](https://www.ulaval.ca/en/).
 
-* Development of the `lidR` package between 2015 and 2018 was made possible thanks to the financial support of the [AWARE project  (NSERC CRDPJ 462973-14)](http://aware.forestry.ubc.ca/); grantee [Prof Nicholas Coops](http://profiles.forestry.ubc.ca/person/nicholas-coops/).
+* Development of the `lidR` package between 2015 and 2018 was made possible thanks to the financial support of the [AWARE project  (NSERC CRDPJ 462973-14)](https://aware.forestry.ubc.ca/); grantee [Prof Nicholas Coops](https://forestry.ubc.ca/faculty-profile/nicholas-coops/).
 * Development of the `lidR` package between 2018 and 2020 was made possible thanks to the financial support of the [Ministère des Forêts, de la Faune et des Parcs of Québec](https://mffp.gouv.qc.ca/).
 
 <img src="https://raw.githubusercontent.com/Jean-Romain/storage/master/README/logos.svg" width="600" align="center">
@@ -123,7 +123,7 @@ To install the package from github make sure you have a working development envi
 # Ubuntu
 sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable
 sudo apt-get update
-sudo apt-get install libgdal-dev libgeos++-dev libudunits2-dev libproj-dev libx11-dev libgl1-mesa-dev libglu1-mesa-dev libfreetype6-dev libv8-3.14-dev libxt-dev
+sudo apt-get install libgdal-dev libgeos++-dev libudunits2-dev libproj-dev libx11-dev libgl1-mesa-dev libglu1-mesa-dev libfreetype6-dev libnode-dev libxt-dev libfftw3-dev
 
 # Fedora
 sudo dnf install gdal-devel geos-devel udunits2-devel proj-devel mesa-libGL-devel mesa-libGLU-devel freetype-devel libjpeg-turbo-devel v8-devel

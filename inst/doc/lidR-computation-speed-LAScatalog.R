@@ -1,9 +1,12 @@
 ## ----setup, include = FALSE---------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.width = 2.5,
+  fig.height = 2.5,
+  dev.args = list(pointsize = 9)
 )
-
+options(rmarkdown.html_vignette.check_title = FALSE)
 library(lidR)
 
 ## ---- echo = FALSE------------------------------------------------------------
@@ -89,20 +92,20 @@ ctg@plotOrder <- Sr@plotOrder
 ctg@data <- data
 ctg@polygons <- Sr@polygons
 
-## ---- echo = FALSE, fig.width=3.5, fig.height=3.5-----------------------------
+## ---- echo = FALSE------------------------------------------------------------
 bbox = as.numeric(ctg@data[42,1:4])
 
 plot(ctg)
 graphics::rect(bbox[1], bbox[3], bbox[2], bbox[4], border = "black", col = "blue")
 
-## ---- echo = FALSE, fig.width=3.5, fig.height=3.5-----------------------------
+## ---- echo = FALSE------------------------------------------------------------
 bbox = as.numeric(ctg@data[42,1:4])
 
 plot(ctg)
 graphics::rect(bbox[1]+200, bbox[3]+200, bbox[2]-200, bbox[4]-200, border = "black", col = "red")
 graphics::rect(bbox[2], bbox[4], bbox[1], bbox[3], border = "black", col = "blue")
 
-## ---- echo = FALSE, fig.width=3.5, fig.height=3.5-----------------------------
+## ---- echo = FALSE------------------------------------------------------------
 neighbourg = ctg@data[c(19,20,23, 41, 43, 44, 45, 47),1:4]
 
 plot(ctg)
@@ -113,7 +116,7 @@ for (i in 1:nrow(neighbourg))
   graphics::rect(bbox[2], bbox[4], bbox[1], bbox[3], border = "black", col = "red")
 }
 
-## ---- echo = FALSE, fig.width=3.5, fig.height=3.4-----------------------------
+## ---- echo = FALSE------------------------------------------------------------
 LASfile <- system.file("extdata", "Megaplot.laz", package = "lidR")
 las = readLAS(LASfile)
 f = tempfile(fileext = ".las")
@@ -134,7 +137,7 @@ op <- graphics::par(mar = c(4,4,1,1) + 0.1)
 barplot(X$t/min(X$t), names.arg = X$format, col = "darkred", xlab = "File format", ylab = "Relative read time", asp = 1)
 graphics::par(op)
 
-## ---- echo = FALSE, fig.width=3.5, fig.height=3.5-----------------------------
+## ---- echo = FALSE------------------------------------------------------------
 neighbourg = ctg@data[c(19,20,23, 41, 43, 44, 45, 47),1:4]
 
 J = list(c(1200,1000,0,0),
@@ -155,7 +158,7 @@ for (i in 1:nrow(neighbourg))
   graphics::rect(bbox[2] + j[1], bbox[4] + j[2], bbox[1] + j[3], bbox[3] + j[4], border = "black", col = "red")
 }
 
-## ---- echo = FALSE, fig.width=3.4, fig.height=3.4-----------------------------
+## ---- echo = FALSE------------------------------------------------------------
 # LASfile <- system.file("extdata", "Megaplot.laz", package = "lidR")
 # las = readLAS(LASfile)
 # f = tempfile(fileext = ".las")

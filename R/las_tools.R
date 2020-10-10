@@ -1,7 +1,7 @@
 #' Rescale and reoffset a LAS object
 #'
-#' Modify the scale factor and the offset of a LAS object. This function modify the header and
-#' recompute the coordinates. Coordinates might be moved by few tenth of millimeters or few
+#' Modifies the scale factor and the offset of a LAS object. This function modifies the header and
+#' recomputes the coordinates. Coordinates might be moved by few tenth of millimeters or few
 #' millimeters depending of the accuracy imposed by the user.
 #'
 #' @param las An object of class LAS
@@ -67,16 +67,16 @@ las_reoffset = function(las, xoffset, yoffset, zoffset)
 
   xrange  <- c(las@header@PHB[["Min X"]], las@header@PHB[["Max X"]])
   yrange  <- c(las@header@PHB[["Min Y"]], las@header@PHB[["Max Y"]])
-  zrange  <- c(las@header@PHB[["Min Z"]], las@header@PHB[["Max z"]])
+  zrange  <- c(las@header@PHB[["Min Z"]], las@header@PHB[["Max Z"]])
 
   if (!missing(xoffset))
   {
     assert_is_a_number(xoffset)
 
-    newX <- suppressWarnings(as.integer((xrange - xoffset)/xscale) * xscale + xoffset)
+    newX <- suppressWarnings(as.integer(round((xrange - xoffset)/xscale)) * xscale + xoffset)
     if (anyNA(newX)) stop("Incorrect xoffset: integer overflow.", call. = FALSE)
 
-    newX <- as.integer((las@data[["X"]] - xoffset)/xscale) * xscale + xoffset
+    newX <- round((las@data[["X"]] - xoffset)/xscale) * xscale + xoffset
     diff <- round(mean(abs(las@data[["X"]] - newX)), 4)
     las@data[["X"]] <- newX
     las@header@PHB[["X offset"]] <- xoffset
@@ -87,10 +87,10 @@ las_reoffset = function(las, xoffset, yoffset, zoffset)
   {
     assert_is_a_number(yoffset)
 
-    newY <- suppressWarnings(as.integer((yrange - yoffset)/yscale) * yscale + yoffset)
+    newY <- suppressWarnings(as.integer(round((yrange - yoffset)/yscale)) * yscale + yoffset)
     if (anyNA(newY)) stop("Incorrect yoffset: integer overflow.", call. = FALSE)
 
-    newY <- as.integer((las@data[["Y"]] - yoffset)/yscale) * yscale + yoffset
+    newY <- round((las@data[["Y"]] - yoffset)/yscale) * yscale + yoffset
     diff <- round(mean(abs(las@data[["Y"]] - newY)), 4)
     las@data[["Y"]] <- newY
     las@header@PHB[["Y offset"]] <- yoffset
@@ -101,10 +101,10 @@ las_reoffset = function(las, xoffset, yoffset, zoffset)
   {
     assert_is_a_number(zoffset)
 
-    newZ <- suppressWarnings(as.integer((zrange - zoffset)/zscale) * zscale + zoffset)
+    newZ <- suppressWarnings(as.integer(round((zrange - zoffset)/zscale)) * zscale + zoffset)
     if (anyNA(newZ)) stop("Incorrect zoffset: integer overflow.", call. = FALSE)
 
-    newZ <- as.integer((las@data[["Z"]] - zoffset)/zscale) * zscale + zoffset
+    newZ <- round((las@data[["Z"]] - zoffset)/zscale) * zscale + zoffset
     diff <- round(mean(abs(las@data[["Z"]] - newZ)), 4)
     las@data[["Z"]] <- newZ
     las@header@PHB[["Z offset"]] <- zoffset

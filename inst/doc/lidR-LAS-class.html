@@ -319,7 +319,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 
-<p>A LAS class is a representation in R of a las file that aims to respect as closely as possible the official <a href="http://www.asprs.org/wp-content/uploads/2010/12/LAS_1_4_r13.pdf">LAS specification</a> that describes the file format. “As closely as possible” means that, due to R internal limitations, it is not possible to represent a las file exactly as it should be represented. Additionally, some aspects of the las format specifications are not supported in lidR. Still, the contents of a <code>LAS</code> object must reflect the fact that it is a representation of a standardized format, so some restrictions are imposed on users.</p>
+<p>A LAS class is a representation in R of a las file that aims to respect as closely as possible the official <a href="https://www.asprs.org/wp-content/uploads/2019/07/LAS_1_4_r15.pdf">LAS specification</a> that describes the file format. “As closely as possible” means that, due to R internal limitations, it is not possible to represent a las file exactly as it should be represented. Additionally, some aspects of the las format specifications are not supported in lidR. Still, the contents of a <code>LAS</code> object must reflect the fact that it is a representation of a standardized format, so some restrictions are imposed on users.</p>
 <div id="build-a-las-object-reading-a-las-file" class="section level2">
 <h2>Build a LAS object reading a las file</h2>
 <p>The function <code>readLAS</code> reads one or several .las or .laz file(s) to build a LAS object.</p>
@@ -329,7 +329,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb1-4"><a href="#cb1-4"></a><span class="co">#&gt; class        : LAS (v1.2 format 1)</span></span>
 <span id="cb1-5"><a href="#cb1-5"></a><span class="co">#&gt; memory       : 6.2 Mb </span></span>
 <span id="cb1-6"><a href="#cb1-6"></a><span class="co">#&gt; extent       : 684766.4, 684993.3, 5017773, 5018007 (xmin, xmax, ymin, ymax)</span></span>
-<span id="cb1-7"><a href="#cb1-7"></a><span class="co">#&gt; coord. ref.  : +proj=utm +zone=17 +datum=NAD83 +units=m +no_defs </span></span>
+<span id="cb1-7"><a href="#cb1-7"></a><span class="co">#&gt; coord. ref.  : NAD83 / UTM zone 17N </span></span>
 <span id="cb1-8"><a href="#cb1-8"></a><span class="co">#&gt; area         : 53112.69 m²</span></span>
 <span id="cb1-9"><a href="#cb1-9"></a><span class="co">#&gt; points       : 81.6 thousand points</span></span>
 <span id="cb1-10"><a href="#cb1-10"></a><span class="co">#&gt; density      : 1.54 points/m²</span></span></code></pre></div>
@@ -339,7 +339,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <p>A <code>LAS</code> object is composed of four slots: <code>@data</code>, <code>@header</code>, <code>@proj4string</code> and <code>@bbox</code>, and inherits <code>Spatial</code> from package <code>sp</code>.</p>
 <div id="data-the-point-cloud" class="section level3">
 <h3><span class="citation">@data</span>: the point cloud</h3>
-<p>The slot <code>data</code> of a LAS object contains a <code>data.table</code> with the data read from .las or .laz file(s). The columns of the table are named after the <a href="http://www.asprs.org/wp-content/uploads/2010/12/LAS_1_4_r13.pdf">LAS specification</a> version 1.4. Each name is reserved and is associated with a given type:</p>
+<p>The slot <code>data</code> of a LAS object contains a <code>data.table</code> with the data read from .las or .laz file(s). The columns of the table are named after the <a href="https://www.asprs.org/wp-content/uploads/2019/07/LAS_1_4_r15.pdf">LAS specification</a> version 1.4. Each name is reserved and is associated with a given type:</p>
 <ul>
 <li><code>X</code> <code>Y</code> <code>Z</code> (dbl)</li>
 <li><code>Intensity</code> (int)</li>
@@ -365,7 +365,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 </div>
 <div id="header-the-header" class="section level3">
 <h3><span class="citation">@header</span>: the header</h3>
-<p>A <code>LAS</code> object contains a slot <code>@header</code> that represents the header of the las file. The header is stored in a <code>LASheader</code> object. A <code>LASheader</code> object contains two slots: <code>@PHB</code> for the public header block and <code>@VLR</code> for the variable length records. Both slots are lists labeled according to the las file format specification. See <a href="http://www.asprs.org/wp-content/uploads/2010/12/LAS_1_4_r13.pdf">public documentation of las file format</a> for more information about las headers. Users should never normally have to worry about the header as long as they use functions from lidR. Everything is managed internally to ensure that objects are valid. However, users still need to know that the contents of the header are important, especially when writing <code>LAS</code> objects into las or laz files.</p>
+<p>A <code>LAS</code> object contains a slot <code>@header</code> that represents the header of the las file. The header is stored in a <code>LASheader</code> object. A <code>LASheader</code> object contains two slots: <code>@PHB</code> for the public header block and <code>@VLR</code> for the variable length records. Both slots are lists labelled according to the las file format specification. See <a href="https://www.asprs.org/wp-content/uploads/2019/07/LAS_1_4_r15.pdf">public documentation of las file format</a> for more information about las headers. Users should never normally have to worry about the header as long as they use functions from lidR. Everything is managed internally to ensure that objects are valid. However, users still need to know that the contents of the header are important, especially when writing <code>LAS</code> objects into las or laz files.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="kw">print</span>(las<span class="op">@</span>header)</span>
 <span id="cb2-2"><a href="#cb2-2"></a><span class="co">#&gt; File signature:           LASF </span></span>
 <span id="cb2-3"><a href="#cb2-3"></a><span class="co">#&gt; File source ID:           0 </span></span>
@@ -418,7 +418,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb4-6"><a href="#cb4-6"></a></span>
 <span id="cb4-7"><a href="#cb4-7"></a><span class="co"># Header has been updated but users do not need to take care of that</span></span>
 <span id="cb4-8"><a href="#cb4-8"></a>las<span class="op">@</span>header<span class="op">@</span>VLR[[<span class="st">&quot;WKT OGC CS&quot;</span>]][[<span class="st">&quot;WKT OGC COORDINATE SYSTEM&quot;</span>]]</span>
-<span id="cb4-9"><a href="#cb4-9"></a><span class="co">#&gt; [1] &quot;PROJCS[\&quot;unknown\&quot;,GEOGCS[\&quot;unknown\&quot;,DATUM[\&quot;North_American_Datum_1983\&quot;,SPHEROID[\&quot;GRS 1980\&quot;,6378137,298.257222101,AUTHORITY[\&quot;EPSG\&quot;,\&quot;7019\&quot;]],AUTHORITY[\&quot;EPSG\&quot;,\&quot;6269\&quot;]],PRIMEM[\&quot;Greenwich\&quot;,0,AUTHORITY[\&quot;EPSG\&quot;,\&quot;8901\&quot;]],UNIT[\&quot;degree\&quot;,0.0174532925199433,AUTHORITY[\&quot;EPSG\&quot;,\&quot;9122\&quot;]]],PROJECTION[\&quot;Transverse_Mercator\&quot;],PARAMETER[\&quot;latitude_of_origin\&quot;,0],PARAMETER[\&quot;central_meridian\&quot;,-81],PARAMETER[\&quot;scale_factor\&quot;,0.9996],PARAMETER[\&quot;false_easting\&quot;,500000],PARAMETER[\&quot;false_northing\&quot;,0],UNIT[\&quot;metre\&quot;,1,AUTHORITY[\&quot;EPSG\&quot;,\&quot;9001\&quot;]],AXIS[\&quot;Easting\&quot;,EAST],AXIS[\&quot;Northing\&quot;,NORTH]]&quot;</span></span></code></pre></div>
+<span id="cb4-9"><a href="#cb4-9"></a><span class="co">#&gt; [1] &quot;PROJCRS[\&quot;NAD83 / UTM zone 17N\&quot;,\n    BASEGEOGCRS[\&quot;NAD83\&quot;,\n        DATUM[\&quot;North American Datum 1983\&quot;,\n            ELLIPSOID[\&quot;GRS 1980\&quot;,6378137,298.257222101,\n                LENGTHUNIT[\&quot;metre\&quot;,1]]],\n        PRIMEM[\&quot;Greenwich\&quot;,0,\n            ANGLEUNIT[\&quot;degree\&quot;,0.0174532925199433]],\n        ID[\&quot;EPSG\&quot;,4269]],\n    CONVERSION[\&quot;UTM zone 17N\&quot;,\n        METHOD[\&quot;Transverse Mercator\&quot;,\n            ID[\&quot;EPSG\&quot;,9807]],\n        PARAMETER[\&quot;Latitude of natural origin\&quot;,0,\n            ANGLEUNIT[\&quot;degree\&quot;,0.0174532925199433],\n            ID[\&quot;EPSG\&quot;,8801]],\n        PARAMETER[\&quot;Longitude of natural origin\&quot;,-81,\n            ANGLEUNIT[\&quot;degree\&quot;,0.0174532925199433],\n            ID[\&quot;EPSG\&quot;,8802]],\n        PARAMETER[\&quot;Scale factor at natural origin\&quot;,0.9996,\n            SCALEUNIT[\&quot;unity\&quot;,1],\n            ID[\&quot;EPSG\&quot;,8805]],\n        PARAMETER[\&quot;False easting\&quot;,500000,\n            LENGTHUNIT[\&quot;metre\&quot;,1],\n            ID[\&quot;EPSG\&quot;,8806]],\n        PARAMETER[\&quot;False northing\&quot;,0,\n            LENGTHUNIT[\&quot;metre\&quot;,1],\n            ID[\&quot;EPSG\&quot;,8807]],\n        ID[\&quot;EPSG\&quot;,16017]],\n    CS[Cartesian,2],\n        AXIS[\&quot;(E)\&quot;,east,\n            ORDER[1],\n            LENGTHUNIT[\&quot;metre\&quot;,1,\n                ID[\&quot;EPSG\&quot;,9001]]],\n        AXIS[\&quot;(N)\&quot;,north,\n            ORDER[2],\n            LENGTHUNIT[\&quot;metre\&quot;,1,\n                ID[\&quot;EPSG\&quot;,9001]]],\n    USAGE[\n        SCOPE[\&quot;unknown\&quot;],\n        AREA[\&quot;North America - 84°W to 78°W and NAD83 by country\&quot;],\n        BBOX[23.81,-84,84,-78]]]&quot;</span></span></code></pre></div>
 </div>
 <div id="bbox-the-bounding-box" class="section level3">
 <h3><span class="citation">@bbox</span>: the bounding box</h3>
@@ -499,17 +499,16 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb13-25"><a href="#cb13-25"></a><span class="co">#&gt;   - Checking extra bytes attributes validity... ✓</span></span>
 <span id="cb13-26"><a href="#cb13-26"></a><span class="co">#&gt;   - Checking the bounding box validity... ✓</span></span>
 <span id="cb13-27"><a href="#cb13-27"></a><span class="co">#&gt;   - Checking coordinate reference sytem... ✓</span></span>
-<span id="cb13-28"><a href="#cb13-28"></a><span class="co">#&gt;     ✗ Global encoding WKT bits set to 1 but an epsg code found in the header.</span></span>
-<span id="cb13-29"><a href="#cb13-29"></a><span class="co">#&gt;  Checking header vs data adequacy</span></span>
-<span id="cb13-30"><a href="#cb13-30"></a><span class="co">#&gt;   - Checking attributes vs. point format... ✓</span></span>
-<span id="cb13-31"><a href="#cb13-31"></a><span class="co">#&gt;   - Checking header bbox vs. actual content... ✓</span></span>
-<span id="cb13-32"><a href="#cb13-32"></a><span class="co">#&gt;   - Checking header number of points vs. actual content... ✓</span></span>
-<span id="cb13-33"><a href="#cb13-33"></a><span class="co">#&gt;   - Checking header return number vs. actual content... ✓</span></span>
-<span id="cb13-34"><a href="#cb13-34"></a><span class="co">#&gt;  Checking preprocessing already done </span></span>
-<span id="cb13-35"><a href="#cb13-35"></a><span class="co">#&gt;   - Checking ground classification... no</span></span>
-<span id="cb13-36"><a href="#cb13-36"></a><span class="co">#&gt;   - Checking normalization... yes</span></span>
-<span id="cb13-37"><a href="#cb13-37"></a><span class="co">#&gt;   - Checking negative outliers... ✓</span></span>
-<span id="cb13-38"><a href="#cb13-38"></a><span class="co">#&gt;   - Checking flightline classification... no</span></span></code></pre></div>
+<span id="cb13-28"><a href="#cb13-28"></a><span class="co">#&gt;  Checking header vs data adequacy</span></span>
+<span id="cb13-29"><a href="#cb13-29"></a><span class="co">#&gt;   - Checking attributes vs. point format... ✓</span></span>
+<span id="cb13-30"><a href="#cb13-30"></a><span class="co">#&gt;   - Checking header bbox vs. actual content... ✓</span></span>
+<span id="cb13-31"><a href="#cb13-31"></a><span class="co">#&gt;   - Checking header number of points vs. actual content... ✓</span></span>
+<span id="cb13-32"><a href="#cb13-32"></a><span class="co">#&gt;   - Checking header return number vs. actual content... ✓</span></span>
+<span id="cb13-33"><a href="#cb13-33"></a><span class="co">#&gt;  Checking preprocessing already done </span></span>
+<span id="cb13-34"><a href="#cb13-34"></a><span class="co">#&gt;   - Checking ground classification... no</span></span>
+<span id="cb13-35"><a href="#cb13-35"></a><span class="co">#&gt;   - Checking normalization... yes</span></span>
+<span id="cb13-36"><a href="#cb13-36"></a><span class="co">#&gt;   - Checking negative outliers... ✓</span></span>
+<span id="cb13-37"><a href="#cb13-37"></a><span class="co">#&gt;   - Checking flightline classification... no</span></span></code></pre></div>
 </div>
 <div id="display-a-las-object" class="section level2">
 <h2>Display a LAS object</h2>
