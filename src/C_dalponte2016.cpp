@@ -29,8 +29,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 #include <Rcpp.h>
 #include <algorithm>
-#include "Point.h"
+#include "lidR/Point.h"
 using namespace Rcpp;
+using namespace lidR;
 
 typedef Point3D<int, int, int, int> Pixeli;
 typedef Point3D<int, int, double, int> Pixeld;

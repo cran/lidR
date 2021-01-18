@@ -55,7 +55,7 @@
 #'
 #' @examples
 #' LASfile <- system.file("extdata", "MixedConifer.laz", package="lidR")
-#' las <- readLAS(LASfile, select = "xyz", filter = "-drop_z_below 0")
+#' las <- readLAS(LASfile, select = "xyz", filter = "-inside 481250 3812980 481300 3813050")
 #'
 #' # point-cloud-based
 #' # =================
@@ -63,24 +63,20 @@
 #' # 5x5 m fixed window size
 #' ttops <- find_trees(las, lmf(5))
 #'
-#' x <- plot(las)
-#' add_treetops3d(x, ttops)
+#' #x <- plot(las)
+#' #add_treetops3d(x, ttops)
 #'
 #' # variable windows size
 #' f <- function(x) { x * 0.07 + 3}
 #' ttops <- find_trees(las, lmf(f))
 #'
-#' x <- plot(las)
-#' add_treetops3d(x, ttops)
+#' #x <- plot(las)
+#' #add_treetops3d(x, ttops)
 #'
 #' # raster-based
 #' # ============
 #'
-#' # 5x5 m fixed window size
 #' chm <- grid_canopy(las, res = 1, p2r(0.15))
-#' kernel <- matrix(1,3,3)
-#' chm <- raster::focal(chm, w = kernel, fun = median, na.rm = TRUE)
-#'
 #' ttops <- find_trees(chm, lmf(5))
 #'
 #' plot(chm, col = height.colors(30))
@@ -120,6 +116,7 @@ lmf = function(ws, hmin = 2, shape = c("circular", "square"))
       stop("'ws' must be a number or a function", call. = FALSE)
     }
 
+    force_autoindex(las) <- LIDRGRIDPARTITION
     return(C_lmf(las, ws, hmin, circ, getThread()))
   }
 

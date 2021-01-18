@@ -24,13 +24,13 @@
 #' las <- readLAS(LASfile, select = "xyz")
 #'
 #' las <- filter_surfacepoints(las, 1)
-#' plot(las)
+#' #plot(las)
 #'
 #' las <- smooth_height(las, 5, "gaussian", "circle", sigma = 2)
-#' plot(las)
+#' #plot(las)
 #'
 #' las <- unsmooth_height(las)
-#' plot(las)
+#' #plot(las)
 smooth_height = function(las, size, method = c("average", "gaussian"), shape = c("circle", "square"), sigma = size/6)
 {
   stopifnotlas(las)
@@ -44,6 +44,7 @@ smooth_height = function(las, size, method = c("average", "gaussian"), shape = c
   if (method == "average") method <- 1  else method <- 2
   if (method == "circle") shape   <- 1  else shape  <- 2
 
+  force_autoindex(las) <- LIDRGRIDPARTITION
   Zs <- C_smooth(las, size, method, shape, sigma, getThread())
   fast_quantization(Zs, las@header@PHB[["Z scale factor"]], las@header@PHB[["Z offset"]])
 

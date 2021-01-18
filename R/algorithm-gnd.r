@@ -53,13 +53,13 @@
 #'
 #' @examples
 #' LASfile <- system.file("extdata", "Topography.laz", package="lidR")
-#' las <- readLAS(LASfile, select = "xyzrn")
+#' las <- readLAS(LASfile, select = "xyzrn", filter = "-inside 273450 5274350 273550 5274450")
 #'
 #' ws <- seq(3,12, 3)
 #' th <- seq(0.1, 1.5, length.out = length(ws))
 #'
 #' las <- classify_ground(las, pmf(ws, th))
-#' plot(las, color = "Classification")
+#' #plot(las, color = "Classification")
 pmf = function(ws, th)
 {
   ws <- lazyeval::uq(ws)
@@ -68,6 +68,7 @@ pmf = function(ws, th)
   f = function(las, filter)
   {
     assert_is_valid_context(LIDRCONTEXTGND, "pmf")
+    force_autoindex(las) <- LIDRGRIDPARTITION
     return(C_pmf(las, ws, th, filter))
   }
 
@@ -110,7 +111,7 @@ pmf = function(ws, th)
 #'
 #' mycsf <- csf(TRUE, 1, 1, time_step = 1)
 #' las <- classify_ground(las, mycsf)
-#' plot(las, color = "Classification")
+#' #plot(las, color = "Classification")
 csf = function(sloop_smooth = FALSE, class_threshold = 0.5, cloth_resolution = 0.5, rigidness = 1L, iterations = 500L, time_step = 0.65)
 {
   sloop_smooth     <- lazyeval::uq(sloop_smooth)
@@ -120,10 +121,19 @@ csf = function(sloop_smooth = FALSE, class_threshold = 0.5, cloth_resolution = 0
   iterations       <- lazyeval::uq(iterations)
   time_step        <- lazyeval::uq(time_step)
 
+  assert_is_a_bool(sloop_smooth)
+  assert_is_a_number(class_threshold)
+  assert_is_a_number(cloth_resolution)
+  assert_is_a_number(rigidness)
+  assert_is_a_number(iterations)
+  assert_is_a_number(time_step)
+  assert_package_is_installed("RCSF")
+
   f = function(las, filter)
   {
     . <- X <- Y <- Z <- NULL
     assert_is_valid_context(LIDRCONTEXTGND, "csf")
+
     las@data[["idx"]] <- 1:npoints(las)
     cloud <- las@data[filter, .(X,Y,Z, idx)]
     gnd <- RCSF:::R_CSF(cloud, sloop_smooth, class_threshold, cloth_resolution, rigidness, iterations, time_step)
@@ -134,7 +144,6 @@ csf = function(sloop_smooth = FALSE, class_threshold = 0.5, cloth_resolution = 0
   class(f) <- LIDRALGORITHMGND
   return(f)
 }
-
 
 #' Parameters for progressive morphological filter
 #'

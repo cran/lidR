@@ -71,12 +71,17 @@ segment_trees.LAS = function(las, algorithm, attribute = "treeID", uniqueness = 
   }
 
   tapex <- function(z,t) {
-    j <- which.max(z)
+    zmax <- max(z)
+    j <- which(z == zmax) # allows to retrieve potentially multiple points that are all max
+    if (length(j) > 1) j <- j[which.min(t[j])] # arbitrarily takes the lowest gpstime
+
     return(list(t.pos.t = t[j]))
   }
 
   xyapex <- function(x,y,z) {
-    j <- which.max(z)
+    zmax <- max(z)
+    j <- which(z == zmax) # allows to retrieve potentially multiple points that are all max
+    if (length(j) > 1) j <- j[which.min(x[j])] # arbitrarily takes the lowest x coordinate
     return(list(x.pos.t = x[j], y.pos.t = y[j]))
   }
 
@@ -97,7 +102,7 @@ segment_trees.LAS = function(las, algorithm, attribute = "treeID", uniqueness = 
 
     las@data[[attribute]] <- matching[["t.pos.t"]]
 
-    las <- lasaddextrabytes_manual(las, name = attribute, desc = "An ID for each segmented tree", type = "double", NA_value = .Machine$double.xmin)
+    las <- add_lasattribute_manual(las, name = attribute, desc = "An ID for each segmented tree", type = "double", NA_value = .Machine$double.xmin)
     return(las)
   }
   else if (uniqueness == 'bitmerge')

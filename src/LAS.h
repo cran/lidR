@@ -1,7 +1,6 @@
 #ifndef LAS_H
 #define LAS_H
 
-
 #include <RcppArmadillo.h>
 #define NDEBUG 1
 using namespace Rcpp;
@@ -9,6 +8,7 @@ using namespace Rcpp;
 class LAS
 {
   public:
+    S4 las;
     NumericVector X;
     NumericVector Y;
     NumericVector Z;
@@ -19,9 +19,7 @@ class LAS
     std::vector<bool> filter;
 
   public:
-    LAS(S4 las);
-    LAS(S4 las, int npcu);
-    ~LAS();
+    LAS(S4 las, int npcu = 1);
 
     void new_filter(LogicalVector b);
     //void apply_filter();
@@ -33,6 +31,7 @@ class LAS
     void filter_with_grid(S4 layout);
     void filter_shape(int method, NumericVector th, int k);
     void filter_progressive_morphology(NumericVector ws, NumericVector th);
+    void filter_isolated_voxel(double ws, unsigned int isolated);
 
     void z_open(double resolution);
     void z_smooth(double size, int method, int shape, double sigma);
@@ -46,6 +45,8 @@ class LAS
     IntegerVector segment_snags(NumericVector neigh_radii, double low_int_thrsh, double uppr_int_thrsh, int pt_den_req, NumericMatrix BBPRthrsh_mat);
     IntegerVector segment_trees(double dt1, double dt2, double Zu, double R, double th_tree, double radius);
     List point_metrics(unsigned int k, double r, DataFrame data, int nalloc, SEXP call, SEXP env);
+    NumericVector fast_knn_metrics(unsigned int k, IntegerVector metrics);
+    NumericVector interpolate_knnidw(NumericVector x, NumericVector y, int k, double p, double rmax);
 
   private:
     static bool coplanar (arma::vec& latent, arma::mat& coeff, NumericVector& th) { return latent[1] > th[0]*latent[2] && th[1]*latent[1] > latent[0]; }

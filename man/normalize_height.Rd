@@ -44,8 +44,9 @@ elevation of NA are filtered. Be careful this creates a copy of the point cloud.
 However this new attribute will be discared at write time. If \code{TRUE} it is maintained as an
 extrabytes attribute. See also \link{add_lasattribute}.}
 
-\item{Wdegenerated}{logical. The function always check and remove degenerated ground points. If
-any a warning in thrown.}
+\item{Wdegenerated}{logical. The function always check and remove degenerated ground points
+for computing the DTM to avoid unexpected behaviours such as infinite elevation. If
+TRUE a warning in thrown to alert about the presence of degenerated ground points.}
 
 \item{e1}{a LAS object}
 
@@ -106,9 +107,9 @@ and cannot be changed.
 
 \examples{
 LASfile <- system.file("extdata", "Topography.laz", package="lidR")
-las <- readLAS(LASfile)
+las <- readLAS(LASfile, filter = "-inside 273450 5274350 273550 5274450")
 
-plot(las)
+#plot(las)
 
 # First option: use a RasterLayer as DTM
 # =======================================================
@@ -117,15 +118,15 @@ dtm <- grid_terrain(las, 1, knnidw(k = 6L, p = 2))
 las <- normalize_height(las, dtm)
 
 plot(dtm)
-plot(las)
+#plot(las)
 
 # restore original elevations
 las <- unnormalize_height(las)
-plot(las)
+#plot(las)
 
 # operator - can be used. This is equivalent to the previous
 las <- las - dtm
-plot(las)
+#plot(las)
 
 # restore original elevations
 las <- unnormalize_height(las)
@@ -134,7 +135,7 @@ las <- unnormalize_height(las)
 # =========================================================
 
 las <- normalize_height(las, tin())
-plot(las)
+#plot(las)
 
 # operator - can be used. This is equivalent to the previous
 las <- unnormalize_height(las)

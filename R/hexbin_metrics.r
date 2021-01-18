@@ -48,7 +48,7 @@
 #'
 #' @examples
 #' LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
-#' lidar = readLAS(LASfile)
+#' lidar = readLAS(LASfile,filter = "-keep_random_fraction 0.5")
 #'
 #' col = grDevices::colorRampPalette(c("blue", "cyan2", "yellow", "red"))
 #'
@@ -75,20 +75,19 @@
 #' metrics = hexbin_metrics(lidar, ~myMetrics(Z, Intensity), 10)
 #'
 #' hexbin::plot(metrics$zwimean, colramp = col, main = "zwimean")
-#' hexbin::plot(metrics$zimean, colramp = col, main = "zimean")
-#' hexbin::plot(metrics$zsqmean, colramp = col, main = "zsqmean")
+#' #hexbin::plot(metrics$zimean, colramp = col, main = "zimean")
+#' #hexbin::plot(metrics$zsqmean, colramp = col, main = "zsqmean")
 #' @family metrics
 hexbin_metrics = function(las, func, res = 20)
 {
+  assert_package_is_installed("hexbin")
+
   stopifnotlas(las)
 
   is_formula <- tryCatch(lazyeval::is_formula(func), error = function(e) FALSE)
   if (!is_formula) func <- lazyeval::f_capture(func)
 
   call <- lazyeval::as_call(func)
-
-  if (!requireNamespace("hexbin", quietly = TRUE))
-    stop("'hexbin' package is needed for this function to work. Please install it.")
 
   res  <- round(sqrt(((2*res*res)/(3*sqrt(3)))), 2)
   ext  <- raster::extent(las)

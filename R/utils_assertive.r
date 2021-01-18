@@ -118,14 +118,14 @@ assert_is_all_of = function(x, class)
 {
   x. <- lazyeval::expr_text(x)
   if (!is(x, class))
-    stop(glue::glue("{x.} is not a {class} it is {class(x)}."), call. = FALSE)
+    stop(glue::glue("{x.} is not a {class} it is {class(x)[1]}."), call. = FALSE)
 }
 
 assert_is_function = function(x)
 {
   x. <- lazyeval::expr_text(x)
   if (!is.function(x))
-    stop(glue::glue("{x.} is not a function it is a {class(x)}."), call. = FALSE)
+    stop(glue::glue("{x.} is not a function it is a {class(x)[1]}."), call. = FALSE)
 }
 
 assert_all_are_same_crs = function(x)
@@ -200,6 +200,12 @@ assert_is_algorithm_trk = function(x)
     stop("The algorithm used is not an algorithm for sensor tracking.", call. = FALSE)
 }
 
+assert_is_algorithm_out = function(x)
+{
+  if (!is(x, LIDROUT))
+    stop("The algorithm used is not an algorithm for noise segmentation.", call. = FALSE)
+}
+
 assert_is_valid_context = function(expected_contexts, name = "", null_allowed = FALSE)
 {
   received_context <- tryCatch({get("lidR.context", envir = parent.frame(n = 2L))}, error = function(e) {return(NULL)})
@@ -220,6 +226,12 @@ assert_las_is_not_empty = function(x)
 {
   if (is.empty(x))
     stop("The point cloud contains 0 point", call. = FALSE)
+}
+
+assert_package_is_installed = function(x)
+{
+  if (!requireNamespace(x, quietly = TRUE))
+    stop(glue::glue("Package '{x}' needed for this function to work. Please install it."), call. = FALSE) # nocov
 }
 
 

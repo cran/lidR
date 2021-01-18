@@ -1,7 +1,6 @@
 context("writeLAS")
 
-LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
-i = readLAS(LASfile)
+i = megaplot
 ofile = paste0(tempfile(), ".las")
 
 test_that("Test if I/O are equal", {
@@ -26,7 +25,7 @@ test_that("Test if I/O are equal", {
 })
 
 test_that("writeLAS does not write empty point cloud", {
-  o <- lasfilter(i, Z > 1000)
+  o <- filter_poi(i, Z > 1000)
   expect_error(writeLAS(o, ofile), "Cannot write a file with 0 point")
 })
 

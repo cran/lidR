@@ -97,39 +97,36 @@
 #' LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
 #'
 #' # Load the file and clip the region of interest
-#' las = readLAS(LASfile)
+#' las = readLAS(LASfile, select = "xyz", filter = "-keep_first")
 #' subset1 = clip_rectangle(las, 684850, 5017850, 684900, 5017900)
 #'
 #' # Do not load the file(s), extract only the region of interest
 #' # from a bigger dataset
-#' ctg = readLAScatalog(LASfile)
+#' ctg = readLAScatalog(LASfile, progress = FALSE, filter = "-keep_first")
 #' subset2 = clip_rectangle(ctg, 684850, 5017850, 684900, 5017900)
 #'
 #' # Extract all the polygons from a shapefile
 #' f <- system.file("extdata", "lake_polygons_UTM17.shp", package = "lidR")
-#' lakes <- shapefile(f)
-#' subset3 <- clip_roi(ctg, lakes)
+#' lakes <- sf::st_read(f, quiet = TRUE)
+#' subset3 <- clip_roi(las, lakes)
 #'
-#' # Extract the polygons, write them in files named after the lake names,
-#' # do not load anything in R
+#' # Extract the polygons for a catalog, write them in files named
+#' # after the lake names, do not load anything in R
 #' opt_output_files(ctg) <- paste0(tempfile(), "_{LAKENAME_1}")
 #' new_ctg = clip_roi(ctg, lakes)
-#' #plot(mew_ctg)
+#' plot(new_ctg)
 #'
 #' # Extract a transect
-#' LASfile <- system.file("extdata", "Topography.laz", package="lidR")
-#' ctg <- readLAScatalog(LASfile)
-#' p1 <- c(273357, y = 5274357)
-#' p2 <- c(273642, y = 5274642)
-#' tr1 <- clip_transect(ctg, p1, p2, width = 3)
-#' tr2 <- clip_transect(ctg, p1, p2, width = 3, xz = TRUE)
-#' plot(tr1, axis = TRUE, clear_artifacts = FALSE)
-#' plot(tr2, axis = TRUE, clear_artifacts = FALSE)
+#' p1 <- c(684800, y = 5017800)
+#' p2 <- c(684900, y = 5017900)
+#' tr1 <- clip_transect(las, p1, p2, width = 4)
 #'
 #' \dontrun{
 #' plot(subset1)
 #' plot(subset2)
 #' plot(subset3)
+#'
+#' plot(tr1, axis = TRUE, clear_artifacts = FALSE)
 #' }
 #' @name clip
 #' @export
@@ -231,7 +228,7 @@ clip_rectangle.LAS = function(las, xleft, ybottom, xright, ytop, ...)
   for (i in 1:length(xleft))
   {
     roi <- filter_poi(las, X >= xleft[i] & X < xright[i] & Y >= ybottom[i] & Y < ytop[i])
-    if (is.empty(roi)) warning(glue::glue("No point found for within disc ({xleft[i]}, {ybottom[i]}, {xright[i]}, {ytop[i]})."))
+    if (is.empty(roi)) warning(glue::glue("No point found for within rectangle ({xleft[i]}, {ybottom[i]}, {xright[i]}, {ytop[i]})."))
     output[[i]] = roi
   }
 
@@ -375,7 +372,7 @@ clip_transect = function(las, p1, p2, width, xz = FALSE, ...)
   coords <- rbind(p1, p2)
   line <- sp::SpatialLines(list(sp::Lines(sp::Line(coords), ID = "1")))
   raster::crs(line) <- crs(las)
-  poly <- rgeos::gBuffer(line, width = width/2, capStyle = "SQUARE")
+  poly <- rgeos::gBuffer(line, width = width/2, capStyle = "FLAT")
   las <- clip_roi(las, poly)
 
   if (!xz) { return(las) }
@@ -470,8 +467,11 @@ catalog_extract = function(ctg, bboxes, shape = LIDRRECTANGLE, sf = NULL, data =
     {
       x <- 0
       class(x) <- "lidr_internal_skip_write"
+      return(x)
     }
 
+    index(x) <- index(cluster)
+    sensor(x) <- sensor(cluster)
     return(x)
   }
 
@@ -551,7 +551,7 @@ catalog_extract = function(ctg, bboxes, shape = LIDRRECTANGLE, sf = NULL, data =
   # output should contain nothing because everything has been streamed into files
   if (opt_output_files(ctg) != "")
   {
-    written_path = c()
+    written_path = character(0)
     for (i in seq_along(clusters))
     {
       if (clusters[[i]]@files[1] == "")
@@ -566,8 +566,27 @@ catalog_extract = function(ctg, bboxes, shape = LIDRRECTANGLE, sf = NULL, data =
         message(glue::glue("No point found for within region of interest {i}."))
     }
 
-    new_ctg <- suppressMessages(readLAScatalog(written_path))
-    opt_copy(new_ctg) <- ctg
+    if (length(written_path) > 0)
+    {
+      new_ctg <- suppressMessages(readLAScatalog(written_path))
+      opt_copy(new_ctg) <- ctg
+    }
+    else
+    {
+      # Empty LAScatalog
+      LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
+      new_ctg <- readLAScatalog(LASfile)
+      data <- new_ctg@data
+      data <- data[0,]
+      poly <- sp::SpatialPolygons(list())
+      poly <- sp::SpatialPolygonsDataFrame(poly, data)
+      new_ctg@data <- data
+      new_ctg@polygons <- poly@polygons
+      new_ctg@plotOrder <- poly@plotOrder
+      new_ctg@bbox <- matrix(0,2,2)
+      new_ctg@proj4string <- ctg@proj4string
+    }
+
     return(list(new_ctg))
   }
   # output should contain LAS objects returned at the R level

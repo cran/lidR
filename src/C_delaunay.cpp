@@ -1,13 +1,13 @@
-#include <Rcpp.h>
-#include "Point.h"
-#include "Shapes.h"
+#include "lidR/GridPartition.h"
 #include "Progress.h"
-#include "GridPartition.h"
 
 #include <boost/polygon/voronoi.hpp>
 
 using boost::polygon::voronoi_diagram;
 using namespace Rcpp;
+using namespace lidR;
+
+
 
 // The point structure must be an integral number. Boost perform on integral number only.
 struct point_int
@@ -40,8 +40,6 @@ namespace boost
     };
   }
 }
-
-typedef GridPartition SpatialIndex;
 
 // [[Rcpp::export(rng = false)]]
 IntegerMatrix C_delaunay(DataFrame P, NumericVector scales, NumericVector offsets, double trim = 0)
@@ -132,7 +130,7 @@ IntegerMatrix C_delaunay(DataFrame P, NumericVector scales, NumericVector offset
           double edge_AB = u.x * u.x + u.y * u.y;
           double edge_AC = v.x * v.x + v.y * v.y;
           double edge_BC = w.x * w.x + w.y * w.y;
-          double edge_max = max(edge_AB, edge_AC, edge_BC);
+          double edge_max = MAX(edge_AB, edge_AC, edge_BC);
 
           bool skip = (trim > 0) ? edge_max > atrim : edge_max < atrim;
 
@@ -225,7 +223,7 @@ NumericVector C_interpolate_delaunay(DataFrame P, DataFrame L, NumericVector sca
   construct_voronoi(points.begin(), points.end(), &vd);
 
   // Build a Spatial to retrieve point in triangles.
-  SpatialIndex tree(x,y);
+  GridPartition tree(x,y);
 
   // Progressbar and user interruption.
   bool abort = false;
@@ -274,15 +272,15 @@ NumericVector C_interpolate_delaunay(DataFrame P, DataFrame L, NumericVector sca
         double edge_AB = u.x * u.x + u.y * u.y;
         double edge_AC = v.x * v.x + v.y * v.y;
         double edge_BC = w.x * w.x + w.y * w.y;
-        double edge_max = max(edge_AB, edge_AC, edge_BC);
+        double edge_max = MAX(edge_AB, edge_AC, edge_BC);
 
-        // Interpolate in this triangle if the longest edge fullfil requirements
+        // Interpolate in this triangle if the longest edge fulfil requirements
         if (trim == 0 || edge_max < trim)
         {
           Triangle tri(A,B,C);
 
           // Find the points in this triangle
-          std::vector<Point*> pts;
+          std::vector<PointXYZ> pts;
           tree.lookup(tri,pts);
 
           if (pts.size() > 0)
@@ -290,7 +288,7 @@ NumericVector C_interpolate_delaunay(DataFrame P, DataFrame L, NumericVector sca
             // For each point, linear interpolation
             for (unsigned int j = 0 ; j < pts.size() ; j++)
             {
-              Point *p = pts[j];
+              PointXYZ& p = pts[j];
 
               PointXYZ n;
               n.x = u.y*v.z-u.z*v.y;
@@ -311,7 +309,7 @@ NumericVector C_interpolate_delaunay(DataFrame P, DataFrame L, NumericVector sca
 
                 #pragma omp critical
                 {
-                  z_out[p->id] = -(p->x * n.x + p->y * n.y + intercept)/n.z;
+                  z_out[p.id] = -(p.x * n.x + p.y * n.y + intercept)/n.z;
                 }
               }
             }
@@ -397,7 +395,7 @@ IntegerVector C_tsearch(IntegerMatrix D, NumericMatrix P, NumericMatrix X, int n
 
   NumericVector x = X(_, 0);
   NumericVector y = X(_, 1);
-  SpatialIndex tree(x, y);
+  GridPartition tree(x, y);
 
   int nelem = D.nrow();
   int np = X.nrow();
@@ -427,15 +425,15 @@ IntegerVector C_tsearch(IntegerMatrix D, NumericMatrix P, NumericMatrix X, int n
     Point C(P(iC, 0), P(iC, 1));
 
     Triangle triangle(A,B,C);
-    std::vector<Point*> points;
+    std::vector<PointXYZ> points;
     tree.lookup(triangle, points);
 
     // Return the id of the triangle
     #pragma omp critical
     {
-      for(std::vector<Point*>::iterator it = points.begin(); it != points.end(); it++)
+      for(std::vector<PointXYZ>::iterator it = points.begin(); it != points.end(); it++)
       {
-        int id = (*it)->id;
+        int id = it->id;
         output(id) = k + 1;
       }
     }

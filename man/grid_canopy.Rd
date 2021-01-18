@@ -18,7 +18,7 @@ In that case the \code{RasterLayer} is used as the layout.}
 \value{
 A \code{RasterLayer} containing a numeric value in each cell. If the \code{RasterLayer}s
 are written on disk when running the function with a \code{LAScatalog}, a virtual raster mosaic is
-returned (see \link[gdalUtils:gdalbuildvrt]{gdalbuildvrt})
+returned (see \href{https://gdal.org/programs/gdalbuildvrt.html}{gdalbuildvrt})
 }
 \description{
 Creates a digital surface model (DSM) using several possible algorithms. If the user provides a
@@ -64,7 +64,7 @@ and this option is not considered. In \link{grid_metrics} this option is respect
 
 \examples{
 LASfile <- system.file("extdata", "MixedConifer.laz", package="lidR")
-las <- readLAS(LASfile)
+las <- readLAS(LASfile, filter = "-inside 481280 3812940 481330 3812990")
 col <- height.colors(50)
 
 # Points-to-raster algorithm with a resolution of 1 meter

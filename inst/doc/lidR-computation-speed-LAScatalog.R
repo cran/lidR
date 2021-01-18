@@ -6,6 +6,22 @@ knitr::opts_chunk$set(
   fig.height = 2.5,
   dev.args = list(pointsize = 9)
 )
+knitr::knit_hooks$set(time_it = local({
+  now <- NULL
+  function(before, options) {
+    if (before) {
+      # record the current time before each chunk
+      now <<- Sys.time()
+    } else {
+      # calculate the time difference after a chunk
+      res <- difftime(Sys.time(), now)
+      # return a character string to show the time
+      #if (res > 0.1)
+      #paste("<br/>========================<br/>Time for this code chunk ", options$label, " to run:", round(res,2), "<br/>========================<br/>")
+    }
+  }
+}))
+knitr::opts_chunk$set(time_it = TRUE)
 options(rmarkdown.html_vignette.check_title = FALSE)
 library(lidR)
 
@@ -116,23 +132,30 @@ for (i in 1:nrow(neighbourg))
   graphics::rect(bbox[2], bbox[4], bbox[1], bbox[3], border = "black", col = "red")
 }
 
+## ---- echo = FALSE,eval=FALSE-------------------------------------------------
+#  LASfile <- system.file("extdata", "Megaplot.laz", package = "lidR")
+#  las = readLAS(LASfile)
+#  f = tempfile(fileext = ".las")
+#  writeLAS(las, f)
+#  
+#  
+#  t1 = system.time(for (i in 1:10) readLAS(LASfile))
+#  t2 = system.time(for (i in 1:10) readLAS(f))
+#  
+#  t1 = t1[3]
+#  t2 = t2[3]
+#  
+#  t = c(t1,t2)
+#  format = c("laz", "las")
+#  X = data.frame(t, format)
+#  
+#  op <- graphics::par(mar = c(4,4,1,1) + 0.1)
+#  barplot(X$t/min(X$t), names.arg = X$format, col = "darkred", xlab = "File format", ylab = "Relative read time", asp = 1)
+#  graphics::par(op)
+
 ## ---- echo = FALSE------------------------------------------------------------
-LASfile <- system.file("extdata", "Megaplot.laz", package = "lidR")
-las = readLAS(LASfile)
-f = tempfile(fileext = ".las")
-writeLAS(las, f)
-
-
-t1 = system.time(for (i in 1:10) readLAS(LASfile))
-t2 = system.time(for (i in 1:10) readLAS(f))
-
-t1 = t1[3]
-t2 = t2[3]
-
-t = c(t1,t2)
-format = c("laz", "las")
-X = data.frame(t, format)
-
+X = structure(list(t = c(1.5, 0.75), format = c("laz", 
+"las")), class = "data.frame", row.names = c(NA, -2L))
 op <- graphics::par(mar = c(4,4,1,1) + 0.1)
 barplot(X$t/min(X$t), names.arg = X$format, col = "darkred", xlab = "File format", ylab = "Relative read time", asp = 1)
 graphics::par(op)

@@ -4,7 +4,7 @@
 \alias{voxel_metrics}
 \title{Voxelize the space and compute metrics for each voxel}
 \usage{
-voxel_metrics(las, func, res = 1)
+voxel_metrics(las, func, res = 1, ..., all_voxels = FALSE)
 }
 \arguments{
 \item{las}{An object of class \code{LAS}.}
@@ -13,6 +13,13 @@ voxel_metrics(las, func, res = 1)
 
 \item{res}{numeric. The resolution of the voxels. \code{res = 1} for a 1x1x1 cubic voxels. Optionally
 \code{res = c(1,2)} for non-cubic voxels (1x1x2 cuboid voxel).}
+
+\item{...}{Unused}
+
+\item{all_voxels}{boolean. By default the function returns only voxels that
+contain 1 or more points. Empty voxels do not exist as the metrics are undefined.
+If \code{all_voxels = TRUE} all the voxels are returned and metrics are NA for
+voxels with 0 points.}
 }
 \value{
 It returns a \code{data.table} containing the metrics for each voxel. The table
@@ -29,13 +36,14 @@ functions. The function will dispatch the LiDAR data for each voxel in the user'
 LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
 las <- readLAS(LASfile)
 
-# Cloud of points is voxelized with a 3-meter resolution and in each voxel
+# Cloud of points is voxelized with a 8-meter resolution and in each voxel
 # the number of points is computed.
-voxel_metrics(las, ~length(Z), 3)
+vm <- voxel_metrics(las, ~length(Z), 8)
 
-# Cloud of points is voxelized with a 3-meter resolution and in each voxel
+# Cloud of points is voxelized with a 8-meter resolution and in each voxel
 # the mean intensity of points is computed.
-voxel_metrics(las, ~mean(Intensity), 3)
+vm <- voxel_metrics(las, ~mean(Intensity), 8)
+#plot(vm, color = "V1", colorPalette = heat.colors(50), trim = 60)
 
 # Define your own metric function
 myMetrics = function(i)
@@ -48,9 +56,9 @@ myMetrics = function(i)
    return(ret)
 }
 
-voxels <- voxel_metrics(las, ~myMetrics(Intensity), 3)
+voxels <- voxel_metrics(las, ~myMetrics(Intensity), 8)
 
-plot(voxels, color = "imean", trim = 100)
+#plot(voxels, color = "imean", colorPalette = heat.colors(50), trim = 60)
 #etc.
 
 attr(voxels, "res")

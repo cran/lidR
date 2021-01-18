@@ -55,8 +55,9 @@
 #' @param add_lasattribute logical. By default the above see level elevation is retained in a new attribute.
 #' However this new attribute will be discared at write time. If \code{TRUE} it is maintained as an
 #' extrabytes attribute. See also \link{add_lasattribute}.
-#' @param Wdegenerated logical. The function always check and remove degenerated ground points. If
-#' any a warning in thrown.
+#' @param Wdegenerated logical. The function always check and remove degenerated ground points
+#' for computing the DTM to avoid unexpected behaviours such as infinite elevation. If
+#' TRUE a warning in thrown to alert about the presence of degenerated ground points.
 #'
 #' @template LAScatalog
 #'
@@ -66,9 +67,9 @@
 #'
 #' @examples
 #' LASfile <- system.file("extdata", "Topography.laz", package="lidR")
-#' las <- readLAS(LASfile)
+#' las <- readLAS(LASfile, filter = "-inside 273450 5274350 273550 5274450")
 #'
-#' plot(las)
+#' #plot(las)
 #'
 #' # First option: use a RasterLayer as DTM
 #' # =======================================================
@@ -77,15 +78,15 @@
 #' las <- normalize_height(las, dtm)
 #'
 #' plot(dtm)
-#' plot(las)
+#' #plot(las)
 #'
 #' # restore original elevations
 #' las <- unnormalize_height(las)
-#' plot(las)
+#' #plot(las)
 #'
 #' # operator - can be used. This is equivalent to the previous
 #' las <- las - dtm
-#' plot(las)
+#' #plot(las)
 #'
 #' # restore original elevations
 #' las <- unnormalize_height(las)
@@ -94,7 +95,7 @@
 #' # =========================================================
 #'
 #' las <- normalize_height(las, tin())
-#' plot(las)
+#' #plot(las)
 #'
 #' # operator - can be used. This is equivalent to the previous
 #' las <- unnormalize_height(las)
@@ -148,17 +149,8 @@ normalize_height.LAS = function(las, algorithm, na.rm = FALSE, use_class = c(2L,
 
     if (!"Classification" %in% names(las@data))  stop("No field 'Classification' found. This attribute is required to interpolate ground points.", call. = FALSE)
 
-    # Non standart evaluation (R CMD check)
+    # Non standard evaluation (R CMD check)
     . <- Z <- Zref <- X <- Y <- Classification <- NULL
-
-    # Delaunay triangulation with boost requiere to
-    # compute back integer coordinates
-    xscale  <- las@header@PHB[["X scale factor"]]
-    yscale  <- las@header@PHB[["Y scale factor"]]
-    xoffset <- las@header@PHB[["X offset"]]
-    yoffset <- las@header@PHB[["Y offset"]]
-    scales  <- c(xscale, yscale)
-    offsets <- c(xoffset, yoffset)
 
     # Select the ground points
     ground  <- las@data[Classification %in% c(use_class), .(X,Y,Z)]
@@ -167,7 +159,8 @@ normalize_height.LAS = function(las, algorithm, na.rm = FALSE, use_class = c(2L,
 
     # wbuffer = !"buffer" %in% names(las@data)
     lidR.context <- "normalize_height"
-    Zground <- algorithm(ground, las@data, scales, offsets)
+    ground  <- LAS(ground, las@header, proj4string = las@proj4string, check = FALSE, index = las@index)
+    Zground <- algorithm(ground, las@data)
     isna    <- is.na(Zground)
     nnas    <- sum(isna)
 
@@ -198,6 +191,7 @@ normalize_height.LAS = function(las, algorithm, na.rm = FALSE, use_class = c(2L,
 
   fast_quantization(las@data[["Z"]], zscale, zoffset)
   las <- lasupdateheader(las)
+  las@index$sensor <- las@index$sensor + NLAS
   return(las)
 }
 
@@ -237,6 +231,7 @@ unnormalize_height = function(las)
   else
     message("No attribute 'Zref' found. Un-normalizisation is impossible.")
 
+  if (las@index$sensor > NLAS) las@index$sensor <- las@index$sensor - NLAS
   return(las)
 }
 

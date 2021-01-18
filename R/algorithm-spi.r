@@ -44,14 +44,14 @@
 #'
 #' @examples
 #' LASfile <- system.file("extdata", "Topography.laz", package="lidR")
-#' las = readLAS(LASfile)
+#' las = readLAS(LASfile, filter = "-inside 273450 5274350 273550 5274450")
 #'
-#' # plot(las)
+#' #plot(las)
 #'
 #' dtm = grid_terrain(las, algorithm = tin())
 #'
 #' plot(dtm, col = terrain.colors(50))
-#' plot_dtm3d(dtm)
+#' #plot_dtm3d(dtm)
 tin = function(..., extrapolate = knnidw(3,1,50))
 {
   if (!is.null(extrapolate))
@@ -59,10 +59,10 @@ tin = function(..., extrapolate = knnidw(3,1,50))
 
   extrapolate <- lazyeval::uq(extrapolate)
 
-  f = function(what, where, scales = c(0,0), offsets = c(0,0))
+  f = function(las, where)
   {
     assert_is_valid_context(LIDRCONTEXTSPI, "tin")
-    z <- interpolate_delaunay(what, where, trim = 0, scales = scales, offsets = offsets, min_normal_z = 3e-2)
+    z <- interpolate_delaunay(las, where, trim = 0, min_normal_z = 3e-2)
 
     # Extrapolate beyond the convex hull
     isna <- is.na(z)
@@ -72,9 +72,8 @@ tin = function(..., extrapolate = knnidw(3,1,50))
       verbose("Interpolating the points ouside the convex hull of the ground points using knnidw()")
 
       lidR.context <- "spatial_interpolation"
-      what <- data.frame(X = where$X[!isna], Y = where$Y[!isna], Z = z[!isna])
       where <- data.frame(X = where$X[isna],  Y = where$Y[isna])
-      zknn <- extrapolate(what, where, scales, offsets)
+      zknn <- extrapolate(las, where)
       z[isna] <- zknn
       isna <- is.na(zknn)
       nnas <- sum(isna)
@@ -108,22 +107,22 @@ tin = function(..., extrapolate = knnidw(3,1,50))
 #' LASfile <- system.file("extdata", "Topography.laz", package="lidR")
 #' las = readLAS(LASfile)
 #'
-#' # plot(las)
+#' #plot(las)
 #'
 #' dtm = grid_terrain(las, algorithm = knnidw(k = 6L, p = 2))
 #'
-#' plot(dtm, col = terrain.colors(50))
-#' plot_dtm3d(dtm)
+#' #plot(dtm, col = terrain.colors(50))
+#' #plot_dtm3d(dtm)
 knnidw = function(k = 10, p = 2, rmax = 50)
 {
   k <- lazyeval::uq(k)
   p <- lazyeval::uq(p)
   rmax <- lazyeval::uq(rmax)
 
-  f = function(what, where, scales = c(0,0), offsets = c(0,0))
+  f = function(las, where)
   {
     assert_is_valid_context(LIDRCONTEXTSPI, "knnidw")
-    return(interpolate_knnidw(what, where, k, p, rmax))
+    return(interpolate_knnidw(las, where, k, p, rmax))
   }
 
   class(f) <- c(LIDRALGORITHMSPI, LIDRALGORITHMOPENMP)
@@ -148,6 +147,7 @@ knnidw = function(k = 10, p = 2, rmax = 50)
 #' @family spatial interpolation algorithms
 #'
 #' @examples
+#' \dontrun{
 #' LASfile <- system.file("extdata", "Topography.laz", package="lidR")
 #' las = readLAS(LASfile)
 #'
@@ -157,12 +157,15 @@ knnidw = function(k = 10, p = 2, rmax = 50)
 #'
 #' plot(dtm, col = terrain.colors(50))
 #' plot_dtm3d(dtm)
+#' }
 kriging = function(model = gstat::vgm(.59, "Sph", 874), k = 10L)
 {
-  f = function(what, where, scales = c(0,0), offsets = c(0,0))
+  assert_package_is_installed("gstat")
+
+  f = function(las, where)
   {
     assert_is_valid_context(LIDRCONTEXTSPI, "kriging")
-    return(interpolate_kriging(what, where, model, k))
+    return(interpolate_kriging(las, where, model, k))
   }
 
   class(f) <- LIDRALGORITHMSPI
@@ -171,26 +174,29 @@ kriging = function(model = gstat::vgm(.59, "Sph", 874), k = 10L)
 
 interpolate_knnidw = function(points, coord, k, p, rmax = 50)
 {
-  z <- C_knnidw(points$X, points$Y, points$Z, coord$X, coord$Y, k, p, rmax, getThread())
-  return(z)
+  if (!inherits(points, "LAS")) {
+    h <- rlas::header_create(points)
+    points <- LAS(points, h, check = F)
+  }
+
+  force_autoindex(points) <- LIDRGRIDPARTITION
+  return(C_knnidw(points, coord$X, coord$Y, k, p, rmax, getThread()))
 }
 
 interpolate_kriging = function(points, coord, model, k)
 {
   X <- Y <- Z <- NULL
-
-  if (!getOption("lidR.verbose"))
-    sink(tempfile())
-
+  if (!getOption("lidR.verbose")) sink(tempfile())
+  if (inherits(points, "LAS")) points <- points@data
   x  <- gstat::krige(Z~X+Y, location = ~X+Y, data = points, newdata = coord, model, nmax = k)
-
   sink()
-
   return(x$var1.pred)
 }
 
 interpolate_delaunay <- function(points, coord, trim = 0, scales = c(1,1), offsets = c(0,0), options = "QbB", min_normal_z = 0)
 {
+  # /!\ TODO: triangulation does not respect spatial index and always use grid partition
+
   stopifnot(is.numeric(trim), length(trim) == 1L)
   stopifnot(is.numeric(scales), length(scales) == 2L)
   stopifnot(is.numeric(offsets), length(offsets) == 2L)
@@ -216,9 +222,9 @@ interpolate_delaunay <- function(points, coord, trim = 0, scales = c(1,1), offse
   }
 
   # Check if coordinates actually match the resolution
-  # Check only 100 of them including the first one
-  n <- min(100, length(points$X)) - 1
-  s <- c(1, sample(2:length(points$X), n))
+  # Check only 100 of them
+  n <- min(100L, length(points$X))
+  s <- as.integer(seq(1L, length(points$X), length.out = n))
   X <- points$X[s]
   Y <- points$Y[s]
   x <- fast_countunquantized(X, scales[1], offsets[1])

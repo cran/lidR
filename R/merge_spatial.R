@@ -55,15 +55,14 @@
 #' LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
 #' shp     <- system.file("extdata", "lake_polygons_UTM17.shp", package = "lidR")
 #'
-#' las   <- readLAS(LASfile)
-#' lakes <- shapefile(shp)
+#' las   <- readLAS(LASfile, filter = "-keep_random_fraction 0.1")
+#' lakes <- sf::st_read(shp)
 #'
 #' # The attribute "inlake" does not exist in the shapefile.
 #' # Points are classified as TRUE if in a polygon
 #' las    <- merge_spatial(las, lakes, "inlakes")     # New attribute 'inlakes' is added.
 #' forest <- filter_poi(las, inlakes == FALSE)
-#' plot(las)
-#' plot(forest)
+#' #plot(forest)
 #'
 #' # The attribute "LAKENAME_1" exists in the shapefile.
 #' # Points are classified with the values of the polygons
@@ -81,7 +80,8 @@ merge_spatial.LAS = function(las, source, attribute = NULL)
     if (sf::st_geometry_type(source) != "POLYGON")
       stop("Only POLYGON geometry types are supported for sf objects", call. = FALSE)
 
-    box <- sf::st_bbox(las)
+    box <- raster::extent(las)
+    box <- sf::st_bbox(box)
     width <- (box[3] - box[1])*0.01 + las@header@PHB[["X scale factor"]]
     height <- (box[4] - box[2])*0.01 + las@header@PHB[["Y scale factor"]]
     box <- box + c(-width, -height, width, height)

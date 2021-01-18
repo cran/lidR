@@ -104,6 +104,13 @@ NumericVector C_rasterize(S4 las, S4 layout, double subcircle = 0, int method = 
   return pt.rasterize(layout, subcircle, method);
 }
 
+// [[Rcpp::export(rng = false)]]
+NumericVector C_knnidw(S4 las, NumericVector x, NumericVector y, int k, double p, double rmax, int ncpu)
+{
+  LAS pt(las, ncpu);
+  return pt.interpolate_knnidw(x,y,k,p,rmax);
+}
+
 // [[Rcpp::export]]
 List C_point_metrics(S4 las, unsigned int k, double r, int nalloc, SEXP call, SEXP env, LogicalVector filter)
 {
@@ -111,6 +118,13 @@ List C_point_metrics(S4 las, unsigned int k, double r, int nalloc, SEXP call, SE
   pt.new_filter(filter);
   DataFrame data = as<DataFrame>(las.slot("data"));
   return pt.point_metrics(k, r, data, nalloc, call, env);
+}
+
+// [[Rcpp::export]]
+NumericVector C_fast_knn_metrics(S4 las, unsigned int k, IntegerVector metrics, int cpu)
+{
+  LAS pt(las, cpu);
+  return pt.fast_knn_metrics(k, metrics);
 }
 
 // [[Rcpp::export(rng = false)]]
@@ -133,6 +147,14 @@ LogicalVector C_local_maximum(S4 las, NumericVector ws, int ncpu)
 {
   LAS pt(las, ncpu);
   pt.filter_local_maxima(ws);
+  return Rcpp::wrap(pt.filter);
+}
+
+//[[Rcpp::export(rng = false)]]
+LogicalVector C_isolated_voxel(S4 las, double res, int isolated)
+{
+  LAS pt(las);
+  pt.filter_isolated_voxel(res, isolated);
   return Rcpp::wrap(pt.filter);
 }
 
@@ -275,7 +297,7 @@ NumericVector roundc(NumericVector x, int digit = 0)
 }
 
 /*
- * ======= ALGEBRA FUNCTIONS =========
+// ======= ALGEBRA FUNCTIONS =========
  */
 
 #include <RcppArmadillo.h>
@@ -296,11 +318,10 @@ SEXP fast_eigen_values(arma::mat A)
  * ======= BINARY SEARCH TREE FUNCTIONS =========
  */
 
-//#include "QuadTree.h"
-#include "GridPartition.h"
+#include "SpatialIndex.h"
 #include "Progress.h"
 
-typedef GridPartition SpatialIndex;
+using namespace lidR;
 
 // [[Rcpp::export(rng = false)]]
 Rcpp::List C_knn(NumericVector X, NumericVector Y, NumericVector x, NumericVector y, int k, int ncpu)
@@ -309,23 +330,23 @@ Rcpp::List C_knn(NumericVector X, NumericVector Y, NumericVector x, NumericVecto
   IntegerMatrix knn_idx(n, k);
   NumericMatrix knn_dist(n, k);
 
-  SpatialIndex tree(X,Y);
+  GridPartition tree(X,Y);
 
   #pragma omp parallel for num_threads(ncpu)
   for(unsigned int i = 0 ; i < n ; i++)
   {
     Point pt(x[i], y[i]);
-    std::vector<Point*> pts;
+    std::vector<PointXYZ> pts;
     tree.knn(pt, k, pts);
 
     #pragma omp critical
     {
       for (unsigned int j = 0 ; j < pts.size() ; j++)
       {
-        knn_idx(i, j)  = pts[j]->id + 1;
+        knn_idx(i, j)  = pts[j].id + 1;
 
-        double dx = pts[j]->x - x[i];
-        double dy = pts[j]->y - y[i];
+        double dx = pts[j].x - x[i];
+        double dy = pts[j].y - y[i];
 
         knn_dist(i, j) = std::sqrt(dx*dx + dy*dy);
       }
@@ -334,146 +355,3 @@ Rcpp::List C_knn(NumericVector X, NumericVector Y, NumericVector x, NumericVecto
 
   return Rcpp::List::create(Rcpp::Named("nn.idx") = knn_idx, Rcpp::Named("nn.dist") = knn_dist);
 }
-
-// [[Rcpp::export(rng = false)]]
-NumericVector C_knnidw(NumericVector X, NumericVector Y, NumericVector Z, NumericVector x, NumericVector y, int k, double p, double rmax, int ncpu)
-{
-  unsigned int n = x.length();
-  NumericVector iZ(n, NA_REAL);
-
-  SpatialIndex tree(X,Y);
-  Progress pb(n, "Inverse distance weighting: ");
-
-  bool abort = false;
-
-  #pragma omp parallel for num_threads(ncpu)
-  for(unsigned int i = 0 ; i < n ; i++)
-  {
-    if (abort) continue;
-    if (pb.check_interrupt()) abort = true;
-    pb.increment();
-
-    Point pt(x[i], y[i]);
-    std::vector<Point*> pts;
-    tree.knn(pt, k, rmax, pts);
-
-    double sum_zw = 0;
-    double sum_w  = 0;
-
-    for (unsigned int j = 0 ; j < pts.size() ; j++)
-    {
-      double dx = pts[j]->x - x[i];
-      double dy = pts[j]->y - y[i];
-      double d  = std::sqrt(dx*dx + dy*dy);
-      double w;
-      double z = Z[pts[j]->id];
-
-      if (d > 0)
-      {
-        w = 1/pow(d,p);
-        sum_zw += z*w;
-        sum_w  += w;
-      }
-      else
-      {
-        sum_zw = z;
-        sum_w  = 1;
-        break;
-      }
-    }
-
-    #pragma omp critical
-    {
-      iZ(i) = sum_zw/sum_w;
-    }
-  }
-
-  if (abort) throw Rcpp::internal::InterruptedException();
-
-  return iZ;
-}
-
-// [[Rcpp::export(rng = false)]]
-IntegerVector C_count_in_disc(NumericVector X, NumericVector Y, NumericVector x, NumericVector y, double radius, int ncpu)
-{
-  unsigned int n = x.length();
-  IntegerVector output(n);
-
-  SpatialIndex tree(X,Y);
-
-  #pragma omp parallel for num_threads(ncpu)
-  for(unsigned int i = 0 ; i < n ; i++)
-  {
-    Circle disc(x[i], y[i], radius);
-    std::vector<Point*> pts;
-    tree.lookup(disc, pts);
-
-    #pragma omp critical
-    {
-      output[i] = pts.size();
-    }
-  }
-
-  return output;
-}
-
-
-// Only for unit tests
-
-// [[Rcpp::export(rng = false)]]
-IntegerVector C_circle_lookup(NumericVector X, NumericVector Y, double x, double y, double r)
-{
-  std::vector<int> id;
-
-  SpatialIndex tree(X,Y);
-  std::vector<Point*> pts;
-  Circle circ(x,y,r);
-  tree.lookup(circ, pts);
-
-  for (size_t j = 0 ; j < pts.size() ; j++)
-    id.push_back(pts[j]->id + 1);
-
-  return wrap(id);
-}
-
-// [[Rcpp::export(rng = false)]]
-IntegerVector C_orectangle_lookup(NumericVector X, NumericVector Y, double x, double y, double w, double h, double angle)
-{
-  std::vector<int> id;
-
-  double xmax = x+w/2;
-  double ymax = y+h/2;
-  double xmin = x-w/2;
-  double ymin = y-h/2;
-
-  SpatialIndex tree(X,Y);
-  std::vector<Point*> pts;
-  OrientedRectangle orect(xmin, xmax, ymin, ymax, angle);
-  tree.lookup(orect, pts);
-
-  for (size_t j = 0 ; j < pts.size() ; j++)
-    id.push_back(pts[j]->id + 1);
-
-  return wrap(id);
-}
-
-
-// [[Rcpp::export(rng = false)]]
-IntegerVector C_knn3d_lookup(NumericVector X, NumericVector Y, NumericVector Z, double x, double y, double z, int k)
-{
-  std::vector<int> id;
-
-  // Creation of a SpatialIndex
-  SpatialIndex tree(X, Y, Z);
-
-  PointXYZ p(x,y,z);
-  std::vector<PointXYZ> pts;
-  tree.knn(p, k, pts);
-
-  for (size_t j = 0 ; j < pts.size() ; j++)
-    id.push_back(pts[j].id + 1);
-
-  return wrap(id);
-}
-
-

@@ -1,8 +1,7 @@
 context("LAS")
 
-LASfile <- system.file("extdata", "Megaplot.laz", package = "lidR")
-las     <- readLAS(LASfile)
-data    <- data.frame(X = runif(10), Y = runif(10), Z = runif(10))
+las  <- megaplot
+data <- data.frame(X = runif(10), Y = runif(10), Z = runif(10))
 
 test_that("Print a LAS object works", {
 
@@ -60,7 +59,7 @@ test_that("LAS builds a LAS 1.2 prf 3 object from RGB data", {
 
 test_that("LAS builds a LAS object respecting a header", {
 
-  las2 <- LAS(data, las@header)
+  las2 <- LAS(data, las@header, check = FALSE)
 
   expect_is(las2, "LAS")
   expect_equal(las2@header@PHB$`Version Minor`, las@header@PHB$`Version Minor`)
@@ -80,7 +79,7 @@ test_that("LAS builds a LAS object with a CRS", {
   expect_true(is.na(las2@proj4string))
   expect_equal(epsg(las2), 0)
 
-  las2 <- LAS(data, las@header)
+  las2 <- LAS(data, las@header, check = FALSE)
 
   expect_equal(projection(las2), projection(las))
   expect_equal(epsg(las2), 26917)
@@ -155,11 +154,16 @@ test_that("LAS throws a warning/error if building an invalid LAS", {
   data <- data.frame(X = runif(10), Y = runif(10), Z = runif(10))
 
   expect_error(LAS(data, header), "Version")
+
+  # Non quantized coordinates
+
+  header@PHB$`Version Minor` <- 1L
+  expect_warning(LAS(data, header), "quantization errors")
 })
 
 test_that("LAS redefined behavior of $, [, and [[", {
 
-  las <- lidR:::dummy_las(10)
+  las <- random_10_points
 
   expect_true(is.numeric(las$Z))
   expect_equal(length(las$Z), 10)
@@ -178,8 +182,68 @@ test_that("LAS redefined behavior of $, [, and [[", {
   expect_error(las[["U"]] <- 1:10, "Addition of a new column")
 })
 
+test_that("LAS operator $ quantize on the fly and update header", {
+
+  las <- random_10_points
+
+  x = runif(10)
+  y = runif(10)
+  z = runif(10)
+
+  las$X <- x
+  las$Y <- y
+  las$Z <- z
+
+  expect_equal(las$X, quantize(x, 0.001, 0, FALSE))
+  expect_equal(las$Y, quantize(y, 0.001, 0, FALSE))
+  expect_equal(las$Z, quantize(z, 0.001, 0, FALSE))
+
+  xbbox = range(quantize(x, 0.001, 0, FALSE))
+  ybbox = range(quantize(y, 0.001, 0, FALSE))
+
+  expect_equivalent(las@bbox, matrix(c(xbbox, ybbox), ncol = 2, byrow = T))
+  expect_equal(las@header@PHB[["Min X"]], xbbox[1])
+  expect_equal(las@header@PHB[["Min Y"]], ybbox[1])
+})
+
+test_that("LAS operator [[ quantize on the fly and update header", {
+
+  las <- random_10_points
+
+  x = runif(10)
+  y = runif(10)
+  z = runif(10)
+
+  las[["X"]] <- x
+  las[["Y"]] <- y
+  las[["Z"]] <- z
+
+  expect_equal(las$X, quantize(x, 0.001, 0, FALSE))
+  expect_equal(las$Y, quantize(y, 0.001, 0, FALSE))
+  expect_equal(las$Z, quantize(z, 0.001, 0, FALSE))
+
+  xbbox = range(quantize(x, 0.001, 0, FALSE))
+  ybbox = range(quantize(y, 0.001, 0, FALSE))
+
+  expect_equivalent(las@bbox, matrix(c(xbbox, ybbox), ncol = 2, byrow = T))
+  expect_equal(las@header@PHB[["Min X"]], xbbox[1])
+  expect_equal(las@header@PHB[["Min Y"]], ybbox[1])
+})
+
+test_that("LAS operator[[ and $ throw error for not storable coordinates", {
+  las <- random_10_points
+  x <- round(runif(10),2)
+  x[5] <- 21474836.47
+
+  expect_error(las$X <- x, "Trying to store values ranging in")
+  expect_error(las$Y <- x, "Trying to store values ranging in")
+  expect_error(las[["X"]] <- x, "Trying to store values ranging in")
+  expect_error(las[["Y"]] <- x, "Trying to store values ranging in")
+})
+
+
 test_that("LAS conversion to SpatialPointsDataFrame works", {
-  las <- lidR:::dummy_las(10)
+  las <- random_10_points
   splas <- as.spatial(las)
 
   expect_true(is(splas, "SpatialPointsDataFrame"))
@@ -190,3 +254,4 @@ test_that("LAS build an empty point cloud with no header (#314)", {
   expect_equal(npoints(las), 0L)
   expect_equal(names(las@data), c("X", "Y", "Z"))
 })
+

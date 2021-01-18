@@ -98,8 +98,10 @@ and "-thin_pulses_with_time" to reduce the number of points loaded.
 \examples{
 # A valid file properly populated
 LASfile <- system.file("extdata", "Topography.laz", package="lidR")
-las = readLAS(LASfile)
-plot(las)
+las = readLAS(LASfile,
+              select = "xyzrntp",
+              filter = "-drop_single -thin_pulses_with_time 0.001")
+#plot(las)
 
 # pmin = 15 because it is an extremely small file
 # strongly decimated to reduce its size. There are
@@ -109,17 +111,8 @@ flightlines <- track_sensor(las, Roussel2020(pmin = 15))
 plot(las@header)
 plot(flightlines, add = TRUE)
 
-x <- plot(las)
-add_flightlines3d(x, flightlines, radius = 10)
-
-# Load only the data actually useful
-las <- readLAS(LASfile,
-               select = "xyzrntp",
-               filter = "-drop_single -thin_pulses_with_time 0.001")
-flightlines <- track_sensor(las,  Roussel2020(pmin = 15))
-
-x <- plot(las)
-add_flightlines3d(x, flightlines, radius = 10)
+#x <- plot(las)
+#add_flightlines3d(x, flightlines, radius = 10)
 
 \dontrun{
 # With a LAScatalog "-drop_single" and "-thin_pulses_with_time"

@@ -48,7 +48,7 @@
 #' las = readLAS(LASfile, select = "xyz")
 #'
 #' las2 = voxelize_points(las, 2)
-#' plot(las2)
+#' #plot(las2)
 voxelize_points = function(las, res)
 {
   assert_all_are_non_negative(res)
@@ -80,7 +80,7 @@ voxelize_points.LAS = function(las, res)
     voxels <- unique(by)
   }
 
-  output <- LAS(voxels, header = las@header, proj4string = las@proj4string, check = FALSE)
+  output <- LAS(voxels, header = las@header, proj4string = las@proj4string, check = FALSE, index = las@index)
   return(output)
 }
 

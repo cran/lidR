@@ -26,15 +26,16 @@
 # ===============================================================================
 
 
-#' Classify points as 'ground' or 'not ground'
+#' Classify points as 'ground'
 #'
-#' Classify points as 'ground' or 'not ground' with several possible algorithms. The function updates the
+#' Classify points as 'ground' with several possible algorithms. The function updates the
 #' attribute \code{Classification} of the LAS object. The points classified as 'ground' are assigned
 #' a value of 2 according to \href{https://www.asprs.org/wp-content/uploads/2019/07/LAS_1_4_r15.pdf}{las specifications}.
 #'
 #' @template param-las
 #'
 #' @param algorithm a ground-segmentation function. \code{lidR} has: \link{pmf} and \link{csf}.
+#' The \href{https://github.com/Jean-Romain/lidRplugins}{lidRplugins} package has 'mcc'.
 #' @param last_returns logical. The algorithm will use only the last returns (including the first returns
 #' in cases of a single return) to run the algorithm. If FALSE all the returns are used. If the attribute
 #' \code{'ReturnNumber'} or \code{'NumberOfReturns'} are absent, \code{'last_returns'} is turned
@@ -50,16 +51,17 @@
 #'
 #' @examples
 #' LASfile <- system.file("extdata", "Topography.laz", package="lidR")
-#' las <- readLAS(LASfile, select = "xyzrn")
+#' las <- readLAS(LASfile, select = "xyzrn", filter = "-inside 273450 5274350 273550 5274450")
 #'
 #' # Using the Progressive Morphological Filter
 #' # --------------------------------------
 #'
-#' ws  <- seq(3,12, 3)
+#' # (Parameters chosen mainly for speed)
+#' ws  <- seq(3,12, 4)
 #' th  <- seq(0.1, 1.5, length.out = length(ws))
 #'
 #' las <- classify_ground(las, pmf(ws, th))
-#' plot(las, color = "Classification")
+#' #plot(las, color = "Classification")
 #'
 #' #' # Using the Cloth Simulation Filter
 #' # --------------------------------------
@@ -67,7 +69,7 @@
 #' # (Parameters chosen mainly for speed)
 #' mycsf <- csf(TRUE, 1, 1, time_step = 1)
 #' las <- classify_ground(las, mycsf)
-#' plot(las, color = "Classification")
+#' #plot(las, color = "Classification")
 classify_ground = function(las, algorithm, last_returns = TRUE)
 {
   UseMethod("classify_ground", las)

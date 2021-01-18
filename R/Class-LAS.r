@@ -40,6 +40,7 @@
 #' \item{\code{X} (numeric)}
 #' \item{\code{Y} (numeric)}
 #' \item{\code{Z} (numeric)}
+#' \item{\code{gpstime} (numeric)}
 #' \item{\code{Intensity} (integer)}
 #' \item{\code{ReturnNumber} (integer)}
 #' \item{\code{NumberOfReturns} (integer)}
@@ -49,9 +50,12 @@
 #' \item{\code{Synthetic_flag} (logical)}
 #' \item{\code{Keypoint_flag} (logical)}
 #' \item{\code{Withheld_flag} (logical)}
-#' \item{\code{ScanAngle} (integer)}
+#' \item{\code{ScanAngleRank} (integer)}
+#' \item{\code{ScanAngle} (numeric)}
 #' \item{\code{UserData} (integer)}
 #' \item{\code{PointSourceID} (integer)}
+#' \item{\code{R,G,B} (integer)}
+#' \item{\code{NIR} (integer)}
 #' }
 #'
 #' @section Extends:
@@ -67,11 +71,13 @@
 #' @slot header Object of class \link[=LASheader-class]{LASheader}. las file header according to the
 #' \href{https://www.asprs.org/wp-content/uploads/2019/07/LAS_1_4_r15.pdf}{LAS file format}
 #'
+#' @slot index list. See \link[=lidR-spatial-index]{spatial indexing}.
+#'
 #' @include Class-LASheader.R
 #' @export
 #' @examples
 #' # Read a las/laz file
-#' LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
+#' LASfile <- system.file("extdata", "example.laz", package="rlas")
 #' las <- readLAS(LASfile)
 #' las
 #'
@@ -79,17 +85,34 @@
 #' data <- data.frame(X = runif(100, 0, 100),
 #'                    Y = runif(100, 0, 100),
 #'                    Z = runif(100, 0, 20))
+#'
+#' # 'data' has many decimal digits
 #' data
 #'
-#' las <- LAS(data) # /!\ data is updated by reference
+#' # Create a default header and quantize *by reference*
+#' # the coordinates to fit with offset and scale factors
+#' cloud <- LAS(data)
 #'
+#' # 'data' has been updated and coordinates were quantized
 #' data
-#' las
+#' cloud
+#'
+#' # Be careful when providing a header the function assumes that
+#' # it corresponds to the data and won't quantize the coordinates
+#' data <- data.frame(X = runif(100, 0, 100),
+#'                    Y = runif(100, 0, 100),
+#'                    Z = runif(100, 0, 20))
+#' header <- las@header
+#'
+#' # This works but triggers warnings and creates an invalid LAS object
+#' cloud <- LAS(data, header)
+#'
+#' las_check(cloud)
 #' @seealso
 #' \link{readLAS}
 setClass(
   Class = "LAS", contains = "Spatial",
-  representation(data = "data.table", header = "LASheader")
+  representation(data = "data.table", header = "LASheader", index = "list")
 )
 
 setMethod("initialize", "LAS", function(.Object)
@@ -113,6 +136,7 @@ setMethod("initialize", "LAS", function(.Object)
   .Object@proj4string <- sp::CRS()
   .Object@header      <- LASheader(header)
   .Object@data        <- data
+  .Object@index       <- LIDRDEFAULTINDEX
 
   return(.Object)
 })

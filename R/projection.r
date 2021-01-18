@@ -260,19 +260,19 @@ setMethod("projection<-", "LAS", function(x, value)
       proj4 <- CRS@projargs
       epsg <- .find_epsg_code(value)
     }
-    else
+    else # nocov start
     {
       proj4 <- value$proj4string
       CRS <- sp::CRS(proj4)
       wkt <- rgdal::showWKT
       epsg <- .find_epsg_code(value)
-    }
+    } # nocov end
   }
   else if (is.character(value))
   {
     CRS <- sp::CRS(SRS_string = value)
     proj4 <- CRS@projargs
-    wkt <- if (proj6) comment(value) else rgdal::showWKT(proj4)
+    wkt <- if (proj6) comment(CRS) else rgdal::showWKT(proj4)
     epsg <- .find_epsg_code(CRS)
   }
   else if (is.numeric(value))
@@ -363,7 +363,7 @@ setMethod("crs", "LAScatalog", function(x, asText = FALSE)
 #' @noRd
 setMethod("spTransform", signature("LAS", "CRS"), function(x, CRSobj, ...)
 {
-  if (is.na(sp::proj4string(x)))
+  if (is.na(x@proj4string@projargs))
     stop("No transformation possible from NA reference system")
 
   # Transform the point coordinates
@@ -442,11 +442,11 @@ epsg2CRS <- function(epsg, fail = FALSE)
         stop(paste("Invalid epsg code", epsg), call. = FALSE)
     })
   }
-  else
+  else # nocov start
   {
     proj <- epsg2proj(epsg, fail)
     crs <- sp::CRS(proj)
-  }
+  } # nocov end
 
   return(crs)
 }
@@ -467,11 +467,11 @@ wkt2CRS <- function(wkt, fail = FALSE)
         stop("Invalid WKT string", call. = FALSE)
     })
   }
-  else
+  else # nocov start
   {
     proj <- wkt2proj(wkt, fail)
     crs <- sp::CRS(proj, doCheckCRSArgs = FALSE) # doCheckCRSArgs = FALSE added in 2.2.4 after #323
-  }
+  } # nocov end
 
   return(crs)
 }
@@ -519,6 +519,7 @@ wkt2CRS <- function(wkt, fail = FALSE)
     stop("Internal error: x is not a CRS or a crs", call. = FALSE)
 }
 
+# nocov start
 epsg2proj <- function(epsg, fail = FALSE)
 {
   tryCatch(
@@ -549,3 +550,4 @@ wkt2proj <- function(wkt, fail = FALSE)
       stop("Invalid WKT", call. = FALSE)
   })
 }
+# nocov end

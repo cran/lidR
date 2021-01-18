@@ -1,19 +1,28 @@
 #' Create an object of class LAScatalog
 #'
-#' Create an object of class \link[=LAScatalog-class]{LAScatalog} from a folder or a collection of filenames.
-#' A LAScatalog is a representation of a collection of las/laz files. A computer cannot load all the data at
-#' once. A \code{LAScatalog} is a simple way to manage all the files sequentially. Most functions from
-#' \code{lidR} can be used seamlessly with a LAScatalog using the internal \code{LAScatalog} processing
-#' engine. To take advantage of the \code{LAScatalog} processing engine the user must first adjust some
-#' processing options using the \link[=catalog_options_tools]{appropriated functions}. Careful
-#' reading of the \link[=LAScatalog-class]{LAScatalog class documentation} is required to use the
-#' \code{LAScatalog} class correctly.\cr\cr \code{catalog()} is softly deprecated for \code{readLAScatalog()}.
+#' Create an object of class \link[=LAScatalog-class]{LAScatalog} from a folder
+#' or a collection of filenames. A LAScatalog is a representation of a collection
+#' of las/laz files. A computer cannot load all the data at once. A \code{LAScatalog}
+#' is a simple way to manage all the files sequentially. Most functions from
+#' `lidR` can be used seamlessly with a LAScatalog using the internal
+#' `LAScatalog` processing engine. To take advantage of the `LAScatalog`
+#' processing engine the user must first adjust some processing options using the
+#' \link[=catalog_options_tools]{appropriate functions}. Careful reading of the
+#' \link[=LAScatalog-class]{LAScatalog class documentation} is required to use the
+#' `LAScatalog` class correctly.\cr\cr
+#' `readLAScatalog` is the original function and always works. Using one of the `read*LAScatalog` functions
+#' adds information to the returned object to register a point-cloud type. Registering the correct point
+#' type **may** improve the performance of some functions by enabling users to select an appropriate spatial index.
+#' See \link[=lidR-spatial-index]{spatial indexing}. Notice that by legacy and for backwards-compatibility
+#' reasons `readLAScatalog()` and `readALSLAScatalog()` are equivalent because lidR was originally designed
+#' for ALS and thus the original function `readLAScatalog()` was (supposedly) used for ALS.
 #'
-#' @param folder string. The path of a folder containing a set of las/laz files. Can also be a vector of
-#' file paths.
-#' @param progress,select,filter,chunk_size,chunk_buffer Easily accessible processing options tuning.
-#' See \link{LAScatalog-class} and \link{catalog_options_tools}.
-#' @param \dots Extra parameters to \link[base:list.files]{list.files}. Typically `recursive = TRUE`.
+#' @param folder string. The path of a folder containing a set of las/laz files.
+#' Can also be a vector of file paths.
+#' @param progress,select,filter,chunk_size,chunk_buffer Easily accessible processing
+#' options tuning. See \link{LAScatalog-class} and \link{catalog_options_tools}.
+#' @param \dots Extra parameters to \link[base:list.files]{list.files}. Typically
+#' `recursive = TRUE`.
 #'
 #' @return A \code{LAScatalog} object
 #'
@@ -28,7 +37,7 @@
 #' \dontrun{
 #' ctg <- readLAScatalog("/path/to/a/folder/of/las/files")
 #'
-#' # Internal engine will sequentially process chunks of size 500 x 500 m (clusters)
+#' # Internal engine will sequentially process chunks of size 500 x 500 m
 #' opt_chunk_size(ctg) <- 500
 #'
 #' # Internal engine will align the 500 x 500 m chunks on x = 250 and y = 300
@@ -44,6 +53,7 @@
 #' help("LAScatalog-class", "lidR")
 #' help("catalog_options_tools", "lidR")
 #' }
+#' @md
 readLAScatalog <- function(folder, progress = TRUE, select = "*", filter = "", chunk_size = 0, chunk_buffer = 30, ...)
 {
   assert_is_character(folder)
@@ -143,10 +153,47 @@ readLAScatalog <- function(folder, progress = TRUE, select = "*", filter = "", c
   if (is.overlapping(res))
     message("Be careful, some tiles seem to overlap each other. lidR may return incorrect outputs with edge artifacts when processing this catalog.")
 
-  #if (!is.indexed(res))
-  #message("las or laz files are not associated with lax files. This is not mandatory but may greatly speed up some computations. See help('writelax', 'rlas').")
+  # if (!is.indexed(res))
+  # message("las or laz files are not associated with lax files. This is not mandatory but may greatly speed up some computations. See help('writelax', 'rlas').")
 
   return(res)
+}
+
+#' @export
+#' @rdname readLAScatalog
+readALSLAScatalog = function(folder, progress = TRUE, select = "*", filter = "", chunk_size = 0, chunk_buffer = 30, ...)
+{
+  ctg <- readLAScatalog(folder, progress, select, filter, chunk_size, chunk_buffer, ...)
+  ctg@index <- LIDRALSINDEX
+  return(ctg)
+}
+
+
+#' @export
+#' @rdname readLAScatalog
+readTLSLAScatalog = function(folder, progress = TRUE, select = "*", filter = "", chunk_size = 0, chunk_buffer = 30, ...)
+{
+  ctg <- readLAScatalog(folder, progress, select, filter, chunk_size, chunk_buffer, ...)
+  ctg@index <- LIDRTLSINDEX
+  return(ctg)
+}
+
+#' @export
+#' @rdname readLAScatalog
+readUAVLAScatalog = function(folder, progress = TRUE, select = "*", filter = "", chunk_size = 0, chunk_buffer = 30, ...)
+{
+  ctg <- readLAScatalog(folder, progress, select, filter, chunk_size, chunk_buffer, ...)
+  ctg@index <- LIDRUAVINDEX
+  return(ctg)
+}
+
+#' @export
+#' @rdname readLAScatalog
+readDAPLAScatalog = function(folder, progress = TRUE, select = "*", filter = "", chunk_size = 0, chunk_buffer = 30, ...)
+{
+  ctg <- readLAScatalog(folder, progress, select, filter, chunk_size, chunk_buffer, ...)
+  ctg@index <- LIDRDAPINDEX
+  return(ctg)
 }
 
 #' @export

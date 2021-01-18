@@ -6,7 +6,7 @@
 \alias{LAS}
 \title{An S4 class to represent a .las or .laz file}
 \usage{
-LAS(data, header = list(), proj4string = sp::CRS(), check = TRUE)
+LAS(data, header = list(), proj4string = sp::CRS(), check = TRUE, index = NULL)
 }
 \arguments{
 \item{data}{a \link[data.table:data.table]{data.table} containing the data of a las or laz file.}
@@ -17,6 +17,9 @@ a las or laz file.}
 \item{proj4string}{projection string of class \link[sp:CRS-class]{CRS-class}.}
 
 \item{check}{logical. Conformity tests while building the object.}
+
+\item{index}{list with two elements \code{list(sensor = 0L, index = 0L)}.
+See \link[=lidR-spatial-index]{spatial indexing}}
 }
 \value{
 An object of class \code{LAS}
@@ -36,6 +39,7 @@ is also standardized. Columns are named:
 \item{\code{X} (numeric)}
 \item{\code{Y} (numeric)}
 \item{\code{Z} (numeric)}
+\item{\code{gpstime} (numeric)}
 \item{\code{Intensity} (integer)}
 \item{\code{ReturnNumber} (integer)}
 \item{\code{NumberOfReturns} (integer)}
@@ -45,16 +49,19 @@ is also standardized. Columns are named:
 \item{\code{Synthetic_flag} (logical)}
 \item{\code{Keypoint_flag} (logical)}
 \item{\code{Withheld_flag} (logical)}
-\item{\code{ScanAngle} (integer)}
+\item{\code{ScanAngleRank} (integer)}
+\item{\code{ScanAngle} (numeric)}
 \item{\code{UserData} (integer)}
 \item{\code{PointSourceID} (integer)}
+\item{\code{R,G,B} (integer)}
+\item{\code{NIR} (integer)}
 }
 }
 \section{Functions}{
 \itemize{
 \item \code{LAS}: creates objects of class LAS. The original data is updated by reference to
-clamp the coordinates with respect to the scale factor of the header. If header is not provided scale
-factor is set to 0.001
+quantize the coordinates according to the scale factor of the header if no header is provided.
+In this case the scale factor is set to 0.001
 }}
 
 \section{Slots}{
@@ -69,6 +76,8 @@ factor is set to 0.001
 
 \item{\code{header}}{Object of class \link[=LASheader-class]{LASheader}. las file header according to the
 \href{https://www.asprs.org/wp-content/uploads/2019/07/LAS_1_4_r15.pdf}{LAS file format}}
+
+\item{\code{index}}{list. See \link[=lidR-spatial-index]{spatial indexing}.}
 }}
 
 \section{Extends}{
@@ -78,7 +87,7 @@ Class  \link[sp:Spatial-class]{Spatial}, directly.
 
 \examples{
 # Read a las/laz file
-LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
+LASfile <- system.file("extdata", "example.laz", package="rlas")
 las <- readLAS(LASfile)
 las
 
@@ -86,12 +95,29 @@ las
 data <- data.frame(X = runif(100, 0, 100),
                    Y = runif(100, 0, 100),
                    Z = runif(100, 0, 20))
+
+# 'data' has many decimal digits
 data
 
-las <- LAS(data) # /!\ data is updated by reference
+# Create a default header and quantize *by reference*
+# the coordinates to fit with offset and scale factors
+cloud <- LAS(data)
 
+# 'data' has been updated and coordinates were quantized
 data
-las
+cloud
+
+# Be careful when providing a header the function assumes that
+# it corresponds to the data and won't quantize the coordinates
+data <- data.frame(X = runif(100, 0, 100),
+                   Y = runif(100, 0, 100),
+                   Z = runif(100, 0, 20))
+header <- las@header
+
+# This works but triggers warnings and creates an invalid LAS object
+cloud <- LAS(data, header)
+
+las_check(cloud)
 }
 \seealso{
 \link{readLAS}

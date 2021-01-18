@@ -1,16 +1,18 @@
 context("plot")
 
-LASfile <- system.file("extdata", "example.laz", package = "rlas")
-las     <- readLAS(LASfile)
-LASfile  <- system.file("extdata", "Megaplot.laz", package = "lidR")
-ctg     <- readLAScatalog(LASfile)
+las     <- example
+ctg     <- megaplot_ctg
 
 test_that("plot LAS works", {
-  expect_error(plot(las, axis = TRUE), NA)
+  skip_on_cran()
+
+  expect_error(plot(las), NA)
   rgl::rgl.close()
 })
 
 test_that("plot LAS works with attributes", {
+
+  skip_on_cran()
 
   las@data$treeID <- sample(1:3, npoints(las), T)
   las@data$R <- 255
@@ -44,11 +46,12 @@ test_that("plot LAS does not work with missing attributes", {
 })
 
 test_that("plot LAS works with artifact", {
+  skip_on_cran()
   expect_error(plot(las, clear_artifact = FALSE), NA)
 })
 
 test_that("plot LAS does not works with 0 points", {
-  expect_error(plot(lasfilter(las, Z > 1000)), "Cannot display an empty point cloud")
+  expect_error(plot(filter_poi(las, Z > 1000)), "Cannot display an empty point cloud")
 })
 
 test_that("plot LAS checks the arguments", {
@@ -69,31 +72,35 @@ test_that("plot LAScatalog works", {
 })
 
 test_that("plot lasmetrics3d works", {
+  skip_on_cran()
   x = voxel_metrics(las, ~length(Z), 5)
   expect_error(plot(x), NA)
   rgl::rgl.close()
 })
 
 test_that("plot dtm3 works", {
+  skip_on_cran()
   x = grid_terrain(las, 1, knnidw())
   expect_error(plot_dtm3d(x), NA)
   rgl::rgl.close()
 })
 
 test_that("add dtm3d works", {
+  skip_on_cran()
   x = grid_terrain(las, 1, knnidw())
   expect_error({y = plot(las) ; add_dtm3d(y, x)}, NA)
   rgl::rgl.close()
 })
 
 test_that("add treetop3d works", {
-  x = tree_detection(las, lmf(3))
+  skip_on_cran()
+  x = find_trees(las, lmf(3))
   expect_error({y = plot(las) ; add_treetops3d(y, x)}, NA)
   rgl::rgl.close()
 })
 
 test_that("add = x overlay a second point cloud", {
-
+  skip_on_cran()
   gnd = filter_poi(las, Classification == LASGROUND)
   ngnd = filter_poi(las, Classification != LASGROUND)
 
@@ -102,3 +109,4 @@ test_that("add = x overlay a second point cloud", {
   rgl::rgl.close()
 
 })
+

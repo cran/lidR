@@ -1,15 +1,17 @@
 #include "LAS.h"
-#include <boost/geometry.hpp>
-#include <limits>
-//#include "QuadTree.h"
-#include "GridPartition.h"
 #include "Progress.h"
 #include "myomp.h"
+#include "SpatialIndex.h"
+#include <limits>
+#include <boost/functional/hash.hpp>
+#include <boost/geometry.hpp>
 
-typedef GridPartition SpatialIndex;
+using namespace lidR;
 
-LAS::LAS(S4 las)
+LAS::LAS(S4 las, int ncpu)
 {
+  this->las = las;
+
   DataFrame data = as<DataFrame>(las.slot("data"));
   this->X = data["X"];
   this->Y = data["Y"];
@@ -22,29 +24,9 @@ LAS::LAS(S4 las)
     this->T = data["gpstime"];
 
   this->npoints = X.size();
-  this->ncpu = 1;
-  this->filter.resize(npoints);
-  std::fill(filter.begin(), filter.end(), false);
-}
-
-LAS::LAS(S4 las, int ncpu)
-{
-  DataFrame data = as<DataFrame>(las.slot("data"));
-  this->X = data["X"];
-  this->Y = data["Y"];
-  this->Z = data["Z"];
-
-  if (data.containsElementNamed("Intensity"))
-    this->I = data["Intensity"];
-
-  this->npoints = X.size();
   this->ncpu = ncpu;
   this->filter.resize(npoints);
   std::fill(filter.begin(), filter.end(), false);
-}
-
-LAS::~LAS()
-{
 }
 
 void LAS::new_filter(LogicalVector b)
@@ -94,7 +76,7 @@ void LAS::z_smooth(double size, int method, int shape, double sigma)
 
   NumericVector Zsmooth = clone(Z);
 
-  SpatialIndex tree(X,Y);
+  SpatialIndex tree(las);
 
   Progress pb(npoints, "Point cloud smoothing: ");
 
@@ -107,7 +89,7 @@ void LAS::z_smooth(double size, int method, int shape, double sigma)
     if (pb.check_interrupt()) abort = true;
     pb.increment();
 
-    std::vector<Point*> pts;
+    std::vector<PointXYZ> pts;
 
     if(shape == 1)
     {
@@ -132,12 +114,12 @@ void LAS::z_smooth(double size, int method, int shape, double sigma)
       }
       else
       {
-        double dx = X[i] - pts[j]->x;
-        double dy = Y[i] - pts[j]->y;
+        double dx = X[i] - pts[j].x;
+        double dy = Y[i] - pts[j].y;
         w = 1/twosquaresigmapi * std::exp(-(dx*dx + dy*dy)/twosquaresigma);
       }
 
-      ztot += w*Z[pts[j]->id];
+      ztot += w*pts[j].z;
       wtot += w;
     }
 
@@ -159,7 +141,7 @@ void LAS::z_open(double resolution)
 
   NumericVector Z_out(npoints);
 
-  SpatialIndex tree(X, Y, filter);
+  SpatialIndex tree(las, filter);
 
   Progress p(2*npoints, "Morphological filter: ");
 
@@ -170,7 +152,7 @@ void LAS::z_open(double resolution)
     p.update(i);
     if (!filter[i]) continue;
 
-    std::vector<Point*> pts;
+    std::vector<PointXYZ> pts;
     Rectangle rect(X[i]-half_res, X[i]+half_res,Y[i]-half_res, Y[i]+half_res);
     tree.lookup(rect, pts);
 
@@ -178,7 +160,7 @@ void LAS::z_open(double resolution)
 
     for(unsigned  int j = 0 ; j < pts.size() ; j++)
     {
-      double z = Z[pts[j]->id];
+      double z = pts[j].z;
 
       if(z < min_pt)
         min_pt = z;
@@ -196,7 +178,7 @@ void LAS::z_open(double resolution)
     p.update(i+npoints);
     if (!filter[i]) continue;
 
-    std::vector<Point*> pts;
+    std::vector<PointXYZ> pts;
     Rectangle rect(X[i]-half_res, X[i]+half_res,Y[i]-half_res, Y[i]+half_res);
     tree.lookup(rect, pts);
 
@@ -204,7 +186,7 @@ void LAS::z_open(double resolution)
 
     for(unsigned int j = 0 ; j < pts.size() ; j++)
     {
-      double z = Z_temp[pts[j]->id];
+      double z = Z_temp[pts[j].id];
 
       if(z > max_pt)
         max_pt = z;
@@ -265,7 +247,6 @@ double LAS::range(NumericVector &x, NumericVector &y , NumericVector &z, Numeric
 {
   NumericVector::iterator it;
   double dx, dy, dz, r, R;
-  double i;
   int j = 0;
 
   // The sensor positions were already sorted a R level
@@ -362,7 +343,7 @@ void LAS::filter_local_maxima(NumericVector ws, double min_height, bool circular
   bool abort = false;
   bool vws = ws.length() > 1;
 
-  SpatialIndex tree(X,Y);
+  SpatialIndex tree(las);
   Progress pb(npoints, "Local maximum filter: ");
 
   #pragma omp parallel for num_threads(ncpu)
@@ -378,7 +359,7 @@ void LAS::filter_local_maxima(NumericVector ws, double min_height, bool circular
       continue;
 
     // Get the points within a windows centered on the current point
-    std::vector<Point*> pts;
+    std::vector<PointXYZ> pts;
     if(!circular)
     {
       Rectangle rect(X[i]-hws, X[i]+hws, Y[i]-hws, Y[i]+hws);
@@ -391,14 +372,14 @@ void LAS::filter_local_maxima(NumericVector ws, double min_height, bool circular
     }
 
     // Initialize the highest point using the central point
-    Point p(X[i], Y[i], i);
+    PointXYZ p(X[i], Y[i], Z[i], i);
     double zmax = Z[i];
     bool is_lm = true;
 
     // Search if one is higher
     for (auto pt : pts)
     {
-      double z = Z[pt->id];
+      double z = pt.z;
 
       // Found one higher, it is not a LM
       if(z > zmax)
@@ -409,7 +390,7 @@ void LAS::filter_local_maxima(NumericVector ws, double min_height, bool circular
 
       // Found one equal. If this one was already tagged LM we can't have two lm
       // The first tagged has the precedence
-      if (z == zmax && filter[pt->id])
+      if (z == zmax && filter[pt.id])
       {
         is_lm = false;
         break;
@@ -457,7 +438,7 @@ void LAS::filter_local_maxima(NumericVector ws)
   else
     Rcpp::stop("C++ unexpected internal error in 'filter_local_maxima': invalid windows."); // # nocov
 
-  SpatialIndex tree(X,Y);
+  SpatialIndex tree(las);
   Progress pb(npoints, "Local maximum filter: ");
 
   #pragma omp parallel for num_threads(ncpu)
@@ -467,8 +448,8 @@ void LAS::filter_local_maxima(NumericVector ws)
     if (pb.check_interrupt()) abort = true;
     pb.increment();
 
-    // Get the points within a windows centered on the current point
-    std::vector<Point*> pts;
+    // Get the points within a windows centred on the current point
+    std::vector<PointXYZ> pts;
     switch(mode)
     {
       case 1: {
@@ -493,20 +474,20 @@ void LAS::filter_local_maxima(NumericVector ws)
 
     // Get the highest Z in the windows
     double Zmax = std::numeric_limits<double>::min();
-    Point* p = pts[0];
+    PointXYZ p = pts[0];
     for (unsigned int j = 0 ; j < pts.size() ; j++)
     {
-      if(Z[pts[j]->id] > Zmax)
+      if(pts[j].z > Zmax)
       {
         p = pts[j];
-        Zmax = Z[p->id];
+        Zmax = Z[p.id];
       }
     }
 
     // The central pixel is the highest, it is a LM
     #pragma omp critical
     {
-      if (Z[i] == Zmax && X[i] == p->x && Y[i] == p->y)
+      if (Z[i] == Zmax && X[i] == p.x && Y[i] == p.y)
         filter[i] = true;
     }
   }
@@ -652,7 +633,7 @@ void LAS::filter_shape(int method, NumericVector th, int k)
 
   bool abort = false;
 
-  SpatialIndex qtree(X,Y,Z, filter);
+  SpatialIndex qtree(las, filter);
 
   bool (*predicate)(arma::vec&, arma::mat&, NumericVector&);
   switch(method)
@@ -720,6 +701,55 @@ void LAS::filter_progressive_morphology(NumericVector ws, NumericVector th)
   return;
 }
 
+void LAS::filter_isolated_voxel(double res, unsigned int isolated)
+{
+  typedef std::array<int, 3> Array;
+
+  double xoffset = X[0];
+  double yoffset = Y[0];
+  double zoffset = Z[0];
+
+  // Stores for a given voxel the number of point in its 27 voxels neighbourhood
+  std::unordered_map<Array, unsigned int, boost::hash<Array> > dynamic_registry;
+
+  for (unsigned int n = 0 ; n < npoints ; n++)
+  {
+    int nx = std::floor((X[n] - xoffset) / res);
+    int ny = std::floor((Y[n] - yoffset) / res);
+    int nz = std::floor((Z[n] - zoffset) / res);
+
+    // Add one in the 27 neighbouring voxel of this point
+    for (int i : {-1,0,1})
+    {
+      for (int j : {-1,0,1})
+      {
+        for (int k : {-1,0,1})
+        {
+          if (!(i == 0 && j == 0 && k == 0))
+          {
+            Array key = {nx + i, ny + j, nz + k};
+            dynamic_registry.insert({key, 0});
+            dynamic_registry[key]++;
+          }
+        }
+      }
+    }
+  }
+
+  // Loop again through each point.
+  // Check if the number of points in its neighbourhood is above the threshold
+  for (unsigned int n = 0 ; n < npoints ; n++)
+  {
+    int nx = std::floor((X[n] - xoffset) / res);
+    int ny = std::floor((Y[n] - yoffset) / res);
+    int nz = std::floor((Z[n] - zoffset) / res);
+    Array key = {nx, ny, nz};
+    filter[n] = dynamic_registry[key] <= isolated;
+  }
+
+  return;
+}
+
 IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh, double uppr_int_thrsh, int pt_den_req, NumericMatrix BBPRthrsh_mat)
 {
   NumericVector BBPr_sph(npoints);          // vector to store the Branch-Bole point ratio (BBPr) for the sphere neighborhood object
@@ -734,7 +764,7 @@ IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh
   IntegerVector ptDen_bigcyl(npoints);      // the big cylinder neighborhood point density for each focal point
   NumericVector meanBBPr_bigcyl(npoints);   // the mean BBPr for each focal point in its corresponding big cylinder neighborhood
 
-  SpatialIndex qtree(X,Y,Z);                // the SpatialIndex for the las object
+  SpatialIndex qtree(las);                  // the SpatialIndex for the las object
 
   // Step 1 - First we have to build neighborhood objects (sphere, small and large cylinders) around each focal point and get
   // the BBPr counts, then we have to calculate the actual ratio of BBPr to neighborhood points for each focal point
@@ -748,7 +778,7 @@ IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh
     // Step 1.a Sphere neighborhood
     // ----------------------------
 
-    std::vector<PointXYZ> sphpts;                     // creation of an STL container of points for the sphere neighborhood object
+    std::vector<PointXYZ> sphpts;                    // creation of an STL container of points for the sphere neighborhood object
     Sphere sphere(X[i], Y[i], Z[i], neigh_radii[0]);  // creation of a sphere object
     qtree.lookup(sphere, sphpts);                     // lookup the points in the sphere neighborhood
     ptDen_sph[i] = sphpts.size();                     // count the points in the sphere neighborhood
@@ -768,7 +798,7 @@ IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh
     // Step 1.b Small cylinder neighborhood
     // ------------------------------------
 
-    std::vector<Point*> smcylpts;                     // creation of an STL container of points for the small cylinder neighborhood object
+    std::vector<PointXYZ> smcylpts;                  // creation of an STL container of points for the small cylinder neighborhood object
     Circle smcircle(X[i], Y[i], neigh_radii[1]);      // creation of a small cylinder object
     qtree.lookup(smcircle, smcylpts);                 // lookup the points in the small cylinder neighborhood
 
@@ -776,10 +806,10 @@ IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh
     double ptZ = Z[i];                                // the height of the focal point (lower end of the small cylinder)
     for (unsigned int j = 0 ; j < smcylpts.size() ; j++)
     {
-      if (Z[smcylpts[j]->id] >= ptZ)
+      if (smcylpts[j].z >= ptZ)
       {
         ptDen_smcyl[i]++;
-        if (I[smcylpts[j]->id] <= low_int_thrsh || I[smcylpts[j]->id] >= uppr_int_thrsh)
+        if (I[smcylpts[j].id] <= low_int_thrsh || I[smcylpts[j].id] >= uppr_int_thrsh)
           BBPr_cnt++;
       }
     }
@@ -792,7 +822,7 @@ IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh
     // Step 1.c Big cylinder neighborhood
     // ----------------------------------
 
-    std::vector<Point*> bigcylpts;                    // creation of an STL container of points for the big cylinder neighborhood object
+    std::vector<PointXYZ> bigcylpts;                    // creation of an STL container of points for the big cylinder neighborhood object
     Circle bigcircle(X[i], Y[i], neigh_radii[2]);     // creation of a big cylinder object
     qtree.lookup(bigcircle, bigcylpts);               // lookup the points in the big cylinder neighborhood
     ptDen_bigcyl[i] = bigcylpts.size();               // get the point density in the big cylinder neighborhood
@@ -800,7 +830,7 @@ IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh
     BBPr_cnt = 0;
     for (unsigned int j = 0; j < bigcylpts.size(); j++)
     {
-      if (I[bigcylpts[j]->id] <= low_int_thrsh || I[bigcylpts[j]->id] >= uppr_int_thrsh)
+      if (I[bigcylpts[j].id] <= low_int_thrsh || I[bigcylpts[j].id] >= uppr_int_thrsh)
         BBPr_cnt++;
     }
 
@@ -839,7 +869,7 @@ IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh
     // Step 2.b Small cylinder neighborhood
     // ------------------------------------
 
-    std::vector<Point*> smcylpts;
+    std::vector<PointXYZ> smcylpts;
     Circle smcircle(X[i], Y[i], neigh_radii[1]);
     qtree.lookup(smcircle, smcylpts);
 
@@ -847,8 +877,8 @@ IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh
     double ptZ = Z[i];                                // the height of he focal point (lower end of the small cylinder)
     for (unsigned int j = 0 ; j < smcylpts.size() ; j++)
     {
-      if (Z[smcylpts[j]->id]>=ptZ)
-        sum_of_elements += BBPr_smcyl[smcylpts[j]->id];
+      if (smcylpts[j].z >= ptZ)
+        sum_of_elements += BBPr_smcyl[smcylpts[j].id];
     }
 
     #pragma omp critical
@@ -859,14 +889,14 @@ IntegerVector LAS::segment_snags(NumericVector neigh_radii, double low_int_thrsh
     // Step 2.c Big cylinder neighborhood
     // ----------------------------------
 
-    std::vector<Point*> bigcylpts;
+    std::vector<PointXYZ> bigcylpts;
     Circle bigcircle(X[i], Y[i], neigh_radii[2]);
     qtree.lookup(bigcircle, bigcylpts);
 
     sum_of_elements = 0;
     for (unsigned int j = 0 ; j < bigcylpts.size() ; j++)
     {
-      sum_of_elements += BBPr_bigcyl[bigcylpts[j]->id];
+      sum_of_elements += BBPr_bigcyl[bigcylpts[j].id];
     }
 
     #pragma omp critical
@@ -950,8 +980,8 @@ IntegerVector LAS::segment_trees(double dt1, double dt2, double Zu, double R, do
   dt2 = dt2 * dt2;
 
   /* =====================
-  * LI ET AL ALGORITHHM *
-  ======================*/
+   * LI ET AL ALGORITHHM *
+   ======================*/
 
   // Li, W., Guo, Q., Jakubowski, M. K., & Kelly, M. (2012). A New Method for Segmenting Individual
   // Trees from the Lidar Point Cloud. Photogrammetric Engineering & Remote Sensing, 78(1), 75–84.
@@ -1150,7 +1180,7 @@ NumericVector LAS::rasterize(S4 layout, double subcircle, int method)
         raster(cell) = f(raster(cell), z);
 
         // This is a hack for R 4.0.0 with alternative compiler toolchain (gcc8 32 bits)
-        // I'm not able to understant why adding a print line fixes the problem
+        // I'm not able to understand why adding a print line fixes the problem
         // and I don't even know what is the problem.
         #ifdef _WIN32
         #ifdef __MINGW32__
@@ -1269,7 +1299,7 @@ List LAS::point_metrics(unsigned int k, double r, DataFrame data, int nalloc, SE
   int j = 0;
 
   // Construction of a spatial index to make the queries
-  SpatialIndex tree(X,Y,Z,filter);
+  SpatialIndex tree(las, filter);
   Progress pb(npoints, "Metrics computation: ");
 
   // Error handling variables
@@ -1277,9 +1307,9 @@ List LAS::point_metrics(unsigned int k, double r, DataFrame data, int nalloc, SE
   int pOutError = 0;
 
   // This is the size of memory used to store the neighborhood
-  int si = nalloc; // initially allocated
-  int sc = si;     // current
-  int sn = si;     // new
+  unsigned int si = nalloc; // initially allocated
+  unsigned int sc = si;     // current
+  unsigned int sn = si;     // new
 
   if (!dynamic_memory_realloc && si != k) Rcpp::stop("Internal error: k elements should have been allocated.");
 
@@ -1436,3 +1466,102 @@ List LAS::point_metrics(unsigned int k, double r, DataFrame data, int nalloc, SE
 
   return output;
 }
+
+NumericVector LAS::fast_knn_metrics(unsigned int k, IntegerVector metrics)
+{
+  Progress pb(npoints, "Metrics computation: ");
+
+  bool abort = false;
+
+  SpatialIndex tree(las);
+
+  NumericVector out(npoints);
+
+  #pragma omp parallel for num_threads(ncpu)
+  for (unsigned int i = 0 ; i < npoints ; i++)
+  {
+    if (abort) continue;
+    if (pb.check_interrupt()) abort = true; // No data race here because only thread 0 can actually write
+    pb.increment();
+
+    PointXYZ p(X[i], Y[i], Z[i]);
+
+    std::vector<PointXYZ> pts;
+    tree.knn(p, k, pts);
+
+    double d = 0;
+    double dmean = 0;
+    for (unsigned int j = 1 ; j < pts.size() ; j++)
+    {
+      d = std::sqrt((p.x - pts[j].x)*(p.x - pts[j].x) + (p.y - pts[j].y)*(p.y - pts[j].y) + (p.z - pts[j].z)*(p.z - pts[j].z));
+      dmean += d;
+    }
+
+    #pragma omp critical
+    {
+      out(i) = dmean/(double)(k-1);
+    }
+  }
+
+  if (abort) throw Rcpp::internal::InterruptedException();
+
+  return out;
+}
+
+NumericVector LAS::interpolate_knnidw(NumericVector x, NumericVector y, int k, double p, double rmax)
+{
+  unsigned int n = x.length();
+  NumericVector iZ(n, NA_REAL);
+
+  SpatialIndex tree(las);
+  Progress pb(n, "Inverse distance weighting: ");
+
+  bool abort = false;
+
+  #pragma omp parallel for num_threads(ncpu)
+  for(unsigned int i = 0 ; i < n ; i++)
+  {
+    if (abort) continue;
+    if (pb.check_interrupt()) abort = true;
+    pb.increment();
+
+    Point pt(x[i], y[i]);
+    std::vector<PointXYZ> pts;
+    tree.knn(pt, k, rmax, pts);
+
+    double sum_zw = 0;
+    double sum_w  = 0;
+
+    for (unsigned int j = 0 ; j < pts.size() ; j++)
+    {
+      double dx = pts[j].x - x[i];
+      double dy = pts[j].y - y[i];
+      double d  = std::sqrt(dx*dx + dy*dy);
+      double w;
+      double z = Z[pts[j].id];
+
+      if (d > 0)
+      {
+        w = 1/pow(d,p);
+        sum_zw += z*w;
+        sum_w  += w;
+      }
+      else
+      {
+        sum_zw = z;
+        sum_w  = 1;
+        break;
+      }
+    }
+
+    #pragma omp critical
+    {
+      iZ(i) = sum_zw/sum_w;
+    }
+  }
+
+  if (abort) throw Rcpp::internal::InterruptedException();
+
+  return iZ;
+}
+

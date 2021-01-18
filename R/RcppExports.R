@@ -65,8 +65,16 @@ C_rasterize <- function(las, layout, subcircle = 0, method = 1L) {
     .Call(`_lidR_C_rasterize`, las, layout, subcircle, method)
 }
 
+C_knnidw <- function(las, x, y, k, p, rmax, ncpu) {
+    .Call(`_lidR_C_knnidw`, las, x, y, k, p, rmax, ncpu)
+}
+
 C_point_metrics <- function(las, k, r, nalloc, call, env, filter) {
     .Call(`_lidR_C_point_metrics`, las, k, r, nalloc, call, env, filter)
+}
+
+C_fast_knn_metrics <- function(las, k, metrics, cpu) {
+    .Call(`_lidR_C_fast_knn_metrics`, las, k, metrics, cpu)
 }
 
 C_lasrangecorrection <- function(las, flightlines, Rs, f) {
@@ -79,6 +87,10 @@ C_lasrange <- function(las, flightlines) {
 
 C_local_maximum <- function(las, ws, ncpu) {
     .Call(`_lidR_C_local_maximum`, las, ws, ncpu)
+}
+
+C_isolated_voxel <- function(las, res, isolated) {
+    .Call(`_lidR_C_isolated_voxel`, las, res, isolated)
 }
 
 C_check_gpstime <- function(t, rn) {
@@ -121,24 +133,20 @@ C_knn <- function(X, Y, x, y, k, ncpu) {
     .Call(`_lidR_C_knn`, X, Y, x, y, k, ncpu)
 }
 
-C_knnidw <- function(X, Y, Z, x, y, k, p, rmax, ncpu) {
-    .Call(`_lidR_C_knnidw`, X, Y, Z, x, y, k, p, rmax, ncpu)
+C_circle_lookup <- function(las, x, y, r) {
+    .Call(`_lidR_C_circle_lookup`, las, x, y, r)
 }
 
-C_count_in_disc <- function(X, Y, x, y, radius, ncpu) {
-    .Call(`_lidR_C_count_in_disc`, X, Y, x, y, radius, ncpu)
+C_orectangle_lookup <- function(las, x, y, w, h, angle) {
+    .Call(`_lidR_C_orectangle_lookup`, las, x, y, w, h, angle)
 }
 
-C_circle_lookup <- function(X, Y, x, y, r) {
-    .Call(`_lidR_C_circle_lookup`, X, Y, x, y, r)
+C_knn2d_lookup <- function(las, x, y, k) {
+    .Call(`_lidR_C_knn2d_lookup`, las, x, y, k)
 }
 
-C_orectangle_lookup <- function(X, Y, x, y, w, h, angle) {
-    .Call(`_lidR_C_orectangle_lookup`, X, Y, x, y, w, h, angle)
-}
-
-C_knn3d_lookup <- function(X, Y, Z, x, y, z, k) {
-    .Call(`_lidR_C_knn3d_lookup`, X, Y, Z, x, y, z, k)
+C_knn3d_lookup <- function(las, x, y, z, k) {
+    .Call(`_lidR_C_knn3d_lookup`, las, x, y, z, k)
 }
 
 R_omp_get_max_threads <- function() {

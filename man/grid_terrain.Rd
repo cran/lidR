@@ -8,10 +8,12 @@ grid_terrain(
   las,
   res = 1,
   algorithm,
+  ...,
   keep_lowest = FALSE,
   full_raster = FALSE,
   use_class = c(2L, 9L),
-  Wdegenerated = TRUE
+  Wdegenerated = TRUE,
+  is_concave = FALSE
 )
 }
 \arguments{
@@ -23,27 +25,36 @@ In that case the \code{RasterLayer} is used as the layout.}
 \item{algorithm}{function. A function that implements an algorithm to compute spatial interpolation.
 \code{lidR} implements \link{knnidw}, \link{tin}, and \link{kriging} (see respective documentation and examples).}
 
+\item{...}{Unused}
+
 \item{keep_lowest}{logical. This option forces the original lowest ground point of each
 cell (if it exists) to be chosen instead of the interpolated values.}
 
 \item{full_raster}{logical. By default the interpolation is made only within the convex hull of
-the point cloud. This prevent against meaningless interpolations where there is no data. If TRUE
+the point cloud. This prevents meaningless interpolations where there is no data. If TRUE,
 each pixel of the raster is interpolated.}
 
 \item{use_class}{integer vector. By default the terrain is computed by using ground points
 (class 2) and water points (class 9).}
 
-\item{Wdegenerated}{logical. The function always check and remove degenerated ground points. If
-any a warning in thrown.}
+\item{Wdegenerated}{logical. The function always checks and removes degenerated ground points
+for computing the DTM to avoid unexpected behaviours, such as infinite elevation. If
+TRUE, a warning is thrown to alert users to the presence of degenerated ground points.}
+
+\item{is_concave}{boolean. By default the function tries to compute a DTM that
+has the same shape as the point cloud by interpolating only in the convex
+hull of the points. If the point cloud is concave this may lead to weird values
+where there are no points. Use \code{is_concave = TRUE} to use a concave hull.
+This is more computationally -involved and requires the concaveman package.}
 }
 \value{
 A \code{RasterLayer} containing a numeric value in each cell. If the \code{RasterLayer}s
 are written on disk when running the function with a \code{LAScatalog}, a virtual raster mosaic is
-returned (see \link[gdalUtils:gdalbuildvrt]{gdalbuildvrt})
+returned (see \href{https://gdal.org/programs/gdalbuildvrt.html}{gdalbuildvrt})
 }
 \description{
 Interpolates the ground points and creates a rasterized digital terrain model. The algorithm uses
-the points classified as "ground" and "water (Classification = 2 and 9 according to
+the points classified as "ground" and "water" (Classification = 2 and 9, respectively, according to
 \href{https://www.asprs.org/wp-content/uploads/2019/07/LAS_1_4_r15.pdf}{LAS file format specifications})
 to compute the interpolation.\cr\cr
 How well the edges of the dataset are interpolated depends on the interpolation method used.
@@ -89,14 +100,15 @@ by file), \code{\{ORIGINALFILENAME\}}.
 \examples{
 
 LASfile <- system.file("extdata", "Topography.laz", package="lidR")
-las = readLAS(LASfile)
-plot(las)
+las = readLAS(LASfile, filter = "-inside 273450 5274350 273550 5274450")
+#plot(las)
 
 dtm1 = grid_terrain(las, algorithm = knnidw(k = 6L, p = 2))
 dtm2 = grid_terrain(las, algorithm = tin())
-dtm3 = grid_terrain(las, algorithm = kriging(k = 10L))
 
 \dontrun{
+dtm3 = grid_terrain(las, algorithm = kriging(k = 10L))
+
 plot(dtm1)
 plot(dtm2)
 plot(dtm3)

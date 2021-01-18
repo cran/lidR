@@ -20,7 +20,7 @@
 #' convenience.
 #' @export
 #' @references
-#' Gatziolis, D. (2013). Dynamic Range-based Intensity Normalization for Airborne, Discrete Return
+#' Gatziolis, D. (2011). Dynamic Range-based Intensity Normalization for Airborne, Discrete Return
 #' Lidar Data of Forest Canopies. Photogrammetric Engineering & Remote Sensing, 77(3), 251–259.
 #' https://doi.org/10.14358/pers.77.3.251
 #' @examples
@@ -83,8 +83,9 @@ prepare_sensor = function(sensor, gpstime, elevation, las)
   if (!"Intensity" %in% names(las@data))
     stop("No 'Intensity' attribute found", call. = FALSE)
 
-  if (is.null(raster::intersect(raster::extent(las), raster::extent(sensor))))
-    stop("Point-cloud and sensor positions do not overlap.", call. = FALSE)
+  # Relaxed in #395
+  #if (is.null(raster::intersect(raster::extent(las), raster::extent(sensor))))
+  #  stop("Point-cloud and sensor positions do not overlap.", call. = FALSE)
 
   if (!gpstime %in% names(sensor@data))
     stop(glue::glue("No '{gpstime}' attribute found in sensor."), call. = FALSE)

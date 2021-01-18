@@ -15,7 +15,7 @@ square meters.}
 \value{
 A \code{RasterLayer} or a \code{RasterBrick} containing a numeric value in each cell. If the
 \code{RasterLayer}s are written on disk when running the function with a \code{LAScatalog}, a
-virtual raster mosaic is returned (see \link[gdalUtils:gdalbuildvrt]{gdalbuildvrt})
+virtual raster mosaic is returned (see \href{https://gdal.org/programs/gdalbuildvrt.html}{gdalbuildvrt})
 }
 \description{
 Creates a map of the point density. If a "pulseID" attribute is found, also returns a map of the pulse
@@ -61,11 +61,9 @@ and this option is not considered. In \link{grid_metrics} this option is respect
 
 \examples{
 LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
-las <- readLAS(LASfile)
+las <- readLAS(LASfile,  filter = "-inside 684800 5017800 684900 5017900")
 
 d <- grid_density(las, 5)
-plot(d)
-d <- grid_density(las, 10)
 plot(d)
 
 las <- retrieve_pulses(las)

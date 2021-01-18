@@ -1,7 +1,7 @@
 context("readLAS")
 
-LASfile <- system.file("extdata", "example.laz", package = "rlas")
-ctg <- readLAScatalog(LASfile, chunk_size = 100, select = "xyzrn")
+LASfile <- example_las_path
+ctg <- readLAScatalog(example_las_path, chunk_size = 100, select = "xyzrn")
 cls <- lidR:::catalog_makecluster(ctg)
 
 test_that("readLAS reads files", {
@@ -86,9 +86,9 @@ test_that("readLAS LAScatalog gives precedence to argument select and filter", {
 
 test_that("readMSLAS reads multispectral data", {
 
-  las1 = lidR:::lasgenerator(10, 1)
-  las2 = lidR:::lasgenerator(10, 2)
-  las3 = lidR:::lasgenerator(10, 3)
+  las1 = lidR:::generate_las(10, 1)
+  las2 = lidR:::generate_las(10, 2)
+  las3 = lidR:::generate_las(10, 3)
   f1 = tempfile(fileext = ".las")
   f2 = tempfile(fileext = ".las")
   f3 = tempfile(fileext = ".las")

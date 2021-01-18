@@ -55,6 +55,9 @@ rOverlay = function(las, res, start = c(0,0), buffer = 0)
     if (round(resolution[1], 4) != round(resolution[2], 4))
       stop("Rasters with different x y resolutions are not supported", call. = FALSE)
 
+    if (!is.null(raster::intersect(raster::extent(res), raster::extent(las))))
+      res <- raster::crop(res, raster::extent(las) + resolution[1])
+
     res@data@values <- rep(NA, raster::ncell(res))
     return(res)
   }
@@ -109,18 +112,12 @@ rBuildVRT = function(file_list, vrt)
   if (!options("lidR.buildVRT")[[1]])
     return(unlist(file_list))
 
-  if (!requireNamespace("gdalUtils", quietly = TRUE))
-  {
-    message("'gdalUtils' package is needed to build a virtual raster mosaic. Returns the list of written files instead.")
-    return(unlist(file_list))
-  }
-
   file_list <- unlist(file_list)
   layers    <- names(raster::stack(file_list[1]))
   folder    <- dirname(file_list[1])
   file      <- paste0("/", vrt, ".vrt")
   vrt       <- paste0(folder, file)
-  gdalUtils::gdalbuildvrt(file_list, vrt)
+  sf::gdal_utils("buildvrt", source = file_list, destination = vrt, quiet = TRUE)
   if (!file.exists(vrt)) return(unlist(file_list))
   file_list <- raster::brick(vrt)
   names(file_list) <- layers
@@ -180,4 +177,31 @@ match_chm_and_seeds = function(chm, seeds, field)
   }
 
   return(list(cells = cells, ids = ids))
+}
+
+raster2dataframe = function(x, xy = FALSE, na.rm = FALSE, fast = FALSE)
+{
+  if (!fast) return(raster::as.data.frame(x, xy = xy, na.rm = na.rm))
+
+  v <- raster::getValues(x)
+
+  if (xy) {
+    XY <- data.frame(raster::xyFromCell(x, 1:raster::ncell(x)))
+    v <- cbind(XY, v)
+  }
+
+  if (na.rm)
+    v <- stats::na.omit(cbind(1:raster::ncell(x), v))
+
+  v <- as.data.frame(v)
+
+  if (na.rm) {
+    rownames(v) <- as.character(v[,1])
+    v <- v[,-1,drop=FALSE]
+  }
+
+  if (raster::nlayers(x) == 1)
+    colnames(v)[ncol(v)] <- names(x)  # for nlayers = 1
+
+  return(v)
 }

@@ -30,12 +30,14 @@
 #' a las or laz file.
 #' @param proj4string projection string of class \link[sp:CRS-class]{CRS-class}.
 #' @param check logical. Conformity tests while building the object.
+#' @param index list with two elements \code{list(sensor = 0L, index = 0L)}.
+#' See \link[=lidR-spatial-index]{spatial indexing}
 #' @return An object of class \code{LAS}
 #' @export
 #' @describeIn LAS-class creates objects of class LAS. The original data is updated by reference to
-#' clamp the coordinates with respect to the scale factor of the header. If header is not provided scale
-#' factor is set to 0.001
-LAS <- function(data, header = list(), proj4string = sp::CRS(), check = TRUE)
+#' quantize the coordinates according to the scale factor of the header if no header is provided.
+#' In this case the scale factor is set to 0.001
+LAS <- function(data, header = list(), proj4string = sp::CRS(), check = TRUE, index = NULL)
 {
   .N <- X <- Y <- Z <- NULL
 
@@ -137,6 +139,20 @@ LAS <- function(data, header = list(), proj4string = sp::CRS(), check = TRUE)
     rlas::is_NIR_in_valid_format(header, data, "warning")
     rlas::is_gpstime_in_valid_format(header, data, "warning")
     rlas::is_ScanAngle_in_valid_format(header, data, "warning")
+
+    xscale <- header[["X scale factor"]]
+    yscale <- header[["Y scale factor"]]
+    zscale <- header[["Z scale factor"]]
+    xoffset <- header[["X offset"]]
+    yoffset <- header[["Y offset"]]
+    zoffset <- header[["Z offset"]]
+
+    if (!is.quantized(data[["X"]], xscale, xoffset, sample = TRUE))
+      warning("Detection of quantization errors for X", call. = FALSE)
+    if (!is.quantized(data[["Y"]], yscale, yoffset, sample = TRUE))
+      warning("Detection of quantization errors for Y", call. = FALSE)
+    if (!is.quantized(data[["Z"]], zscale, zoffset, sample = TRUE))
+      warning("Detection of quantization errors for Z", call. = FALSE)
   }
 
   header <- LASheader(header)
@@ -144,11 +160,18 @@ LAS <- function(data, header = list(), proj4string = sp::CRS(), check = TRUE)
   if (is.na(proj4string@projargs))
     proj4string <- crs(header)
 
+  if (is.null(index))
+    index <- LIDRDEFAULTINDEX
+
+  index$xprt <- NULL
+
   las             <- new("LAS")
   las@bbox        <- with(header@PHB, matrix(c(`Min X`, `Min Y`, `Max X`, `Max Y`), ncol = 2, dimnames = list(c("x", "y"), c("min", "max"))))
   las@header      <- header
   las@data        <- data
   las@proj4string <- proj4string
+  las@index       <- index
+
 
   return(las)
 }
@@ -207,7 +230,30 @@ setMethod("$<-", "LAS", function(x, name, value)
       stop(glue::glue("Trying to replace data of type {type1} by data of type {type2}: this action is not allowed"), call. = FALSE)
   }
 
+  for (coordinate_name in c("X", "Y", "Z"))
+  {
+    if (name == coordinate_name)
+    {
+      scale_string <- paste(name, "scale factor")
+      offset_string <- paste(name, "offset")
+      scale  <- x@header@PHB[[scale_string]]
+      offset <- x@header@PHB[[offset_string]]
+      valid_range <- storable_coordinate_range(scale, offset)
+      value_range <- range(value)
+
+      if (value_range[1] < valid_range[1] | value_range[2] > valid_range[2])
+        stop(glue::glue("Trying to store values ranging in [{value_range[1]}, {value_range[2]}] but storable range is [{valid_range[1]}, {valid_range[2]}]"), call. = FALSE)
+
+      if(!is.quantized(value, scale, offset))
+        value <- quantize(value, scale, offset, FALSE)
+    }
+  }
+
   x@data[[name]] = value
+
+  if (name %in% c("X", "Y", "Z"))
+    x <- las_update(x)
+
   return(x)
 })
 
@@ -229,6 +275,49 @@ setMethod("[[<-", c("LAS", "ANY", "missing", "ANY"),  function(x, i, j, value)
       stop(glue::glue("Trying to replace data of type {type1} by data of type {type2}: this action is not allowed"), call. = FALSE)
   }
 
+  if (!i %in% names(x@data))
+    stop("Addition of a new column using $ is forbidden for LAS objects. See ?add_attribute", call. = FALSE)
+
+  if (i %in% LASATTRIBUTES)
+  {
+    type1 <- storage.mode(x@data[[i]])
+    type2 <- storage.mode(value)
+
+    if (type1 != type2)
+      stop(glue::glue("Trying to replace data of type {type1} by data of type {type2}: this action is not allowed"), call. = FALSE)
+  }
+
+  for (coordinate_name in c("X", "Y", "Z"))
+  {
+    if (i == coordinate_name)
+    {
+      scale_string <- paste(i, "scale factor")
+      offset_string <- paste(i, "offset")
+      scale  <- x@header@PHB[[scale_string]]
+      offset <- x@header@PHB[[offset_string]]
+      valid_range <- storable_coordinate_range(scale, offset)
+      value_range <- range(value)
+
+      if (value_range[1] < valid_range[1] | value_range[2] > valid_range[2])
+        stop(glue::glue("Trying to store values ranging in [{value_range[1]}, {value_range[2]}] but storable range is [{valid_range[1]}, {valid_range[2]}]"), call. = FALSE)
+
+      if(!is.quantized(value, scale, offset))
+        value <- quantize(value, scale, offset, FALSE)
+    }
+  }
+
   x@data[[i]] = value
+
+  if (i %in% c("X", "Y", "Z"))
+    x <- las_update(x)
+
   return(x)
+})
+
+#' @rdname redefined_behaviors
+#' @export
+setMethod("[", c("LAS", "numeric"),  function(x, i)
+{
+  data = x@data[i]
+  return(LAS(data, x@header, x@proj4string, FALSE, x@index))
 })

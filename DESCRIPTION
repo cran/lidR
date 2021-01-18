@@ -2,8 +2,8 @@ Package: lidR
 Type: Package
 Title: Airborne LiDAR Data Manipulation and Visualization for Forestry
         Applications
-Version: 3.0.4
-Date: 2020-10-09
+Version: 3.1.0
+Date: 2021-01-15
 Authors@R: c(
     person("Jean-Romain", "Roussel", email = "jean-romain.roussel.1@ulaval.ca", role = c("aut", "cre", "cph")),
     person("David", "Auty", email = "", role = c("aut", "ctb"), comment = "Reviews the documentation"),
@@ -20,9 +20,9 @@ URL: https://github.com/Jean-Romain/lidR
 BugReports: https://github.com/Jean-Romain/lidR/issues
 License: GPL-3
 Depends: R (>= 3.1.0),methods,raster,sp (>= 1.4.2)
-Imports: data.table (>= 1.12.0), future, gdalUtils, geometry, glue,
-        grDevices, lazyeval, Rcpp (>= 1.0.3), RCSF, rgeos, rgdal (>=
-        1.4.8), rgl, rlas (>= 1.3.5), sf, stats, tools, utils
+Imports: data.table (>= 1.12.0), future, geometry, glue, grDevices,
+        lazyeval, Rcpp (>= 1.0.3), RCSF, rgeos, rgdal (>= 1.4.8), rgl,
+        rlas (>= 1.3.5), sf, stats, tools, utils
 Suggests: EBImage, concaveman, crayon, gstat, hexbin, mapview, mapedit,
         progress, testthat (>= 2.1.0), knitr, rmarkdown, covr
 LazyData: true
@@ -36,19 +36,20 @@ Collate: 'Class-LASheader.R' 'Class-LAS.R' 'Class-LAScatalog.R'
         'Class-LAScluster.R' 'RcppExports.R' 'add_attribute.R'
         'algorithm-dec.R' 'algorithm-dsm.R' 'algorithm-gnd.R'
         'algorithm-itd.R' 'algorithm-its.R' 'algorithm-noi.R'
-        'algorithm-shp.R' 'algorithm-snag.R' 'algorithm-spi.R'
-        'algorithm-trk.R' 'catalog_apply.R' 'catalog_fakerun.R'
-        'catalog_index.R' 'catalog_intersect.R' 'catalog_laxindex.R'
-        'catalog_makecluster.R' 'catalog_merge_results.R'
-        'catalog_overlaps.R' 'catalog_retile.R' 'catalog_select.R'
-        'classify_ground.R' 'clip_roi.R' 'cloud_metrics.R'
+        'algorithm-out.R' 'algorithm-shp.R' 'algorithm-snag.R'
+        'algorithm-spi.R' 'algorithm-trk.R' 'catalog_apply.R'
+        'catalog_fakerun.R' 'catalog_index.R' 'catalog_intersect.R'
+        'catalog_laxindex.R' 'catalog_makecluster.R'
+        'catalog_merge_results.R' 'catalog_overlaps.R'
+        'catalog_retile.R' 'catalog_select.R' 'classify_ground.R'
+        'classify_noise.R' 'clip_roi.R' 'cloud_metrics.R'
         'clusters_apply.R' 'decimate_points.R' 'delineate_crowns.R'
         'deprecated.R' 'doc-drivers.R' 'doc-lidR.R' 'doc-parallelism.R'
         'filter_duplicates.R' 'filter_poi.R' 'filter_roi.R'
         'filter_surfacepoints.R' 'find_localmaxima.R' 'find_trees.R'
         'generate_las.R' 'grid_canopy.R' 'grid_density.R'
         'grid_metrics.R' 'grid_terrain.R' 'hexbin_metrics.R'
-        'io_readLAS.R' 'io_readLAScatalog.R' 'io_readMSLAS.R'
+        'io_readLAS.R' 'io_readLAScatalog.R' 'io_readXLAS.R'
         'io_writeANY.R' 'io_writeLAS.R' 'las_check.R' 'las_tools.R'
         'merge_las.R' 'merge_spatial.R' 'methods-LAS.R'
         'methods-LAScatalog.R' 'methods-LAScluster.R'
@@ -60,10 +61,10 @@ Collate: 'Class-LASheader.R' 'Class-LAS.R' 'Class-LAScatalog.R'
         'utils_catalog_options.R' 'utils_colors.R'
         'utils_define_constant.R' 'utils_delaunay.R' 'utils_geometry.R'
         'utils_is.R' 'utils_metrics.R' 'utils_misc.R' 'utils_raster.R'
-        'utils_threads.R' 'utils_typecast.R' 'voxel_metrics.R'
-        'voxelize_points.R' 'zzz.R'
+        'utils_spatial_index.R' 'utils_threads.R' 'utils_typecast.R'
+        'voxel_metrics.R' 'voxelize_points.R' 'zzz.R'
 NeedsCompilation: yes
-Packaged: 2020-10-10 15:37:43 UTC; jr
+Packaged: 2021-01-15 17:11:47 UTC; jr
 Author: Jean-Romain Roussel [aut, cre, cph],
   David Auty [aut, ctb] (Reviews the documentation),
   Florian De Boissieu [ctb] (Fixed bugs and improved catalog features),
@@ -75,4 +76,4 @@ Author: Jean-Romain Roussel [aut, cre, cph],
     track_sensor())
 Maintainer: Jean-Romain Roussel <jean-romain.roussel.1@ulaval.ca>
 Repository: CRAN
-Date/Publication: 2020-10-10 21:40:03 UTC
+Date/Publication: 2021-01-18 17:30:02 UTC

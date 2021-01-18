@@ -61,6 +61,7 @@
 #' las <- readLAS(LASfile)
 #' las_check(las)
 #' @export
+#' @family las utilities
 las_check = function(las, print = TRUE, ...)
 {
   UseMethod("las_check", las)
@@ -140,6 +141,38 @@ las_check.LAS = function(las, print = TRUE, ...)
   h2("Checking coordinates type...")
 
   fail(rlas::is_valid_XYZ(data, "vector"))
+
+  h2("Checking coordinates range...")
+
+  xvalid_range <- storable_coordinate_range(xscale, xoffset)
+  yvalid_range <- storable_coordinate_range(yscale, yoffset)
+  zvalid_range <- storable_coordinate_range(zscale, zoffset)
+  xrange <- range(data$X)
+  yrange <- range(data$Y)
+  zrange <- range(data$Z)
+
+  failure = FALSE
+
+  if (xrange[1] < xvalid_range[1] | xrange[2] > xvalid_range[2])
+  {
+    fail(glue::glue("X coordinates range in [{xrange[1]}, {xrange[2]}] but storable range is  [{xvalid_range[1]}, {xvalid_range[2]}]"))
+    failure = TRUE
+  }
+
+  if (yrange[1] < yvalid_range[1] | yrange[2] > yvalid_range[2])
+  {
+    fail(glue::glue("Y coordinates range in [{yrange[1]}, {yrange[2]}] but storable range is  [{yvalid_range[1]}, {yvalid_range[2]}]"))
+    failure = TRUE
+  }
+
+  if (zrange[1] < zvalid_range[1] | zrange[2] > zvalid_range[2])
+  {
+    fail(glue::glue("Z coordinates range in [{zrange[1]}, {zrange[2]}] but storable range is  [{zvalid_range[1]}, {zvalid_range[2]}]"))
+    failure = TRUE
+  }
+
+  if (failure == FALSE)
+    ok()
 
   h2("Checking coordinates quantization...")
 

@@ -1,6 +1,6 @@
 context("grid_metrics")
 
-las <- lidR:::dummy_las(2000)
+las <- lidR:::generate_las(2000)
 projection(las) <- sp::CRS("+init=epsg:4326")
 
 test_that("grid_metrics returns a named RasterLayer", {
@@ -53,13 +53,13 @@ test_that("grid_metrics returns a named multilayers RasterBrick aligned with the
 
 test_that("grid_metrics returns a RasterLayer -- tricky case", {
 
-  las2 <- lasfilter(las, X < 20 | X > 70)
+  las2 <- filter_poi(las, X < 20 | X > 70)
   out  <- grid_metrics(las2, ~max(Z))
 
   expect_equal(dim(out), c(5, 5, 1))
   expect_equal(raster::res(out), c(20, 20))
 
-  las2 <- lasfilter(las, (X < 20 | X > 70) & (Y < 20 | Y > 70))
+  las2 <- filter_poi(las, (X < 20 | X > 70) & (Y < 20 | Y > 70))
   out  <- grid_metrics(las2, ~max(Z), 10)
 
   expect_equal(dim(out), c(10, 10, 1))
@@ -68,7 +68,7 @@ test_that("grid_metrics returns a RasterLayer -- tricky case", {
 
 test_that("grid_metrics return a RasterBrick -- tricky case", {
 
-  las2 <- lasfilter(las, (X < 20 | X > 80) & (Y < 20 | Y > 80))
+  las2 <- filter_poi(las, (X < 20 | X > 80) & (Y < 20 | Y > 80))
   out  <- suppressWarnings(grid_metrics(las2, ~list(mean(Z), max(Z)), 10))
 
   expect_true(is(out, "RasterBrick"))
@@ -85,12 +85,12 @@ test_that("grid_metrics accepts both an expression or a formula", {
 })
 
 # Convert laz to las for faster testing
-LASfile  <- system.file("extdata", "Megaplot.laz", package = "lidR")
-ctg      <- readLAScatalog(LASfile, select = "xyz", filter = "-keep_first")
-las      <- readLAS(ctg)
+las <- filter_first(megaplot)
+las@data$Intensity <- NULL
+ctg <- megaplot_ctg
 
-opt_chunk_size(ctg)      <- 140
-opt_chunk_alignment(ctg) <- c(684760, 5017760)
+opt_chunk_size(ctg)      <- 260
+opt_chunk_alignment(ctg) <- c(160, 160)
 opt_chunk_buffer(ctg)    <- 0
 opt_progress(ctg)        <- FALSE
 opt_select(ctg)          <- "xyz"
@@ -123,17 +123,7 @@ test_that("grid_metric return the same both with catalog and las + grid alignmen
 
 test_that("grid_metric works with a RasterLayer as input instead of a resolution", {
 
-  # --- partialy matching bbox
-
-  r <- raster::raster(round(extent(las) - 80))
-  raster::res(r) <- 15
-  raster::crs(r) <- crs(las)
-
-  m1 <- grid_metrics(ctg, ~length(Z), r)
-  m2 <- grid_metrics(las, ~length(Z), r)
-  expect_equal(m1, m2)
-
-  # --- partialy matching bbox
+  # --- partially matching bbox
 
   bb = round(extent(las))
   bb@xmin = bb@xmin - 160
@@ -144,7 +134,7 @@ test_that("grid_metric works with a RasterLayer as input instead of a resolution
 
   m1 <- grid_metrics(las, ~length(Z), r)
 
-  expect_equal(raster::extent(m1), raster::extent(r))
+  expect_equal(raster::extent(m1), raster::extent(684756, 684831, 5017767, 5018007))
   expect_equal(sum(!is.na(m1[])), 80L)
 
   # --- no matching bbox
@@ -166,20 +156,19 @@ test_that("grid_metric works with a RasterLayer as input instead of a resolution
 
 test_that("predefined metric set work both with a LAS and LAScatalog", {
 
-  las <- lidR:::dummy_las(500)
+  las <- random_500_points
 
   expect_error(grid_metrics(las, .stdmetrics_z), NA)
   expect_error(grid_metrics(las, .stdmetrics_i), NA)
   expect_error(grid_metrics(las, .stdmetrics_rn), NA)
   expect_error(grid_metrics(las, .stdmetrics_ctrl), NA)
+  expect_error(grid_metrics(las, .stdshapemetrics), NA)
   expect_error(grid_metrics(ctg, .stdmetrics_z), NA)
-  expect_error(grid_metrics(ctg, .stdshapemetrics), NA)
 })
 
 test_that("Using a non empty layout return correct output (#318)", {
 
-  LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
-  ldr = readLAS(LASfile, filter = "-keep_scan_angle -3 3")
+  ldr = filter_poi(megaplot, ScanAngleRank >= -3, ScanAngleRank <= 3 )
   ref = lidR:::rOverlay(ldr, 20)
   suppressWarnings(ref[] <- 10)
   m = grid_metrics(ldr, mean(Z), ref)

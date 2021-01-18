@@ -58,27 +58,32 @@
 #'
 #' @examples
 #' LASfile <- system.file("extdata", "MixedConifer.laz", package="lidR")
-#' las = readLAS(LASfile, select = "xyz0", filter = "-drop_z_below 0")
+#' poi = "-drop_z_below 0 -inside 481280 3812940 481320 3812980"
+#' las = readLAS(LASfile, select = "xyz0", filter = poi)
 #'
 #' # NOTE: This dataset is already segmented
-#' # plot(las, color = "treeID", colorPalette = pastel.colors(200))
+#'
+#' #plot(las, color = "treeID", colorPalette = pastel.colors(200))
 #'
 #' # Only the hulls
 #' convex_hulls = delineate_crowns(las)
 #' plot(convex_hulls)
-#' spplot(convex_hulls, "ZTOP")
 #'
 #' # The hulls + some user-defined metrics
 #' convex_hulls = delineate_crowns(las, func = ~list(Zmean = mean(Z)))
-#' spplot(convex_hulls, "Zmean")
+#' convex_hulls
 #'
 #' # The bounding box
 #' bbox_hulls = delineate_crowns(las, "bbox")
 #' plot(bbox_hulls)
 #'
 #' \dontrun{
+#' # With concave hull (longer to compute)
 #' concave_hulls = delineate_crowns(las, "concave")
-#' sp::plot(concave_hulls)
+#' plot(concave_hulls)
+#'
+#' spplot(convex_hulls, "ZTOP")
+#' spplot(convex_hulls, "Zmean")
 #' }
 delineate_crowns = function(las, type = c("convex", "concave", "bbox"), concavity = 3, length_threshold = 0, func = NULL, attribute = "treeID")
 {
@@ -96,13 +101,9 @@ delineate_crowns.LAS = function(las, type = c("convex", "concave", "bbox"), conc
   assert_is_a_string(attribute)
 
   # concaveman is only a 'suggested' dependency
-  if (type == "concave")
-  {
-    if (!requireNamespace("concaveman", quietly = TRUE))
-      stop("'concaveman' package is needed to compute concave hull.", call. = FALSE) # nocov
-  }
+  if (type == "concave") assert_package_is_installed("concaveman")
 
-  # Pointeur on function C style coding
+  # Pointer on function C style coding
   if      (type == "convex")  fhull <- stdtreehullconvex
   else if (type == "concave") fhull <- stdtreehullconcave
   else if (type == "bbox")    fhull <- stdtreehullbbox
