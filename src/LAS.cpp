@@ -1,9 +1,13 @@
+#if defined(__GNUC__) && (__GNUC__ < 5) && !defined(__clang__) && !defined(__llvm__) && !defined(__INTEL_COMPILER)
+#include "gcc_4_9_patch/std_is_trivially_substitutes.hpp"
+#include "gcc_4_9_patch/boost_compare_patched.hpp"
+#endif
+
 #include "LAS.h"
 #include "Progress.h"
 #include "myomp.h"
 #include "SpatialIndex.h"
 #include <limits>
-#include <boost/functional/hash.hpp>
 #include <boost/geometry.hpp>
 
 using namespace lidR;
@@ -497,7 +501,7 @@ void LAS::filter_local_maxima(NumericVector ws)
   return;
 }
 
-void LAS::filter_with_grid(S4 layout)
+void LAS::filter_with_grid(S4 layout, bool max)
 {
   S4 extent   = layout.slot("extent");
   int ncols   = layout.slot("ncols");
@@ -508,9 +512,10 @@ void LAS::filter_with_grid(S4 layout)
   double ymax = extent.slot("ymax");
   double xres = (xmax - xmin) / ncols;
   double yres = (ymax - ymin) / nrows;
+  int limit = (max) ? std::numeric_limits<int>::min() : std::numeric_limits<int>::max();
 
   std::vector<int> output(ncols*nrows);
-  std::fill(output.begin(), output.end(), std::numeric_limits<int>::min());
+  std::fill(output.begin(), output.end(), limit);
 
   for (unsigned int i = 0 ; i < npoints ; i++)
   {
@@ -530,20 +535,24 @@ void LAS::filter_with_grid(S4 layout)
 
     int cell = row * ncols + col;
 
-    if (output[cell] == std::numeric_limits<int>::min())
+    if (output[cell] == limit)
     {
       output[cell] = i;
     }
     else
     {
       double zref = Z[output[cell]];
-      if (zref < z) output[cell] = i;
+      if (max) {
+        if (zref < z) output[cell] = i;
+      } else {
+        if (zref > z) output[cell] = i;
+      }
     }
   }
 
   for (unsigned int i = 0 ; i < output.size() ; i++)
   {
-    if (output[i] > std::numeric_limits<int>::min())
+    if (output[i] != limit)
       filter[output[i]] = true;
   }
 
@@ -703,20 +712,25 @@ void LAS::filter_progressive_morphology(NumericVector ws, NumericVector th)
 
 void LAS::filter_isolated_voxel(double res, unsigned int isolated)
 {
-  typedef std::array<int, 3> Array;
+  double xmin = min(X);
+  double ymin = min(Y);
+  double zmin = min(Z);
+  double xmax = max(X);
+  double ymax = max(Y);
+  double zmax = max(Z);
 
-  double xoffset = X[0];
-  double yoffset = Y[0];
-  double zoffset = Z[0];
+  unsigned int width = std::floor((xmax - xmin) / res);
+  unsigned int height = std::floor((ymax - ymin) / res);
+  //unsigned int depth = std::floor((zmax - zmin) / res);
 
   // Stores for a given voxel the number of point in its 27 voxels neighbourhood
-  std::unordered_map<Array, unsigned int, boost::hash<Array> > dynamic_registry;
+  std::unordered_map<unsigned int, unsigned int> dynamic_registry;
 
   for (unsigned int n = 0 ; n < npoints ; n++)
   {
-    int nx = std::floor((X[n] - xoffset) / res);
-    int ny = std::floor((Y[n] - yoffset) / res);
-    int nz = std::floor((Z[n] - zoffset) / res);
+    int nx = std::floor((X[n] - xmin) / res);
+    int ny = std::floor((Y[n] - ymin) / res);
+    int nz = std::floor((Z[n] - zmin) / res);
 
     // Add one in the 27 neighbouring voxel of this point
     for (int i : {-1,0,1})
@@ -727,7 +741,7 @@ void LAS::filter_isolated_voxel(double res, unsigned int isolated)
         {
           if (!(i == 0 && j == 0 && k == 0))
           {
-            Array key = {nx + i, ny + j, nz + k};
+            unsigned int key = (nx+i) + (ny+j)*width + (nz+k)*width*height;
             dynamic_registry.insert({key, 0});
             dynamic_registry[key]++;
           }
@@ -740,10 +754,10 @@ void LAS::filter_isolated_voxel(double res, unsigned int isolated)
   // Check if the number of points in its neighbourhood is above the threshold
   for (unsigned int n = 0 ; n < npoints ; n++)
   {
-    int nx = std::floor((X[n] - xoffset) / res);
-    int ny = std::floor((Y[n] - yoffset) / res);
-    int nz = std::floor((Z[n] - zoffset) / res);
-    Array key = {nx, ny, nz};
+    int nx = std::floor((X[n] - xmin) / res);
+    int ny = std::floor((Y[n] - ymin) / res);
+    int nz = std::floor((Z[n] - zmin) / res);
+    unsigned int key = nx + ny*width + nz*width*height;
     filter[n] = dynamic_registry[key] <= isolated;
   }
 

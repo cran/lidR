@@ -49,31 +49,17 @@ cluster_apply = function(.CLUSTER, .FUN, .PROCESSOPT, .OUTPUTOPT, .GLOBALS = NUL
   pb         <- engine_progress_bar(nclusters, prgrss)
   percentage <- 0
 
-
-
   on.exit(engin_close_pb(pb))
 
-  # Inititalize parallelism
-  workers    <- getWorkers()
-  threads    <- getThreads()
-  cores      <- future::availableCores()
-  manual     <- getOption("lidR.threads.manual")
-
-  # The nofuture mainly intend to be used on CRAN unit test because even small examples are
-  # long to run. This is because the initialisation of a future is long even for sequential
-  # plan.
-  nofuture   <- isTRUE(getOption('lidR.no.future'))
-  future <- if (!nofuture) future::future else function(expr, ...) { eval(substitute(expr, parent.frame())) }
-
-  if (!manual && workers * threads > cores)
-  {
-    # nocov because tested with a single core on CRAN
-    verbose(glue::glue("Cannot nest {workers} future threads and {threads} OpenMP threads. Precedence given to future: OpenMP threads set to 1.")) # nocov
-    threads <- 1L # nocov
-  }
+  # Disable OpenMP? The different between  LIDRTHREADS$n and LIDRTHREADS$input
+  # is that n is the corrected number of workers. e.g on a quadcore set_lidr_threads(0)
+  # set 4 and set_lidr_threads(12) set 4 too. On the contrary input will be 0 and 12 respectively
+  # Consequently so on remote machines with different capabilities than the master worker
+  # the information is not overwritten by the master worker.
+  threads = if (must_disable_openmp()) 1L else if (isFALSE(getOption("lidR.check.nested.parallelism"))) LIDRTHREADS$input else LIDRTHREADS$n
 
   verbose(glue::glue("Start processing {nclusters} chunks..."))
-  verbose(glue::glue("Using {workers} CPUs with future and {threads} CPU with OpenMP."))
+  #verbose(glue::glue("Using {workers} CPUs with future and {threads} CPU with OpenMP."))
 
   # ==== PROCESSING ====
 
@@ -87,7 +73,7 @@ cluster_apply = function(.CLUSTER, .FUN, .PROCESSOPT, .OUTPUTOPT, .GLOBALS = NUL
     engine_update_progress(pb, .CLUSTER[[i]], states[i], percentage, i)
 
     # Asynchronous computation of .FUN on the chunk
-    futures[[i]] <- future(
+    futures[[i]] <- future::future(
     {
       setThreads(threads)
       options(lidR.progress = FALSE)
@@ -116,18 +102,10 @@ cluster_apply = function(.CLUSTER, .FUN, .PROCESSOPT, .OUTPUTOPT, .GLOBALS = NUL
         }
       }
 
-      if (is.null(y)) y <- if (!nofuture) NULL else "NULL"
+      if (is.null(y)) y <- NULL
       if (!is.null(y) && writemode) y <- writeANY(y, save, drivers)
       y
     }, substitute = TRUE, globals = structure(TRUE, add = .GLOBALS), seed = TRUE)
-
-    if (nofuture)
-    {
-      # Hack
-      if (is.character(futures[[i]]) && length(futures[[i]]) == 1L && futures[[i]] == "NULL")
-        futures[i] <- list(NULL)
-      next
-    }
 
     # Evaluation of the state of the futures
     for (j in 1:i)
@@ -178,8 +156,6 @@ cluster_apply = function(.CLUSTER, .FUN, .PROCESSOPT, .OUTPUTOPT, .GLOBALS = NUL
       output[[j]] <- suppressWarnings(future::value(futures[[j]]))
     }
   }
-
-  if (nofuture) return(futures)
 
   # ==== PROGRESS ENDING ====
 
