@@ -2,15 +2,16 @@ Package: lidR
 Type: Package
 Title: Airborne LiDAR Data Manipulation and Visualization for Forestry
         Applications
-Version: 3.1.2
-Date: 2021-03-11
+Version: 3.1.3
+Date: 2021-05-20
 Authors@R: c(
     person("Jean-Romain", "Roussel", email = "jean-romain.roussel.1@ulaval.ca", role = c("aut", "cre", "cph")),
     person("David", "Auty", email = "", role = c("aut", "ctb"), comment = "Reviews the documentation"),
     person("Florian", "De Boissieu", email = "", role = ("ctb"), comment = "Fixed bugs and improved catalog features"),
     person("Andrew", "Sánchez Meador", email = "", role = ("ctb"), comment = "Implemented wing2015() for segment_snags()"),
     person("Bourdon", "Jean-François", email = "", role = ("ctb"), comment = "Contributed to Roussel2020() for track_sensor()"),
-    person("Gatziolis", "Demetrios", email = "", role = ("ctb"), comment = "Implemented Gatziolis2019() for track_sensor()"))
+    person("Gatziolis", "Demetrios", email = "", role = ("ctb"), comment = "Implemented Gatziolis2019() for track_sensor()"),
+    person("Leon", "Steinmeier", email = "Lenostatos@gmx.de", role = ("ctb"), comment = "Contributed to parallelization management"))
 Description: Airborne LiDAR (Light Detection and Ranging) interface for data
     manipulation and visualization. Read/write 'las' and 'laz' files, computation
     of metrics in area based approach, point filtering, artificial point reduction,
@@ -25,7 +26,6 @@ Imports: data.table (>= 1.12.0), future, geometry, glue, grDevices,
         rlas (>= 1.3.5), sf, stats, tools, utils
 Suggests: EBImage, concaveman, crayon, gstat, hexbin, mapview, mapedit,
         progress, testthat (>= 2.1.0), knitr, rmarkdown, covr
-LazyData: true
 RoxygenNote: 7.1.1
 LinkingTo: BH (>= 1.72.0),Rcpp,RcppArmadillo
 Encoding: UTF-8
@@ -64,7 +64,7 @@ Collate: 'Class-LASheader.R' 'Class-LAS.R' 'Class-LAScatalog.R'
         'utils_spatial_index.R' 'utils_threads.R' 'utils_typecast.R'
         'voxel_metrics.R' 'voxelize_points.R' 'zzz.R'
 NeedsCompilation: yes
-Packaged: 2021-03-11 12:25:14 UTC; jr
+Packaged: 2021-05-20 12:29:06 UTC; jr
 Author: Jean-Romain Roussel [aut, cre, cph],
   David Auty [aut, ctb] (Reviews the documentation),
   Florian De Boissieu [ctb] (Fixed bugs and improved catalog features),
@@ -73,7 +73,8 @@ Author: Jean-Romain Roussel [aut, cre, cph],
   Bourdon Jean-François [ctb] (Contributed to Roussel2020() for
     track_sensor()),
   Gatziolis Demetrios [ctb] (Implemented Gatziolis2019() for
-    track_sensor())
+    track_sensor()),
+  Leon Steinmeier [ctb] (Contributed to parallelization management)
 Maintainer: Jean-Romain Roussel <jean-romain.roussel.1@ulaval.ca>
 Repository: CRAN
-Date/Publication: 2021-03-16 13:40:12 UTC
+Date/Publication: 2021-05-20 13:10:02 UTC

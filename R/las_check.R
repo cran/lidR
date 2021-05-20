@@ -52,7 +52,7 @@
 #' @param ... Use \code{deep = TRUE} on a LAScatalog only. Instead of a shallow inspection it reads
 #' all the files and performs a deep inspection.
 #'
-#' @return A list with two elements named \code{warnings} and \code{errors}. This list is returned
+#' @return A list with three elements named \code{message}, \code{warnings} and \code{errors}. This list is returned
 #' invisibly if \code{print = TRUE}. If \code{deep = TRUE} a nested list is returned with one element
 #' per file.
 #'
@@ -80,12 +80,13 @@ las_check.LAS = function(las, print = TRUE, ...)
   {
     green = crayon::green
     red = crayon::red
-    orange = crayon::yellow
+    yellow = crayon::yellow
+    orange = crayon::make_style("orange")
     silver = crayon::silver
   }
   else
   {
-    green <- red <- orange <- silver <- function(x) { return(x) } # nocov
+    green <- red <- orange <- yellow <- silver <- function(x) { return(x) } # nocov
   }
 
   h1    <- function(x)   {if (print) cat("\n", x)}
@@ -98,13 +99,14 @@ las_check.LAS = function(las, print = TRUE, ...)
 
   warnings <- character(0)
   errors <- character(0)
+  infos <- character(0)
 
   fail  <- function(msg) {
     if (print) {
       if (length(msg) == 0) {
         ok()
       } else {
-        for (x in msg) cat("\n", red(g("   \u2717 {x}")))
+        for (x in msg) cat("\n", red(g("   \U2717 {x}")))
       }
     }
 
@@ -116,11 +118,23 @@ las_check.LAS = function(las, print = TRUE, ...)
       if (length(msg) == 0) {
         ok()
       } else {
-        for (x in msg) cat("\n", orange(g("  \u26A0 {x}")))
+        for (x in msg) cat("\n", orange(g("  \U26A0 {x}")))
       }
     }
 
     if (length(msg) > 0) { for (x in msg) warnings <<- append(warnings, x) }
+  }
+
+  info  <- function(msg) {
+    if (print) {
+      if (length(msg) == 0) {
+        ok()
+      } else {
+        for (x in msg) cat("\n", yellow(g("  \U1F6C8 {x}")))
+      }
+    }
+
+    if (length(msg) > 0) { for (x in msg) infos <<- append(infos, x) }
   }
 
   xscale <- las@header@PHB$`X scale factor`
@@ -274,10 +288,10 @@ las_check.LAS = function(las, print = TRUE, ...)
       else
       {
         if (s1 > 0)
-          warn(g("There were {s1} degenerated ground points. Some X Y Z coordinates were repeated."))
+          warn(g("There were {s1} degenerated ground points. Some X Y Z coordinates were repeated"))
 
         if (s2 > 0)
-          warn(g("There were {s2} degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates."))
+          warn(g("There were {s2} degenerated ground points. Some X Y coordinates were repeated but with different Z coordinates"))
 
       }
     }
@@ -296,7 +310,7 @@ las_check.LAS = function(las, print = TRUE, ...)
     s = all(data[["gpstime"]] == 0)
 
     if (s)
-      msg = c(msg, g("'gpstime' attribute is not populated."))
+      msg = c(msg, g("'gpstime' attribute is not populated"))
   }
 
   if (!is.null(data[["PointSourceID"]]))
@@ -304,7 +318,7 @@ las_check.LAS = function(las, print = TRUE, ...)
     s = fast_countequal(data[["PointSourceID"]], 0L)
 
     if (s == nrow(data))
-      msg = c(msg, g("'PointSourceID' attribute is not populated."))
+      msg = c(msg, g("'PointSourceID' attribute is not populated"))
   }
 
   if (!is.null(data[["ScanDirectionFlag"]]))
@@ -312,7 +326,7 @@ las_check.LAS = function(las, print = TRUE, ...)
     s = fast_countequal(data[["ScanDirectionFlag"]], 0L)
 
     if (s == nrow(data))
-      msg = c(msg, g("'ScanDirectionFlag' attribute is not populated."))
+      msg = c(msg, g("'ScanDirectionFlag' attribute is not populated"))
   }
 
   if (!is.null(data[["EdgeOfFlightline"]]))
@@ -320,10 +334,10 @@ las_check.LAS = function(las, print = TRUE, ...)
     s = fast_countequal(data[["EdgeOfFlightline"]], 0L)
 
     if (s == nrow(data))
-      msg = c(msg, g("'EdgeOfFlightline' attribute is not populated."))
+      msg = c(msg, g("'EdgeOfFlightline' attribute is not populated"))
   }
 
-  warn(msg)
+  info(msg)
 
   h2("Checking gpstime incoherances")
 
@@ -348,7 +362,7 @@ las_check.LAS = function(las, print = TRUE, ...)
     s = sum(data[["Withheld_flag"]])
 
     if (s > 0)
-      msg = c(msg, g("{s} points flagged 'withheld'."))
+      msg = c(msg, g("{s} points flagged 'withheld'"))
   }
 
   if (!is.null(data[["Synthetic_flag"]]))
@@ -356,7 +370,7 @@ las_check.LAS = function(las, print = TRUE, ...)
     s = sum(data[["Synthetic_flag"]])
 
     if (s > 0)
-      msg = c(msg, g("{s} points flagged 'synthetic'."))
+      msg = c(msg, g("{s} points flagged 'synthetic'"))
   }
 
   if (!is.null(data[["Keypoint_flag"]]))
@@ -364,10 +378,10 @@ las_check.LAS = function(las, print = TRUE, ...)
     s = sum(data[["Keypoint_flag"]])
 
     if (s > 0)
-      msg = c(msg, g("{s} points flagged 'keypoint'."))
+      msg = c(msg, g("{s} points flagged 'keypoint'"))
   }
 
-  warn(msg)
+  info(msg)
 
   h2("Checking user data attribute...")
 
@@ -378,7 +392,7 @@ las_check.LAS = function(las, print = TRUE, ...)
     s = sum(data[["UserData"]] != 0)
 
     if (s > 0)
-      warn(g("{s} points have a non 0 UserData attribute. This probably has a meaning."))
+      info(g("{s} points have a non 0 UserData attribute. This probably has a meaning"))
     else
       ok()
   }
@@ -448,18 +462,18 @@ las_check.LAS = function(las, print = TRUE, ...)
     codeproj <- epsg2CRS(code)
 
     if (is.na(codeproj@projargs))
-    { fail(glue::glue("EPSG code {code} unknown.")) ; failure = TRUE }
+    { fail(glue::glue("EPSG code {code} unknown")) ; failure = TRUE }
 
     if (is.na(codeproj@projargs) && !is.na(lasproj@projargs))
-    { warn(glue::glue("EPSG code is unknown but a proj4string found.")) ; failure = TRUE }
+    { warn(glue::glue("EPSG code is unknown but a proj4string found")) ; failure = TRUE }
 
     if (!is.na(codeproj@projargs) && is.na(lasproj@projargs))
-    { warn("ESPG code is valid but no proj4string found.") ; failure = TRUE }
+    { warn("ESPG code is valid but no proj4string found") ; failure = TRUE }
 
     if (!is.na(codeproj@projargs) && !is.na(lasproj@projargs))
     {
       if (codeproj@projargs != lasproj@projargs)
-      { fail("ESPG code and proj4string do not match.") ; failure = TRUE }
+      { fail("ESPG code and proj4string do not match") ; failure = TRUE }
     }
 
     if (!failure)
@@ -474,15 +488,15 @@ las_check.LAS = function(las, print = TRUE, ...)
     { fail("WKT OGC CS not understood by rgdal") ; failure = TRUE }
 
     if (is.na(codeproj@projargs) & !is.na(lasproj@projargs))
-    { warn("WKT OGC CS not understood by rgdal but a proj4string found.") ; failure = TRUE }
+    { warn("WKT OGC CS not understood by rgdal but a proj4string found") ; failure = TRUE }
 
     if (!is.na(codeproj@projargs) & is.na(lasproj@projargs))
-    { warn("WKT OGC CS is valid but no proj4string found.") ; failure = TRUE }
+    { warn("WKT OGC CS is valid but no proj4string found") ; failure = TRUE }
 
     if (!is.na(codeproj@projargs) & !is.na(lasproj@projargs))
     {
       if (codeproj@projargs != lasproj@projargs)
-      { fail("WKT OGC CS and proj4string do not match.") ; failure = TRUE }
+      { fail("WKT OGC CS and proj4string do not match") ; failure = TRUE }
     }
 
     if (!failure)
@@ -490,15 +504,15 @@ las_check.LAS = function(las, print = TRUE, ...)
   }
 
   if (use_epsg(las) && swkt != "")
-  { fail("Global encoding WKT bits set to 0 but a WKT string found in the header.") ; failure = TRUE }
+  { fail("Global encoding WKT bits set to 0 but a WKT string found in the header") ; failure = TRUE }
 
   if (use_wktcs(las) && code != 0)
-  { fail("Global encoding WKT bits set to 1 but an epsg code found in the header.") ; failure = TRUE }
+  { fail("Global encoding WKT bits set to 1 but an epsg code found in the header") ; failure = TRUE }
 
   if (code == 0 & swkt == "")
   {
     if (!is.na(lasproj@projargs))
-    { warn("A proj4string found but no CRS in the header.") ; failure = TRUE }
+    { warn("A proj4string found but no CRS in the header") ; failure = TRUE }
 
     if (!failure)
       ok()
@@ -548,10 +562,14 @@ las_check.LAS = function(las, print = TRUE, ...)
   {
     s = fast_countequal(data$Classification, 2L)
 
-    if (s > 0)
+    if (s > 0) {
       yes()
-    else
+      infos <- append(infos, "The point cloud is ground classified")
+    }
+    else {
       no()
+      infos <- append(infos, "The point cloud is not ground classified")
+    }
   }
   else
     skip()
@@ -566,12 +584,18 @@ las_check.LAS = function(las, print = TRUE, ...)
     min = grid_metrics(las, ~min(Z), res = 20)
     mean_min = mean(abs(min[]), na.rm = TRUE)
 
-    if (mean_min <= 0.1)
+    if (mean_min <= 0.1) {
       yes()
-    else if (mean_min > 0.1 & mean_min < 1)
+      infos <- append(infos, "The point cloud is height normalized")
+    }
+    else if (mean_min > 0.1 & mean_min < 1) {
       maybe()
-    else
+      infos <- append(infos, "The point cloud is maybe height normalized")
+    }
+    else {
       no()
+      infos <- append(infos, "The point cloud is not height normalized")
+    }
   }
 
   h2("Checking negative outliers...")
@@ -589,17 +613,21 @@ las_check.LAS = function(las, print = TRUE, ...)
   {
     s = fast_countequal(data$PointSourceID, 0L)
 
-    if (s == nrow(data))
+    if (s == nrow(data)) {
       no()
-    else if (s > 0 & s < nrow(data))
+    }
+    else if (s > 0 & s < nrow(data)) {
       maybe()
-    else
+    }
+    else {
       yes()
+    }
   }
   else
     skip()
 
   warnerr = list(
+    messages = infos,
     warnings = warnings,
     errors = errors)
 
@@ -609,6 +637,7 @@ las_check.LAS = function(las, print = TRUE, ...)
     return(warnerr)
 }
 
+#' @export
 las_check.LAScluster = function(las, print = TRUE, ...)
 {
   f <- basename(las@files)
@@ -664,22 +693,26 @@ las_check.LAScatalog = function(las, print = TRUE, deep = FALSE, ...)
   {
     green = crayon::green
     red = crayon::red
-    orange = crayon::yellow
+    yellow = crayon::yellow
+    orange = crayon::make_style("orange")
     silver = crayon::silver
   }
   else
   {
-    green <- red <- orange <- silver <- function(x) { return(x) } # nocov
+    green <- red <- orange <- yellow <- silver <- function(x) { return(x) } # nocov
   }
+
 
   warnings <- character(0)
   errors <- character(0)
+  infos <- character(0)
 
   h1    <- function(x) {if (print) cat("\n", x)}
   h2    <- function(x) {if (print) cat("\n  -", x)}
-  ok    <- function()  {if (print) cat(green(" \u2713"))}
-  fail  <- function(x) {if (print) { cat("\n", red(g("   \u2717 {x}"))) } ; errors <<- append(errors, x)}
-  warn  <- function(x) {if (print) { cat("\n", orange(g("   \u26A0 {x}"))) } ; warnings <<- append(warnings, x)}
+  ok    <- function()  {if (print) cat(green(" \U2713"))}
+  fail  <- function(x) {if (print) { cat("\n", red(g("   \U2717 {x}"))) } ; errors <<- append(errors, x)}
+  warn  <- function(x) {if (print) { cat("\n", orange(g("   \U26A0 {x}"))) } ; warnings <<- append(warnings, x)}
+  info  <- function(x) {if (print) { cat("\n", orange(g("   \U1F6C8 {x}"))) } ; infos <<- append(infos, x)}
   #skip  <- function()  {cat(silver(g(" skipped")))}
   no    <- function()  {if (print) cat(red(g(" no")))}
   yes   <- function()  {if (print) cat(green(g(" yes")))}
@@ -771,9 +804,9 @@ las_check.LAScatalog = function(las, print = TRUE, deep = FALSE, ...)
   h2("Checking Point Data Format ID validity...")
 
   if (any(data$Point.Data.Format.ID %in% c(4,5,9,10)))
-    warn("Invalid headers: point data format not supported yet.")
+    warn("Invalid headers: point data format not supported yet")
   else if (any(data$Point.Data.Format.ID < 0 | data$Point.Data.Format.ID > 10))
-    fail("Invalid header: point data format invalid.")
+    fail("Invalid header: point data format invalid")
   else
     ok()
 
@@ -792,12 +825,18 @@ las_check.LAScatalog = function(las, print = TRUE, deep = FALSE, ...)
 
   mean_min = mean(abs(data$Min.Z))
 
-  if (mean_min <= 0.1)
+  if (mean_min <= 0.1) {
     yes()
-  else if (mean_min > 0.1 & mean_min < 2)
+    infos <<- append(infos, "The point cloud is height normalized")
+  }
+  else if (mean_min > 0.1 & mean_min < 2) {
     maybe()
-  else
+    infos <<- append(infos, "The point cloud is maybe height normalized")
+  }
+  else {
     no()
+    infos <<- append(infos, "The point cloud is not height normalized")
+  }
 
   h1("Checking the geometry")
 
@@ -810,12 +849,17 @@ las_check.LAScatalog = function(las, print = TRUE, deep = FALSE, ...)
 
   h2("Checking point indexation...")
 
-  if (is.indexed(las))
+  if (is.indexed(las)) {
     yes()
-  else
+    infos <- append(infos, "The LAS files are spatially indexed")
+  }
+  else {
     no()
+    infos <- append(infos, "The LAS files are not spatially indexed")
+  }
 
   warnerr = list(
+    messages = infos,
     warnings = warnings,
     errors = errors)
 
