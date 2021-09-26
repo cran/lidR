@@ -17,10 +17,12 @@
 \alias{projection,LAS-method}
 \alias{projection<-,LAS-method}
 \alias{projection,LAScatalog-method}
+\alias{projection<-,LAScatalog-method}
 \alias{crs,LASheader-method}
 \alias{crs,LAS-method}
 \alias{crs<-,LAS-method}
 \alias{crs,LAScatalog-method}
+\alias{crs<-,LAScatalog-method}
 \title{Get or set the projection of a LAS* object}
 \usage{
 epsg(object, ...)
@@ -53,6 +55,8 @@ wkt(object) <- value
 
 \S4method{projection}{LAScatalog}(x, asText = TRUE)
 
+\S4method{projection}{LAScatalog}(x) <- value
+
 \S4method{crs}{LASheader}(x, asText = FALSE)
 
 \S4method{crs}{LAS}(x, asText = FALSE)
@@ -60,6 +64,8 @@ wkt(object) <- value
 \S4method{crs}{LAS}(x, ...) <- value
 
 \S4method{crs}{LAScatalog}(x, asText = FALSE)
+
+\S4method{crs}{LAScatalog}(x, ...) <- value
 }
 \arguments{
 \item{object, x, obj}{An object of class LAS or eventually LASheader (regular users don't need to manipulate
@@ -108,15 +114,6 @@ epsg(las)
 
 # Get the WKT string stored in the header (LAS >= 1.4)
 wkt(las)
-
-if (rgdal::new_proj_and_gdal())
-{
-   # Get the WKT of the CRS
-   sp::wkt(crs(las))
-
-   # Recorded CRS is "NAD83 / UTM zone 17N"
-   sf::st_crs(las)$input
-}
 
 # Overwrite the CRS (but does not reproject)
 crs <- sp::CRS("+init=epsg:26918")

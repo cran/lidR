@@ -99,10 +99,6 @@
 #' # Convenient shortcut for the previous example
 #' m5 <- grid_metrics(las, .stdmetrics_i, res = 40)
 #'
-#' # Works also with cloud_metrics and hexbin_metrics
-#' m6 <- cloud_metrics(las, .stdmetrics)
-#' m7 <- hexbin_metrics(las, .stdmetrics)
-#'
 #' # Combine some predefined function with your own new metrics
 #' # Here convenient shortcuts are no longer usable.
 #' myMetrics = function(z, i, rn)
@@ -213,6 +209,7 @@ stdmetrics_i = function(i, z = NULL, class = NULL, rn = NULL)
 
   n <- length(i)
   itot <- sum(i)
+  if (is.double(itot)) stop("Metric 'itot' is greater than 2147483647 and cannot be stored as integer.", call. = FALSE)
   imean <- mean(i)
 
   probs <- seq(0.05, 0.95, 0.05)
@@ -373,7 +370,7 @@ stdtreehullconcave = function(x,y,z,grp, concavity, length_threshold)
   if (length(x) < 4)
     return(NULL)
 
-  P <- concaveman::concaveman(cbind(x,y), concavity, length_threshold)
+  P <- concaveman(x, y, concavity, length_threshold)
   poly <- sp::Polygon(P)
   poly <- sp::Polygons(list(poly), ID = grp)
 

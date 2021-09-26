@@ -57,7 +57,7 @@
 #' has the same shape as the point cloud by interpolating only in the convex
 #' hull of the points. If the point cloud is concave this may lead to weird values
 #' where there are no points. Use \code{is_concave = TRUE} to use a concave hull.
-#' This is more computationally -involved and requires the concaveman package.
+#' This is more computationally demanding. It uses \link{concaveman} internally.
 #'
 #' @template LAScatalog
 #'
@@ -135,19 +135,14 @@ grid_terrain.LAS = function(las, res = 1, algorithm, ..., keep_lowest = FALSE, f
   if (!full_raster)
   {
     if (is_concave)
-    {
-      assert_package_is_installed("concaveman")
-      hull <- concaveman::concaveman(as.matrix(coordinates(las)), 10, 100)
-    }
+      hull <- concaveman(coordinates(las), concavity = 10, length_threshold = 100)
     else
-    {
       hull <- convex_hull(las@data$X, las@data$Y)
-    }
 
-    hull <- sp::Polygon(hull)
-    hull <- sp::SpatialPolygons(list(sp::Polygons(list(hull), "null")))
-    hull <- rgeos::gBuffer(hull, width = raster::res(layout)[1])
-    hull <- hull@polygons[[1]]@Polygons[[1]]@coords
+    hull <- sf::st_polygon(list(as.matrix(hull)))
+    hull <- sf::st_sfc(hull)
+    hull <- sf::st_buffer(hull, dist = raster::res(layout)[1])
+    hull <- sf::st_coordinates(hull)[,1:2]
     keep <- sp::point.in.polygon(grid$X, grid$Y, hull[,1], hull[,2], TRUE) > 0
     if (!all(keep)) grid = grid[keep]
   }
@@ -158,6 +153,7 @@ grid_terrain.LAS = function(las, res = 1, algorithm, ..., keep_lowest = FALSE, f
   lidR.context <- "grid_terrain"
   ground <- LAS(ground, las@header, proj4string = las@proj4string, check = FALSE, index = las@index)
   Zg <- algorithm(ground, grid)
+  Zg[is.nan(Zg)] <- NA_real_
   fast_quantization(Zg, las@header@PHB[["Z scale factor"]], las@header@PHB[["Z offset"]])
   cells <- raster::cellFromXY(layout, grid[, .(X,Y)])
 

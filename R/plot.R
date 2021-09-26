@@ -51,11 +51,11 @@
 #' This is because \code{rgl} computes with single precision \code{float}. To fix that the point
 #' cloud is shifted to (0,0) to reduce the number of digits needed to represent its coordinates.
 #' The drawback is that the point cloud is not plotted at its actual coordinates.
-#' @param nbits integer. If \code{color = RGB} it assumes that RGB colors are coded on 16 bits as described
+#' @param nbits integer. If \code{color = RGB} it assumes that RGB colours are coded on 16 bits as described
 #' in the LAS format specification. However, this is not always respected. If the colors are stored
-#' on 8 bits set this parameter to 8.
+#' on 8 bits, set this parameter to 8.
 #' @param axis logical. Display axis on XYZ coordinates.
-#' @param legend logical. Display a gradient color legend.
+#' @param legend logical. Display a gradient colour legend.
 #' @param backend character. Can be \code{"rgl"} or \code{"lidRviewer"}. If \code{"rgl"} is chosen
 #' the display relies on the \code{rgl} package. If \code{"lidRviewer"} is chosen it relies on the
 #' \code{lidRviewer} package, which is much more efficient and can handle million of points
@@ -63,6 +63,11 @@
 #' be installed from github (see. \url{https://github.com/Jean-Romain/lidRviewer}).
 #' @param add If \code{FALSE} normal behaviour otherwise must be the output of a prior plot function
 #' to enable the alignment of a second point cloud.
+#' @param voxel boolean or numeric. Displays voxels instead of points. Useful to render the output
+#' of \link{voxelize_points}, for example. However it is computationally demanding to render and can
+#' easily take 15 seconds for 10000 voxels. It should be reserved for small scenes. If boolean the voxel
+#' resolution is guessed automatically. Otherwise users can provide the size of the voxels. To reduce the rendering time, 
+#' an internal optimization removes voxels that are not visible when surrounded by other voxels.
 #'
 #' @param mapview logical. If \code{FALSE} the catalog is displayed in a regular plot from R base.
 #' @param chunk_pattern logical. Display the current chunk pattern used to process the catalog.
@@ -72,13 +77,13 @@
 #' if \code{mapview = FALSE} or to \link[mapview:mapView]{mapview} if \code{mapview = TRUE} (LAScatalog).
 #'
 #' @examples
+#' \dontrun{
 #' LASfile <- system.file("extdata", "MixedConifer.laz", package="lidR")
 #' las <- readLAS(LASfile)
 #'
 #' plot(las)
 #' plot(las, color = "Intensity")
 #'
-#' \dontrun{
 #' # If outliers break the color range, use the trim parameter
 #' plot(las, color = "Intensity", trim = 150)
 #'
@@ -86,11 +91,12 @@
 #'
 #' # This dataset is already tree segmented
 #' plot(las, color = "treeID")
-#' }
 #'
 #' # single file LAScatalog using data provided in lidR
 #' ctg = readLAScatalog(LASfile)
 #' plot(ctg)
+#' plot(ctg, map = T, map.types = "Esri.WorldImagery")
+#' }
 #'
 #' @export
 #' @method plot LAS
@@ -98,9 +104,9 @@ setGeneric("plot", function(x, y, ...)
   standardGeneric("plot"))
 
 #' @rdname plot
-setMethod("plot", signature(x = "LAS", y = "missing"), function(x, y, color = "Z", colorPalette = "auto", bg = "black", trim = Inf, backend = "rgl", clear_artifacts = TRUE, nbits = 16, axis = FALSE, legend = FALSE, add = FALSE, ...)
+setMethod("plot", signature(x = "LAS", y = "missing"), function(x, y, color = "Z", colorPalette = "auto", bg = "black", trim = Inf, backend = "rgl", clear_artifacts = TRUE, nbits = 16, axis = FALSE, legend = FALSE, add = FALSE, voxel = FALSE, ...)
 {
-  plot.LAS(x, y, color, colorPalette, bg, trim, backend, clear_artifacts, nbits, axis, legend, add, ...)
+  plot.LAS(x, y, color, colorPalette, bg, trim, backend, clear_artifacts, nbits, axis, legend, add, voxel, ...)
 })
 
 #' @export
@@ -212,8 +218,16 @@ plot.LAScatalog = function(x, y, mapview = FALSE, chunk_pattern = FALSE, overlap
 
     if (is.null(param$add)) do.call(graphics::plot, param)
 
-    graphics::rect(x@data$Min.X, x@data$Min.Y, x@data$Max.X, x@data$Max.Y, col = col)
-    graphics::par(op)
+    if (!isTRUE(attr(x, "trueshape")))
+    {
+      graphics::rect(x@data$Min.X, x@data$Min.Y, x@data$Max.X, x@data$Max.Y, col = col)
+      graphics::par(op)
+    }
+    else
+    {
+      plot(as.spatial(x), col = col)
+      graphics::par(op)
+    }
 
     if (overlaps) {
       plot(catalog_overlaps(x), add = T, col = "red", border = "red")
@@ -223,55 +237,81 @@ plot.LAScatalog = function(x, y, mapview = FALSE, chunk_pattern = FALSE, overlap
   }
 }
 
-plot.LAS = function(x, y, color = "Z", colorPalette = "auto", bg = "black", trim = Inf, backend = "rgl", clear_artifacts = TRUE, nbits = 16, axis = FALSE, legend = FALSE, add = FALSE, ...)
+plot.LAS = function(x, y, color = "Z", colorPalette = "auto", bg = "black", trim = Inf, backend = "rgl", clear_artifacts = TRUE, nbits = 16, axis = FALSE, legend = FALSE, add = FALSE, voxel = FALSE, ...)
 {
   backend <- match.arg(backend, c("rgl", "lidRviewer"))
   use_pcv <- backend == "lidRviewer"
   use_rgl <- !use_pcv
+  use_vox <- !isFALSE(voxel)
   has_pcv <- "lidRviewer" %in% rownames(utils::installed.packages())
   has_col <- color %in% names(x@data)
   use_rgb <- color == "RGB"
   has_rgb <- all(c("R", "G", "B") %in% names(x@data))
   maxcol  <- 2^nbits - 1
   autocol <- all(colorPalette == "auto")
-  value_index <- FALSE
 
+  # Error handling
+  assert_is_a_bool(clear_artifacts)
+  assert_is_a_bool(axis)
+  assert_is_a_bool(legend)
+  if (!isFALSE(add)) {
+    assert_is_numeric(add)
+    assert_is_of_length(add, 2)
+  }
   if (is.empty(x))         stop("Cannot display an empty point cloud", call. = FALSE)
   if (use_pcv & !has_pcv)  stop("'lidRviewer' package is needed. Please read documentation.", call. = FALSE) # nocov
   if (length(color) > 1)   stop("'color' should contain a single value.", call. = FALSE)
   if (!use_rgb & !has_col) stop("'color' should refer to an attribute of the LAS data.", call. = FALSE)
   if (use_rgb & !has_rgb)  stop("No 'RGB' attributes found.", call. = FALSE)
 
-  if (!isFALSE(add))
+
+  # Retrieve voxels size
+  if (use_vox)
   {
-    assert_is_numeric(add)
-    assert_is_of_length(add, 2)
+    verbose("Plotting in voxel mode")
+
+    if (!is.null(attr(x, 'res')) && !is.numeric(voxel)) {
+      voxel <- attr(x, 'res')
+      verbose(glue::glue("Resolution of the voxels found in the attribute 'res': {voxel}"))
+    } else if (isTRUE(voxel)) {
+      xres <- min(diff(sort(unique(x$X))))
+      yres <- min(diff(sort(unique(x$Y))))
+      zres <- min(diff(sort(unique(x$Z))))
+      voxel  <- min(xres, yres, zres)
+      verbose(glue::glue("Resolution automatically detected: {voxel}"))
+    } else if (is.numeric(voxel)) {
+      verbose(glue::glue("Resolution defined by user: {voxel}"))
+    } else {
+      stop("Parameter 'voxel' must be a boolean or a number")
+    }
   }
 
+  # Create a colour scheme for each point as a function of the attribute plotted
+  value_is_index <- FALSE
   if (autocol)
   {
     if (color == "Z")
-      colorPalette = height.colors(50)
+      colorPalette <- height.colors(50)
     else if (color == "Intensity")
-      colorPalette = grDevices::heat.colors(50)
-    else if (color  == "Classification")
-    {
-      colorPalette = lasclass.colors()
-      clmin = min(x@data[["Classification"]])
-      clmax = max(x@data[["Classification"]])
-      trim  = min(length(colorPalette), clmax+1)
-      value_index = TRUE
+      colorPalette <- grDevices::heat.colors(50)
+    else if (color  == "Classification") {
+      colorPalette <- lasclass.colors()
+      clmin <- min(x@data[["Classification"]])
+      clmax <- max(x@data[["Classification"]])
+      trim  <- min(length(colorPalette), clmax+1)
+      value_is_index <- TRUE
     }
     else if (color == "ScanAngleRank" | color == "ScanAngle")
-      colorPalette = height.colors(50)
+      colorPalette <- height.colors(50)
     else if (color == "ReturnNumber")
-      colorPalette = rev(c("#440154FF", "#3B528BFF", "#21908CFF", "#5DC863FF", "#FDE725FF"))
+      colorPalette <- rev(c("#440154FF", "#3B528BFF", "#21908CFF", "#5DC863FF", "#FDE725FF"))
     else if (color == "treeID")
-      colorPalette = pastel.colors(200)
+      colorPalette <- pastel.colors(200)
     else
-      colorPalette = height.colors(50)
+      colorPalette <- height.colors(50)
   }
 
+  # Select the attribute used for colouring
   if (use_rgb & use_pcv)
     col <- "RGB"
   else if (use_rgb & use_rgl)
@@ -283,43 +323,34 @@ plot.LAS = function(x, y, color = "Z", colorPalette = "auto", bg = "black", trim
   if (is.null(args$size))
     args$size <- 1.5
 
-  if (use_rgl)
-    lasplot <- .plot_with_rgl
-  else
-    lasplot <- .plot_with_pcv # nocov
+  lasplot <- if (use_rgl) .plot_with_rgl else .plot_with_pcv # nocov
 
-  return(lasplot(x, bg, col, colorPalette, trim, clear_artifacts, axis, legend, args, value_index, add))
+  return(lasplot(x, bg, col, colorPalette, trim, clear_artifacts, axis, legend, args, value_is_index, add, voxel))
 }
 
-.plot_with_rgl = function(las, bg, col, pal, trim, clear_artifacts, axis, legend, args, value_index, add)
+.plot_with_rgl = function(las, bg, col, pal, trim, clear_artifacts, axis, legend, args, value_is_index, add, use_voxels)
 {
+  # The color of the foreground  (axis actually) is the opposite of the background
+  # so usually white, maybe black if bg = "white" or something fancy in other cases
   fg   <- grDevices::col2rgb(bg)
   fg   <- grDevices::rgb(t(255 - fg)/255)
 
-  if (isFALSE(add))
-  {
+  # If it is a new layer, compute the offset used to get rid of floating point accuracy with rgl
+  # otherwise we use the input offset
+  if (isFALSE(add)) {
     minx <- min(las@data$X)
     miny <- min(las@data$Y)
-  }
-  else
-  {
+  } else {
     minx <- add[1]
     miny <- add[2]
   }
 
-  if (is.numeric(col))
-  {
+  # Compute the colour of each point/voxel
+  if (is.numeric(col)) {
     mincol <- min(col, na.rm = TRUE)
     maxcol <- min(max(col, na.rm = TRUE), trim)
-    col <- set.colors(col, pal, trim, value_index)
-  }
-  else if (is.character(col))
-  {
-    legend <- FALSE
-    col <- col
-  }
-  else if (is.logical(col))
-  {
+    col <- set.colors(col, pal, trim, value_is_index)
+  } else if (is.logical(col)) {
     mincol <- 0
     maxcol <- 1
     col <- set.colors(as.numeric(col), pal)
@@ -327,21 +358,53 @@ plot.LAS = function(x, y, color = "Z", colorPalette = "auto", bg = "black", trim
 
   col[is.na(col)] <- "lightgray"
 
-  with <- c(list(x = las@data$X, y = las@data$Y, z = las@data$Z, col = col), args)
-
-  if (clear_artifacts)
+  # Optimize the rendering of the voxels by removing voxels than can't be seen
+  if(!isFALSE(use_voxels) && getOption("lidR.optimize.voxel.rendering"))
   {
+    nvoxels1 <- npoints(las)
+    res <- as.numeric(use_voxels)
+    u <- point_metrics(las, ~length(Z), r = res)
+    keep <- u$V1 <= 6
+    las <- filter_poi(las, keep)
+    col <- col[keep]
+    nvoxels2 <- npoints(las)
+    verbose(glue::glue("Rendering {nvoxels2} voxels. {nvoxels1-nvoxels2} being hidden."))
+  }
+
+  with <- c(list(x = las@data[["X"]], y = las@data[["Y"]], z = las@data[["Z"]], col = col), args)
+
+  if (clear_artifacts) {
     with$x <- with$x - minx
     with$y <- with$y - miny
   }
-
-  if (isFALSE(add))
-  {
+  # If it is a new layer, open an rgl windows
+  if (isFALSE(add)) {
     rgl::open3d()
     rgl::rgl.bg(color = bg)
+    rgl::rgl.material(specular = "black")
   }
 
-  do.call(rgl::points3d, with)
+  # Two modes, point-cloud rendering or voxel rendering
+  if (isFALSE(use_voxels))
+  {
+    do.call(rgl::points3d, with)
+  }
+  else
+  {
+    res <- as.numeric(use_voxels)
+    res <- res / 2
+    n <- npoints(las)
+    u <- vector("list", n)
+    for(i in 1:n)
+    {
+      voxel <- rgl::cube3d(col = col[i])
+      voxel <- rgl::scale3d(voxel, res, res, res)
+      voxel <- rgl::translate3d(voxel , with$x[i], with$y[i], with$z[i])
+      u[[i]] <- voxel
+    }
+
+    rgl::shapelist3d(u)
+  }
 
   if (axis)
   {
@@ -352,7 +415,7 @@ plot.LAS = function(x, y, color = "Z", colorPalette = "auto", bg = "black", trim
 
   if (legend)
   {
-    # nocov because this fails on some flavor on CRAN
+    # nocov because this fails on some flavors on CRAN
     f <- .plot_scale_gradient(mincol, maxcol, fg, pal, bg) # nocov
     rgl::bg3d(texture = f, col = "white") # nocov
   }
@@ -366,9 +429,10 @@ plot.LAS = function(x, y, color = "Z", colorPalette = "auto", bg = "black", trim
 }
 
 # nocov start
-.plot_with_pcv = function(las, bg, col, pal, trim, clear_artifacts, axis, legend, args, value_index, add)
+.plot_with_pcv = function(las, bg, col, pal, trim, clear_artifacts, axis, legend, args, value_is_index, add, use_voxel)
 {
-  if (!isFALSE(add)) stop("Argument 'add = TRUE' is not supported with lidRviewer")
+  if (!isFALSE(add)) stop("Argument 'add' is not supported with lidRviewer")
+  if (!isFALSE(use_voxel)) stop("Argument 'use_voxel' is not supported with lidRviewer")
 
   if (is.character(col))
   {
@@ -379,7 +443,7 @@ plot.LAS = function(x, y, color = "Z", colorPalette = "auto", bg = "black", trim
   }
   else
   {
-    if (value_index)
+    if (value_is_index)
       id <- col + 1L
     else
     {

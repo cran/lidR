@@ -53,13 +53,14 @@
 #' \itemize{
 #'  \item \href{https://en.wikipedia.org/wiki/Well-known_text}{WKT string}: describing a POINT, a POLYGON or
 #'  a MULTIPOLYGON. If points, a parameter 'radius' must be passed in \code{...}
-#'  \item \link[sp:Polygon-class]{Polygon} or \link[sp:Polygons-class]{Polygons}
-#'  \item \link[sp:SpatialPolygons-class]{SpatialPolygons} or \link[sp:SpatialPolygonsDataFrame-class]{SpatialPolygonsDataFrame}
-#'  \item \link[sp:SpatialPoints-class]{SpatialPoints} or \link[sp:SpatialPointsDataFrame-class]{SpatialPointsDataFrame}
+#'  \item \link[sp:Polygon-class]{Polygon}, \link[sp:SpatialPolygons-class]{SpatialPolygons},
+#'  \link[sp:SpatialPolygonsDataFrame-class]{SpatialPolygonsDataFrame},  \link[sp:SpatialPoints-class]{SpatialPoints}
+#'  or \link[sp:SpatialPointsDataFrame-class]{SpatialPointsDataFrame}
 #'  in that case a parameter 'radius' must be passed in \code{...}
-#'  \item \link[sf:sf]{SimpleFeature} that consistently contains \code{POINT} or \code{POLYGON/MULTIPOLYGON}.
+#'  \item \link[sf:sf]{SimpleFeature} from sf that consistently contains \code{POINT} or \code{POLYGON/MULTIPOLYGON}.
 #'  In case of \code{POINT} a parameter 'radius' must be passed in \code{...}
-#'  \item \link[raster:Extent-class]{Extent}
+#'  \item \link[raster:Extent-class]{Extent} from package \code{raster}
+#'  \item \link[sf:st_bbox]{bbox} from package \code{sf}
 #'  \item \link[base:matrix]{matrix} 2 x 2 describing a bounding box following this order:
 #'  \preformatted{
 #'   min     max
@@ -133,13 +134,10 @@
 clip_roi = function(las, geometry, ...)
 {
   if (is.character(geometry))
-    geometry <- rgeos::readWKT(geometry, p4s = las@proj4string)
+    geometry <- sf::st_as_sfc(geometry, crs = sf::st_crs(las))
 
   if (is(geometry, "Polygon"))
-    geometry <- sp::Polygons(list(geometry), ID = 1)
-
-  if (is(geometry, "Polygons"))
-    geometry <- sp::SpatialPolygons(list(geometry), proj4string = las@proj4string)
+    geometry <- sf::st_geometry(sf::st_polygon(list(geometry@coords)))
 
   if (is(geometry, "SpatialPolygons") | is(geometry, "SpatialPolygonsDataFrame"))
     geometry <- sf::st_as_sf(geometry)
@@ -147,7 +145,10 @@ clip_roi = function(las, geometry, ...)
   if (is(geometry, "SpatialPoints") | is(geometry, "SpatialPointsDataFrame"))
     geometry <- sf::st_as_sf(geometry)
 
-  if (is(geometry, "sf"))
+  if (is(geometry, "sfg"))
+    geometry <- sf::st_geometry(geometry)
+
+  if (is(geometry, "sf") | is(geometry, "sfc"))
   {
     if (all(sf::st_is(geometry, "POLYGON") | sf::st_is(geometry, "MULTIPOLYGON")))
     {
@@ -170,10 +171,10 @@ clip_roi = function(las, geometry, ...)
   }
   else if (is(geometry, "Extent"))
   {
-    xmin = geometry@xmin
-    xmax = geometry@xmax
-    ymin = geometry@ymin
-    ymax = geometry@ymax
+    xmin <- geometry@xmin
+    xmax <- geometry@xmax
+    ymin <- geometry@ymin
+    ymax <- geometry@ymax
     return(clip_rectangle(las, xmin, ymin, xmax, ymax))
   }
   else if (is.matrix(geometry))
@@ -181,21 +182,20 @@ clip_roi = function(las, geometry, ...)
     if (!all(dim(geometry) == 2))
       stop("Matrix must have a size 2 x 2")
 
-    xmin = geometry[1]
-    xmax = geometry[3]
-    ymin = geometry[2]
-    ymax = geometry[4]
+    xmin <- geometry[1]
+    xmax <- geometry[3]
+    ymin <- geometry[2]
+    ymax <- geometry[4]
     return(clip_rectangle(las, xmin, ymin, xmax, ymax))
   }
-  #else if (tryCatch(is(raster::extent(geometry), "Extent"), error = function(e) return(FALSE)))
-  #{
-    #geometry = raster::extent(geometry)
-    #xmin = geometry@xmin
-    #xmax = geometry@xmax
-    #ymin = geometry@ymin
-    #ymax = geometry@ymax
-    #return(clip_rectangle(las, xmin, ymin, xmax, ymax))
-  #}
+  else if (is(geometry, "bbox"))
+  {
+    xmin <- geometry$xmin
+    xmax <- geometry$xmax
+    ymin <- geometry$ymin
+    ymax <- geometry$ymax
+    return(clip_rectangle(las, xmin, ymin, xmax, ymax))
+  }
   else
   {
     stop(paste0("Geometry type ", paste0(class(geometry), collapse = " "), " not supported"))
@@ -370,9 +370,10 @@ clip_transect = function(las, p1, p2, width, xz = FALSE, ...)
   a  <- atan(dy/dx)
   rot <- matrix(c(cos(a), sin(a), -sin(a), cos(a)), ncol = 2)
   coords <- rbind(p1, p2)
-  line <- sp::SpatialLines(list(sp::Lines(sp::Line(coords), ID = "1")))
-  raster::crs(line) <- crs(las)
-  poly <- rgeos::gBuffer(line, width = width/2, capStyle = "FLAT")
+  line <- sf::st_linestring(coords)
+  line <- sf::st_sfc(line)
+  sf::st_crs(line) <- sf::st_crs(las)
+  poly <- sf::st_buffer(line, dist = width/2, endCapStyle = "FLAT")
   las <- clip_roi(las, poly)
 
   if (!xz) { return(las) }
@@ -427,11 +428,9 @@ clip_sf.LAScatalog = function(las, sf)
 {
   wkt  <- sf::st_as_text(sf::st_geometry(sf), digits = 10)
 
-  bboxes <- lapply(wkt, function(string)
-  {
-    spgeom <- rgeos::readWKT(string)
-    return(raster::extent(spgeom))
-  })
+  # We need the bounding box of each geometry to be able to leverage automatically spatial
+  # indexing of LAS files with LAX files
+  bboxes <- lapply(sf::st_geometry(sf), function(x) { raster::extent(sf::st_bbox(x)) })
 
   output = catalog_extract(las, bboxes, LIDRRECTANGLE, sf = sf)
 

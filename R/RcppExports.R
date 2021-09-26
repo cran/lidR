@@ -89,8 +89,8 @@ C_lasrange <- function(las, flightlines) {
     .Call(`_lidR_C_lasrange`, las, flightlines)
 }
 
-C_local_maximum <- function(las, ws, ncpu) {
-    .Call(`_lidR_C_local_maximum`, las, ws, ncpu)
+C_local_maximum <- function(las, ws, filter, ncpu) {
+    .Call(`_lidR_C_local_maximum`, las, ws, filter, ncpu)
 }
 
 C_isolated_voxel <- function(las, res, isolated) {
@@ -99,6 +99,10 @@ C_isolated_voxel <- function(las, res, isolated) {
 
 C_check_gpstime <- function(t, rn) {
     .Call(`_lidR_C_check_gpstime`, t, rn)
+}
+
+C_eigen_metrics <- function(las, k, r, filter, ncpu) {
+    .Call(`_lidR_C_eigen_metrics`, las, k, r, filter, ncpu)
 }
 
 fast_table <- function(x, size = 5L) {
@@ -129,6 +133,10 @@ roundc <- function(x, digit = 0L) {
     .Call(`_lidR_roundc`, x, digit)
 }
 
+bitmerge <- function(u, v) {
+    .Call(`_lidR_bitmerge`, u, v)
+}
+
 fast_eigen_values <- function(A) {
     .Call(`_lidR_fast_eigen_values`, A)
 }
@@ -151,6 +159,10 @@ C_knn2d_lookup <- function(las, x, y, k) {
 
 C_knn3d_lookup <- function(las, x, y, z, k) {
     .Call(`_lidR_C_knn3d_lookup`, las, x, y, z, k)
+}
+
+cpp_concaveman <- function(x, y, concavity, lengthThreshold, chull) {
+    .Call(`_lidR_cpp_concaveman`, x, y, concavity, lengthThreshold, chull)
 }
 
 R_omp_get_max_threads <- function() {

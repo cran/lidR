@@ -34,11 +34,13 @@
 #' @param \dots Supplementary parameters for \link[lidR:plot]{plot}. The function internally uses the
 #' same plot function than LAS objects.
 #' @examples
+#' \dontrun{
 #' LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
 #' lidar = readLAS(LASfile)
 #'
 #' voxels = voxel_metrics(lidar, list(Imean = mean(Intensity)), res = 5)
 #' plot(voxels, color = "Imean", colorPalette = heat.colors(50), trim=60)
+#' }
 #' @export
 #' @method plot lasmetrics3d
 plot.lasmetrics3d = function(x, y, ...)
@@ -47,6 +49,7 @@ plot.lasmetrics3d = function(x, y, ...)
   on.exit(data.table::setattr(x, "class", cl))
   header = rlas::header_create(x)
   las = LAS(x, header, check = FALSE)
+  attr(las, "res") <- attr(x, "res")
   plot(las, ...)
 }
 
@@ -76,6 +79,7 @@ plot.lasmetrics3d = function(x, y, ...)
 #'
 #' @name plot_3d
 #' @examples
+#' \dontrun{
 #' LASfile <- system.file("extdata", "Topography.laz", package="lidR")
 #' las = readLAS(LASfile, filter = "-keep_xy 273450 273600 5274450 5274600")
 #'
@@ -88,7 +92,6 @@ plot.lasmetrics3d = function(x, y, ...)
 #' add_dtm3d(x, dtm)
 #' add_treetops3d(x, ttops)
 #'
-#' \dontrun{
 #' library(magrittr)
 #' plot(las) %>% add_dtm3d(dtm) %>% add_treetops3d(ttops)
 #' }

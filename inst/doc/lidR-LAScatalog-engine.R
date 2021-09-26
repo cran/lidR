@@ -208,6 +208,19 @@ opt_chunk_size(ctg) <- 0
 opt_output_files(ctg) <- ""
 opt_wall_to_wall(ctg) <- FALSE
 opt_progress(ctg) <- TRUE
+opt_restart(ctg) <- 9
+cl <- lidR:::catalog_makecluster(ctg)
+for (i in 1:4){
+  bbox <- cl[[i]]@bbox
+  graphics::rect(bbox[1], bbox[2], bbox[3], bbox[4], border = "black", col = "green3")
+}
+
+## ---- echo=FALSE--------------------------------------------------------------
+opt_chunk_size(ctg) <- 0
+opt_output_files(ctg) <- ""
+opt_wall_to_wall(ctg) <- FALSE
+opt_progress(ctg) <- TRUE
+opt_restart(ctg) <- 1
 cl <- lidR:::catalog_makecluster(ctg)
 for (i in 1:length(cl)){
   bbox <- cl[[i]]@bbox

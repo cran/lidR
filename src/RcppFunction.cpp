@@ -151,9 +151,10 @@ NumericVector C_lasrange(S4 las, DataFrame flightlines)
 }
 
 //[[Rcpp::export(rng = false)]]
-LogicalVector C_local_maximum(S4 las, NumericVector ws, int ncpu)
+LogicalVector C_local_maximum(S4 las, NumericVector ws, LogicalVector filter, int ncpu)
 {
   LAS pt(las, ncpu);
+  pt.new_filter(filter);
   pt.filter_local_maxima(ws);
   return Rcpp::wrap(pt.filter);
 }
@@ -210,6 +211,15 @@ int C_check_gpstime(NumericVector t, IntegerVector rn)
   return sum;
 }
 
+//[[Rcpp::export(rng = false)]]
+DataFrame C_eigen_metrics(S4 las, int k, double r, LogicalVector filter, int ncpu)
+{
+  LAS pt(las, ncpu);
+  pt.new_filter(filter);
+  return pt.eigen_decomposition(k, r);
+}
+
+
 /*
  * ======= FAST BASE FUNCTIONS =========
  */
@@ -249,10 +259,13 @@ void fast_quantization(NumericVector x, double scale, double offset)
 
   for (NumericVector::iterator it = x.begin(), end = x.end() ; it != end ; ++it)
   {
-    u = (*it - offset)/scale;
-    if (u > um || u < -um) Rcpp::stop("Non quantizable value outside the range of representable values of type 'int'");
-    X = std::round((*it - offset)/scale);
-    *it = X * scale + offset;
+    if (!Rcpp::traits::is_nan<REALSXP>(*it) && !Rcpp::traits::is_na<REALSXP>(*it))
+    {
+      u = (*it - offset)/scale;
+      if (u > um || u < -um) Rcpp::stop("Non quantizable value outside the range of representable values of type 'int'");
+      X = std::round((*it - offset)/scale);
+      *it = X * scale + offset;
+    }
   }
 
   return;
@@ -326,6 +339,31 @@ NumericVector roundc(NumericVector x, int digit = 0)
   }
 
   return y;
+}
+
+// [[Rcpp::export(rng=false)]]
+NumericVector bitmerge(IntegerVector u, IntegerVector v)
+{
+  if (u.size() != v.size())
+    Rcpp::stop("Internal error in bitmerge: u and v have different sizes");
+
+  int32_t x;
+  int32_t y;
+  int64_t z;
+  double  t;
+  int n = u.size();
+  NumericVector o(n);
+
+  for (int i = 0 ; i < n ; ++i)
+  {
+    x = u[i];
+    y = v[i];
+    z = (int64_t)x << 32 | y;
+    memcpy(&t, &z, sizeof(int64_t));
+    o[i] = t;
+  }
+
+  return o;
 }
 
 /*

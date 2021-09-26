@@ -17,6 +17,7 @@ class LAS
     unsigned int ncpu;
     unsigned int npoints;
     std::vector<bool> filter;
+    std::vector<bool> skip;
 
   public:
     LAS(S4 las, int npcu = 1);
@@ -47,6 +48,7 @@ class LAS
     List point_metrics(unsigned int k, double r, DataFrame data, int nalloc, SEXP call, SEXP env);
     NumericVector fast_knn_metrics(unsigned int k, IntegerVector metrics);
     NumericVector interpolate_knnidw(NumericVector x, NumericVector y, int k, double p, double rmax);
+    DataFrame eigen_decomposition(int k, double r);
 
   private:
     static bool coplanar (arma::vec& latent, arma::mat& coeff, NumericVector& th) { return latent[1] > th[0]*latent[2] && th[1]*latent[1] > latent[0]; }

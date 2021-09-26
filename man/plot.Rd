@@ -22,6 +22,7 @@ plot(x, y, ...)
   axis = FALSE,
   legend = FALSE,
   add = FALSE,
+  voxel = FALSE,
   ...
 )
 
@@ -61,16 +62,22 @@ This is because \code{rgl} computes with single precision \code{float}. To fix t
 cloud is shifted to (0,0) to reduce the number of digits needed to represent its coordinates.
 The drawback is that the point cloud is not plotted at its actual coordinates.}
 
-\item{nbits}{integer. If \code{color = RGB} it assumes that RGB colors are coded on 16 bits as described
+\item{nbits}{integer. If \code{color = RGB} it assumes that RGB colours are coded on 16 bits as described
 in the LAS format specification. However, this is not always respected. If the colors are stored
-on 8 bits set this parameter to 8.}
+on 8 bits, set this parameter to 8.}
 
 \item{axis}{logical. Display axis on XYZ coordinates.}
 
-\item{legend}{logical. Display a gradient color legend.}
+\item{legend}{logical. Display a gradient colour legend.}
 
 \item{add}{If \code{FALSE} normal behaviour otherwise must be the output of a prior plot function
 to enable the alignment of a second point cloud.}
+
+\item{voxel}{boolean or numeric. Displays voxels instead of points. Useful to render the output
+of \link{voxelize_points}, for example. However it is computationally demanding to render and can
+easily take 15 seconds for 10000 voxels. It should be reserved for small scenes. If boolean the voxel
+resolution is guessed automatically. Otherwise users can provide the size of the voxels. To reduce the rendering time, 
+an internal optimization removes voxels that are not visible when surrounded by other voxels.}
 
 \item{mapview}{logical. If \code{FALSE} the catalog is displayed in a regular plot from R base.}
 
@@ -88,13 +95,13 @@ Plot displays a \link[=LASheader-class]{LASheader} object exactly like it displa
 object.
 }
 \examples{
+\dontrun{
 LASfile <- system.file("extdata", "MixedConifer.laz", package="lidR")
 las <- readLAS(LASfile)
 
 plot(las)
 plot(las, color = "Intensity")
 
-\dontrun{
 # If outliers break the color range, use the trim parameter
 plot(las, color = "Intensity", trim = 150)
 
@@ -102,10 +109,11 @@ plot(las, color = "Classification")
 
 # This dataset is already tree segmented
 plot(las, color = "treeID")
-}
 
 # single file LAScatalog using data provided in lidR
 ctg = readLAScatalog(LASfile)
 plot(ctg)
+plot(ctg, map = T, map.types = "Esri.WorldImagery")
+}
 
 }

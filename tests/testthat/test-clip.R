@@ -62,15 +62,12 @@ test_that("clip_roi clips polygon works from WTK both on a LAS and LAScatalog", 
 
 test_that("clip_roi clips polygon works from sp polygons both on a LAS and LAScatalog", {
 
-  wkt1 <- "MULTIPOLYGON (((339010.5 5248000, 339012 5248000, 339010.5 5248002, 339010.5 5248000)),
-  ((339008 5248000, 339010 5248000, 339010 5248002, 339008 5248000),
-  (339008.5 5248000.2, 339009.5 5248000.2, 339009.5 5248001, 339008.5 5248000.2)))"
-
+  wkt1 <- "MULTIPOLYGON (((339010.5 5248000, 339012 5248000, 339010.5 5248002, 339010.5 5248000)), ((339008 5248000, 339010 5248000, 339010 5248002, 339008 5248000), (339008.5 5248000.2, 339009.5 5248000.2, 339009.5 5248001, 339008.5 5248000.2)))"
   wkt2 <- "POLYGON ((339008 5248000, 339010 5248000, 339010 5248002, 339008 5248000))"
 
-  # Polygon
-  spatialpolygons1 <- rgeos::readWKT(wkt1)
-  spatialpolygons2 <- rgeos::readWKT(wkt2)
+  # SpatialPolygons
+  spatialpolygons1 <- sf::as_Spatial(sf::st_as_sfc(wkt1))
+  spatialpolygons2 <- sf::as_Spatial(sf::st_as_sfc(wkt2))
 
   polygon1 <- spatialpolygons1@polygons[[1]]@Polygons[[1]]
   poly1    <- clip_roi(las, polygon1)
@@ -78,17 +75,6 @@ test_that("clip_roi clips polygon works from sp polygons both on a LAS and LASca
 
   expect_is(poly1, "LAS")
   expect_equal(npoints(poly1), 2L)
-  expect_equal(poly1@proj4string, las@proj4string)
-  expect_equal(poly2@proj4string, ctg@proj4string)
-  expect_equal(poly1, poly2)
-
-  # Polygons
-  polygons1 <- spatialpolygons1@polygons[[1]]
-  poly1     <- clip_roi(las, polygons1)
-  poly2     <- clip_roi(ctg, polygons1)
-
-  expect_is(poly1, "LAS")
-  expect_equal(npoints(poly1), 11L)
   expect_equal(poly1@proj4string, las@proj4string)
   expect_equal(poly2@proj4string, ctg@proj4string)
   expect_equal(poly1, poly2)
@@ -277,8 +263,8 @@ test_that("clip_roi throws errors with invalid queries", {
   # Invalid WKT
   wkt <- "POLGON ((684975.7 5«017899, 685007.3 5017873, 684994.3 5017816, 684936.1 5017812, 684918.8 5017845, 684975.7 5017899))"
 
-  expect_error(clip_roi(las, wkt), "Unable to parse")
-  expect_error(clip_roi(ctg, wkt), "Unable to parse")
+  expect_error(clip_roi(las, wkt), "OGR error")
+  expect_error(clip_roi(ctg, wkt), "OGR error")
 
   # Different number of coordinates
   xc <- c(684800)

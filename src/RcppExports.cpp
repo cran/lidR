@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // filterTimeBlockPulses
 IntegerVector filterTimeBlockPulses(DataFrame pulsedt);
 RcppExport SEXP _lidR_filterTimeBlockPulses(SEXP pulsedtSEXP) {
@@ -305,14 +310,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // C_local_maximum
-LogicalVector C_local_maximum(S4 las, NumericVector ws, int ncpu);
-RcppExport SEXP _lidR_C_local_maximum(SEXP lasSEXP, SEXP wsSEXP, SEXP ncpuSEXP) {
+LogicalVector C_local_maximum(S4 las, NumericVector ws, LogicalVector filter, int ncpu);
+RcppExport SEXP _lidR_C_local_maximum(SEXP lasSEXP, SEXP wsSEXP, SEXP filterSEXP, SEXP ncpuSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< S4 >::type las(lasSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type ws(wsSEXP);
+    Rcpp::traits::input_parameter< LogicalVector >::type filter(filterSEXP);
     Rcpp::traits::input_parameter< int >::type ncpu(ncpuSEXP);
-    rcpp_result_gen = Rcpp::wrap(C_local_maximum(las, ws, ncpu));
+    rcpp_result_gen = Rcpp::wrap(C_local_maximum(las, ws, filter, ncpu));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -336,6 +342,20 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type t(tSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type rn(rnSEXP);
     rcpp_result_gen = Rcpp::wrap(C_check_gpstime(t, rn));
+    return rcpp_result_gen;
+END_RCPP
+}
+// C_eigen_metrics
+DataFrame C_eigen_metrics(S4 las, int k, double r, LogicalVector filter, int ncpu);
+RcppExport SEXP _lidR_C_eigen_metrics(SEXP lasSEXP, SEXP kSEXP, SEXP rSEXP, SEXP filterSEXP, SEXP ncpuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< S4 >::type las(lasSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< double >::type r(rSEXP);
+    Rcpp::traits::input_parameter< LogicalVector >::type filter(filterSEXP);
+    Rcpp::traits::input_parameter< int >::type ncpu(ncpuSEXP);
+    rcpp_result_gen = Rcpp::wrap(C_eigen_metrics(las, k, r, filter, ncpu));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -414,6 +434,17 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
     Rcpp::traits::input_parameter< int >::type digit(digitSEXP);
     rcpp_result_gen = Rcpp::wrap(roundc(x, digit));
+    return rcpp_result_gen;
+END_RCPP
+}
+// bitmerge
+NumericVector bitmerge(IntegerVector u, IntegerVector v);
+RcppExport SEXP _lidR_bitmerge(SEXP uSEXP, SEXP vSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type u(uSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type v(vSEXP);
+    rcpp_result_gen = Rcpp::wrap(bitmerge(u, v));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -497,6 +528,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cpp_concaveman
+DataFrame cpp_concaveman(NumericVector x, NumericVector y, double concavity, double lengthThreshold, IntegerVector chull);
+RcppExport SEXP _lidR_cpp_concaveman(SEXP xSEXP, SEXP ySEXP, SEXP concavitySEXP, SEXP lengthThresholdSEXP, SEXP chullSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< double >::type concavity(concavitySEXP);
+    Rcpp::traits::input_parameter< double >::type lengthThreshold(lengthThresholdSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type chull(chullSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_concaveman(x, y, concavity, lengthThreshold, chull));
+    return rcpp_result_gen;
+END_RCPP
+}
 // R_omp_get_max_threads
 int R_omp_get_max_threads();
 RcppExport SEXP _lidR_R_omp_get_max_threads() {
@@ -530,9 +576,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lidR_C_fast_knn_metrics", (DL_FUNC) &_lidR_C_fast_knn_metrics, 4},
     {"_lidR_C_lasrangecorrection", (DL_FUNC) &_lidR_C_lasrangecorrection, 4},
     {"_lidR_C_lasrange", (DL_FUNC) &_lidR_C_lasrange, 2},
-    {"_lidR_C_local_maximum", (DL_FUNC) &_lidR_C_local_maximum, 3},
+    {"_lidR_C_local_maximum", (DL_FUNC) &_lidR_C_local_maximum, 4},
     {"_lidR_C_isolated_voxel", (DL_FUNC) &_lidR_C_isolated_voxel, 3},
     {"_lidR_C_check_gpstime", (DL_FUNC) &_lidR_C_check_gpstime, 2},
+    {"_lidR_C_eigen_metrics", (DL_FUNC) &_lidR_C_eigen_metrics, 5},
     {"_lidR_fast_table", (DL_FUNC) &_lidR_fast_table, 2},
     {"_lidR_fast_countequal", (DL_FUNC) &_lidR_fast_countequal, 2},
     {"_lidR_fast_countbelow", (DL_FUNC) &_lidR_fast_countbelow, 2},
@@ -540,12 +587,14 @@ static const R_CallMethodDef CallEntries[] = {
     {"_lidR_fast_countunquantized", (DL_FUNC) &_lidR_fast_countunquantized, 3},
     {"_lidR_fast_countover", (DL_FUNC) &_lidR_fast_countover, 2},
     {"_lidR_roundc", (DL_FUNC) &_lidR_roundc, 2},
+    {"_lidR_bitmerge", (DL_FUNC) &_lidR_bitmerge, 2},
     {"_lidR_fast_eigen_values", (DL_FUNC) &_lidR_fast_eigen_values, 1},
     {"_lidR_C_knn", (DL_FUNC) &_lidR_C_knn, 6},
     {"_lidR_C_circle_lookup", (DL_FUNC) &_lidR_C_circle_lookup, 4},
     {"_lidR_C_orectangle_lookup", (DL_FUNC) &_lidR_C_orectangle_lookup, 6},
     {"_lidR_C_knn2d_lookup", (DL_FUNC) &_lidR_C_knn2d_lookup, 4},
     {"_lidR_C_knn3d_lookup", (DL_FUNC) &_lidR_C_knn3d_lookup, 5},
+    {"_lidR_cpp_concaveman", (DL_FUNC) &_lidR_cpp_concaveman, 5},
     {"_lidR_R_omp_get_max_threads", (DL_FUNC) &_lidR_R_omp_get_max_threads, 0},
     {NULL, NULL, 0}
 };

@@ -94,7 +94,7 @@ random = function(density, use_pulse = FALSE)
 #' the coverage area. For each cell, the proportion of points or pulses that will be retained is computed
 #' using the actual local density and the desired density. If the desired density is greater than the actual
 #' density it returns an unchanged set of points (it cannot increase the density). The cell size must be
-#' large enough to compute a coherent local density. For example in a 2 points/m^2 point cloud, 25 square
+#' large enough to compute a coherent local density. For example, in a 2 points/m^2 point cloud, 25 square
 #' meters would be feasible; however 1 square meter cells would not be feasible because density does
 #' not have meaning at this scale.
 #'
@@ -114,7 +114,7 @@ random = function(density, use_pulse = FALSE)
 #' las = readLAS(LASfile, select = "xyz")
 #'
 #' # Select points randomly to reach an homogeneous density of 1
-#' thinned = decimate_points(las, homogenize(1,5))
+#' thinned <- decimate_points(las, homogenize(1,5))
 #' plot(grid_density(thinned, 10))
 homogenize = function(density, res = 5, use_pulse = FALSE)
 {
@@ -156,7 +156,7 @@ homogenize = function(density, res = 5, use_pulse = FALSE)
 
 #' Point Cloud Decimation Algorithm
 #'
-#' These functions are made to be used in \link{decimate_points}. They implements algorithms that
+#' These functions are made to be used in \link{decimate_points}. They implement algorithms that
 #' creates a grid with a given resolution and filters the point cloud by selecting the highest/lowest
 #' point within each cell.
 #'
@@ -212,6 +212,42 @@ lowest = function(res = 1)
     assert_is_valid_context(LIDRCONTEXTDEC, "lowest")
     layout  <- rOverlay(las, res)
     return(C_lowest(las, layout))
+  }
+
+  class(f) <- LIDRALGORITHMDEC
+  return(f)
+}
+
+#' Point Cloud Decimation Algorithm
+#'
+#' This functions is made to be used in \link{decimate_points}. It implements an algorithm that
+#' creates a 3D grid with a given resolution and filters the point cloud by randomly selecting
+#' n points within each voxel
+#'
+#' @param res numeric. The resolution of the voxel grid used to filter the point cloud
+#' @param n integer. The number of points to select
+#'
+#' @examples
+#' LASfile <- system.file("extdata", "Megaplot.laz", package="lidR")
+#' las <- readLAS(LASfile, select = "xyz")
+#' thinned <- decimate_points(las, random_per_voxel(8, 1))
+#' #plot(thinned)
+#' @family point cloud decimation algorithms
+#' @export
+random_per_voxel = function(res = 1, n = 1)
+{
+  assert_all_are_positive(n)
+  assert_all_are_positive(res)
+  n <- as.integer(n)
+  if (length(res) == 1) res <- c(res, res)
+
+  n <- lazyeval::uq(n)
+  res <- lazyeval::uq(res)
+
+  f = function(las)
+  {
+    by <- group_grid_3d(las$X, las$Y, las$Z, res)
+    return(las@data[, .selected_pulses(1:.N, n), by = by]$V1)
   }
 
   class(f) <- LIDRALGORITHMDEC

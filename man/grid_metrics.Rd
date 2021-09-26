@@ -4,7 +4,14 @@
 \alias{grid_metrics}
 \title{Area-Based Approach}
 \usage{
-grid_metrics(las, func, res = 20, start = c(0, 0), filter = NULL)
+grid_metrics(
+  las,
+  func,
+  res = 20,
+  start = c(0, 0),
+  filter = NULL,
+  by_echo = "all"
+)
 }
 \arguments{
 \item{las}{An object of class \link[lidR:LAS-class]{LAS} or \link[lidR:LAScatalog-class]{LAScatalog}.}
@@ -19,6 +26,10 @@ grid aligns on (0,0).}
 
 \item{filter}{formula of logical predicates. Enables the function to run only on points of interest
 in an optimized way. See examples.}
+
+\item{by_echo}{characters. The metrics are computed multiples times for different echo types. Can
+be one or more of "all", "first", "intermediate", "lastofmany", "single", "multiple". See examples. Default
+is "all" meaning that it computes metrics with all points provided.}
 }
 \value{
 A \code{RasterLayer} or a \code{RasterBrick} containing a numeric value in each cell. If the
@@ -138,11 +149,17 @@ metrics = grid_metrics(las, ~mean(Z), 20, filter = ~ReturnNumber == 1)
 # ~50\% faster and uses ~10x less memory
 las = readLAS(LASfile, filter = "-keep_first")
 metrics = grid_metrics(las, ~mean(Z), 20)
+
+# === Split by echo type ===
+func = ~list(avgI = mean(Intensity))
+echo = c("all", "first","multiple")
+metrics <- grid_metrics(las, func , 20, by_echo = echo)
+plot(metrics, col = heat.colors(25))
 }
 \seealso{
 Other metrics: 
 \code{\link{cloud_metrics}()},
-\code{\link{hexbin_metrics}()},
+\code{\link{plot_metrics}()},
 \code{\link{point_metrics}()},
 \code{\link{tree_metrics}()},
 \code{\link{voxel_metrics}()}
