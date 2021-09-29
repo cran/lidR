@@ -1,7 +1,7 @@
 8f0e2cd40e05189ec81232da84bd6e1a *COPYING
-b52a33b4fc8c15a9c197a88de5821769 *DESCRIPTION
+dc3e88c0342d02e74703ff43cb9969da *DESCRIPTION
 e9cf8e3af5799bcc9bd407ddb2e65c77 *NAMESPACE
-6e81d22d7f1684378687681807b087d5 *NEWS.md
+63e9ad5a85711cfebfd77fdaeeef7d82 *NEWS.md
 b09088e83fad31b3070857ca76781ad7 *R/Class-LAS.R
 49cb1cabd15c4058d82b1e4b8e014697 *R/Class-LAScatalog.R
 09c2f332308462d8a2a8d969a730ee6d *R/Class-LAScluster.R
@@ -25,7 +25,7 @@ b0c93a8e6017fcc8dabd36a63abf318a *R/catalog_fakerun.R
 1c5d01acbbfc689a1a12951b4fbaa7bd *R/catalog_index.R
 67ebad3bdbc7dfbab3e597170acc24ad *R/catalog_intersect.R
 6d0198dfdac3d2028c2444d8a0c499e9 *R/catalog_laxindex.R
-71394918f9f783b19219e1c91bb2dffd *R/catalog_makecluster.R
+555670fb31c5b621cd0c92d80c217e36 *R/catalog_makecluster.R
 12dfcf48f8bed5e5e9aab0afd635b9bb *R/catalog_merge_results.R
 56f8ccb2075f6c7d691e4604291d1fbc *R/catalog_overlaps.R
 3f7443f9a2ed866fdd41dd9d065add93 *R/catalog_retile.R
@@ -68,14 +68,14 @@ a29981f16cb18a0cff6da051674d5b39 *R/las_check.R
 f6ab01c431593d3d28b01b0d77918d3a *R/methods-LAScatalog.R
 eaf155b9b557822b37043699d8f698c7 *R/methods-LAScluster.R
 2db695703faf777bafecfb9594020e25 *R/methods-LASheader.R
-f60a0718e870bbb872e789641c621e04 *R/normalize_height.R
+57860f4c79a9fbc9c8a2b8b4b321e2e1 *R/normalize_height.R
 57892108382eeb772ffaa7196726d3f4 *R/normalize_intensity.R
 1176da43c606046299196dba17edac1f *R/plot.R
 f55e2878ed8e5e40197125bfd562fdce *R/plot.s3.R
 16acf483c9d8aa575ae39971f7c4296e *R/plot_metrics.R
 df7b227f0bdfb09c6b760acb44b8cbad *R/point_metrics.R
 256a76b9e64e99a1a4845a08243e983e *R/print.R
-23eaf1bb6b48815b2794a3d40b893ab8 *R/projection.R
+c4cc28da304737459a5c0bde07466019 *R/projection.R
 88496b210e891a610e4ccc5cfffd4a5c *R/retrieve_info.R
 52f09a1b67c44a711710ff73c56b6de9 *R/segment_shapes.R
 a7da463d37dbb12de2d080a32369f501 *R/segment_snags.R
@@ -90,11 +90,11 @@ b3af0de54973f31ce06b242c5ec1b551 *R/utils_assertive.R
 36ca66a70de5b973533c3a61dae7e55e *R/utils_delaunay.R
 595ae4f8865262a5518a1de5482d2fd3 *R/utils_geometry.R
 7e6b57e194f5e30a5ad6b42680a358bc *R/utils_is.R
-51e1dae273f6d8821a34f5d365673c1b *R/utils_metrics.R
+bf851a9f561bbd497ab2af99b99f8ebe *R/utils_metrics.R
 758ec8b1171373299bb3caf7b2d08aa2 *R/utils_misc.R
 e7dcc260dd2ae472cd15b0f06ac86006 *R/utils_raster.R
 ce50f3c1fd447d01dfd3fa63759c0180 *R/utils_spatial_index.R
-96d5a2513032a497b5f3b23b18993f36 *R/utils_threads.R
+54f60f03954ddc45e43bd22e09e95f8d *R/utils_threads.R
 28909c42ac8ec8ae61c17f556d9b4e54 *R/utils_typecast.R
 39c8dd23198f61f3561bd60850872166 *R/voxel_metrics.R
 865b7a10daaa7928b8606ddb6e35f074 *R/voxelize_points.R
@@ -102,7 +102,7 @@ c7b92fe58aead9e6af228e5c08761840 *R/zzz.R
 40236ea2d712af777b0646d9b18c03fb *README.md
 0a478d0471e594f3266263a700b7f0c5 *build/vignette.rds
 b2a9a02dfac8c9f8ae5aa0170de34ea9 *inst/CITATION
-a85c034cc205c8bcd72d98023ff7c8bd *inst/WORDLIST
+e57b151916ab3d1e9f4f7c54d2b52a59 *inst/WORDLIST
 d66a8190018c9ebd94e035ecf15803ee *inst/doc/lidR-LAS-class.R
 5fecef5b5062439187803f72e06f27b6 *inst/doc/lidR-LAS-class.Rmd
 1da489ebdf70d48e29cd52514d8db717 *inst/doc/lidR-LAS-class.html
@@ -154,7 +154,7 @@ af3e6247887fc0f62ec35ff0fa6ac8ef *man/as.spatial.Rd
 1af53bba82ce2e6c51010b56c6716e9f *man/catalog_apply.Rd
 4f78507ce708c3d0c364718642f95f98 *man/catalog_boundaries.Rd
 3141e4d780e0231d86971c50f38d4aec *man/catalog_intersect.Rd
-c27249e47bb629217958e20302448bf6 *man/catalog_makechunks.Rd
+2ca1e8a15e4f816e2bae54904003ec70 *man/catalog_makechunks.Rd
 a415ed0b5c66dadae1baf22b2399e3f2 *man/catalog_options_tools.Rd
 3eccb4d7ecb3554a5110702f84617f10 *man/catalog_retile.Rd
 b8281c5309db4d8af54904c912c8e77b *man/catalog_select.Rd
@@ -202,7 +202,7 @@ ae05f126b8f9d6efea33f47b7e31d6b4 *man/lidR-package.Rd
 a2f05134106b690117869e89a63cfb21 *man/manual.Rd
 75bc9c735925c37bc2f5f98aac86128c *man/maxima.Rd
 90860b20e6c56f926058892a472ee502 *man/merge_spatial.Rd
-f661ddf55491069f712d0c3ec986b5a1 *man/normalize_height.Rd
+d347ddd529e577b86d8f2b96a62a4f76 *man/normalize_height.Rd
 326554c875931c8bc5f75cbaf2a5a897 *man/normalize_intensity.Rd
 883098c60213fc3bd36c539935a33b87 *man/p2r.Rd
 fb478da26cfb3e0ae19072f20b7a8e8c *man/pitfree.Rd
@@ -214,7 +214,7 @@ bd418c467643f837617be14bb6093d29 *man/plot.lasmetrics3d.Rd
 32b9b36dd7316ce5b8ffc3de9570e9be *man/point_eigenvalues.Rd
 6cd5c4c52c8a3a8ad67807497dfee25c *man/point_metrics.Rd
 0f5ee90bed8adef1b58c317f59b9d850 *man/print.Rd
-cdf3e89018fb3098707d2f0b0251619a *man/projection.Rd
+92acb959970744510d72ba97f309e783 *man/projection.Rd
 ad548b6d983d0a04f85fdb4f948c4219 *man/random.Rd
 c8e6b9e00abb216da19b6a261d1bea8c *man/random_per_voxel.Rd
 4dd5ffb2791e6ad52488f3a442eb19a4 *man/range_correction.Rd
@@ -227,12 +227,12 @@ f2d00f1583923f7c11f0fa6dc19b2b11 *man/readLASheader.Rd
 df214677f3e4f9d0e4dd9705d652a89b *man/segment_snags.Rd
 0b7f60ba7f14b85b2a882c38dd3b4f81 *man/segment_trees.Rd
 92b12e39fd704a74c28b5cadeb0f031b *man/set.colors.Rd
-b0267b080bb09bb2e1e21db019cf16e4 *man/set_lidr_threads.Rd
+f998549075ada1a7546d8a431e04b7fc *man/set_lidr_threads.Rd
 0dd51717ef8c2fee42eafb95e1182a70 *man/shape_detection.Rd
 c5786078f05e36adb27f79ac79607b77 *man/silva2016.Rd
 dfe98eb94bd707bd1f0057763ec0a94c *man/smooth_height.Rd
 769de5f35dfea4fa23de410973782e04 *man/sor.Rd
-52d23dc8ff53f725d5ad505c745c9e85 *man/stdmetrics.Rd
+12b14db4cda8c29da79999cc65c260af *man/stdmetrics.Rd
 16315e2669641fd16edbef42a0d82ab0 *man/tin.Rd
 8ac00961477b9f0ed65baf553f6e34b2 *man/track_sensor.Rd
 975c9b0169ae25e2d8f6559fd9423f70 *man/tree_metrics.Rd
@@ -263,7 +263,7 @@ f3dbea8c477f738bc594ba2eff25a91e *src/convaveman.cpp
 49940463bca67a58b6be54d6caba449a *src/myomp.h
 e5b7595922dbe2e0022d18123238767e *src/openmputils.cpp
 23dfdb8b83754c0b46818f547b8859af *tests/testthat.R
-9f4a620177c9cbfbaa8d23b7b9cbf170 *tests/testthat/Rplots.pdf
+d81487211f165b4bf20743d5a7bf0a56 *tests/testthat/Rplots.pdf
 76b2cfc0fa1c897754af8afebad0d24c *tests/testthat/setup-testthat.R
 760deb79fef2b1d37d3261f9c0be67c5 *tests/testthat/test-LAS.R
 436dd3664848f3d543f84f36d67ff762 *tests/testthat/test-LAScatalog.R
@@ -287,7 +287,7 @@ eecc62af8135c8b39a34146b56fa3236 *tests/testthat/test-classify_poi.R
 26453f5a6b85010b62b0c54209fc4723 *tests/testthat/test-clip.R
 effd165cd83b380c9cba8b1d8f22d538 *tests/testthat/test-cloud_metrics.R
 101290597061fa53dd6bc01e928a0576 *tests/testthat/test-cluster_apply.R
-347d45f7b6746883c94d6ceaf84d29d0 *tests/testthat/test-concaveman.R
+2e7ee3cfc511704cbdede90dc28b4de5 *tests/testthat/test-concaveman.R
 d72d340fbab3348e710fb7f77d8caf51 *tests/testthat/test-decimate_points.R
 52f6d757d758065093203d0ce4444251 *tests/testthat/test-delaunay.R
 d29a7a45f44ab6bea155175b9b38a96a *tests/testthat/test-delineate_crowns.R
@@ -317,7 +317,7 @@ a649101aa3cc308f02905a308364c1f9 *tests/testthat/test-print.R
 4afad646f4333e2f3b3079606aaed5d6 *tests/testthat/test-progress.R
 8de017fd59f44c1e094a7c99385550b6 *tests/testthat/test-projection.R
 9908d5e3d1e43efadcfcef07d67ccd5a *tests/testthat/test-quantization.R
-5432a8fbc7b8072dca9c18acd6115d7e *tests/testthat/test-readLAS.R
+d24cf523d5353bc23bc9226cafd76421 *tests/testthat/test-readLAS.R
 4bd5dcf91b2aabc608c08a5967b2dc9a *tests/testthat/test-retrieve.R
 4a3f870bef6183adbf4f312bbf06fc44 *tests/testthat/test-roughness.R
 f14ae72a6ef5a41a2739af707719f53d *tests/testthat/test-segment_shape.R

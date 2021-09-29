@@ -1,8 +1,12 @@
 If you are viewing this file on CRAN, please check [the latest news on GitHub](https://github.com/Jean-Romain/lidR/blob/master/NEWS.md) where the formatting is also better
 
-## lidR v3.2.0 (Release date: ...)
+## lidR v3.2.1(Release date: 2021-09-27)
 
-#### ANNOUCEMENT
+- Fix stuff on Solaris.
+
+## lidR v3.2.0 (Release date: 2021-09-26)
+
+#### ANNOUNCEMENT
 
 `rgdal` and `rgeos` will be retired on Jan 1st 2024. `raster` and `sp` are based on `rgdal`/`rgeos`. `lidR` is based on `raster` and `sp` because it was created before `sf`, `terra` and `stars`. This means that sooner or later `lidR` will run into trouble (actually it has already started to be the case). So, it is time to fully embrace `sf`, `terra`/`stars` and to leave `sp` and `raster`. This will require an in-depth rebase of `lidR`. We have started the work and we plan to release `lidR` 4.0.0 that will no longer have any internal code that uses `sp` and `raster`. This version already no longer uses `rgdal`. We hope make these changes with minimal breakage in backward compatibility by maintaining the conversion to `sp`/`raster` for functions from v < 4.0.0, but some backward incompatibilities will necessarily arise. In particular, `LAS` will no longer inherit the `sp::Spatial` class and will no longer contain a `sp::CRS` but a `sf::crs` and `LAScatalog` will no longer be `sp::SpatialPolygonDataFrame`. Our plan is (hopefully) to rebase `lidR` in such a way that nobody will notice the changes expect users who dig a little deeper into the objects.
 
@@ -238,7 +242,7 @@ grid_terrain(las, 1, tin(), keep_lowest = TRUE, full_raster = TRUE, use_class = 
 3. `normalize_intensity()` was previously not working with a `LAScatalog`. Now fixed. See [#388](https://github.com/Jean-Romain/lidR/issues/388)
 4. In `grid_*()` functions when a `RasterLayer` is given as layout, the computation was performed for all the cells no matter if the extent of the loaded point-cloud was much smaller than the raster. For large rasters this dramatically increased the workload with redundant computation and saturated the RAM to a point that the computation was no longer possible. 
 5. In `track_sensor()` pulse IDs could be wrongly attributed for multi-beam sensors if the number of points is very low. See [#392](https://github.com/Jean-Romain/lidR/issues/392)
-6. In `track_sensor()`, if `thin_pulses_with_time = 0` a single pulse was loaded with a `LAScatalog`. However it worked as expected with a `LAS` object. This behavior has been fixed.
+6. In `track_sensor()`, if `thin_pulses_with_time = 0` a single pulse was loaded with a `LAScatalog`. However it worked as expected with a `LAS` object. This behaviour has been fixed.
 7. Fixed some new warnings coming from `future` and related to RNG.
 8. `clip_*()` in a region with no points from a `LAScatalog` + an output file no longer fails. See [#400](https://github.com/Jean-Romain/lidR/issues/400).
 
@@ -263,7 +267,7 @@ grid_terrain(las, 1, tin(), keep_lowest = TRUE, full_raster = TRUE, use_class = 
 * Fix: `projection<-()` and `crs<-()` properly attributes `NA` CRS for LAS 1.4 objects
 * Change: in `print` the CRS of `LAS` and `LAScatalog` is no longer displayed as a proj4 string but uses the WTK string with `sf` style display. E.g. `NAD83 / UTM zone 17N` is displayed instead of `+proj=utm +zone=17 +datum=NAD83 +units=m +no_defs`. This is part of the migration toward WTK instead of proj4.
 * Change: `lidR` now explicitly depends on `rgdal >= 1.5.8`.
-* Change: `grid_canopy()` now rounds the values of the pixels for not outputing pixels that with an irrelevant number of decimal digits.
+* Change: `grid_canopy()` now rounds the values of the pixels for not outputting pixels that with an irrelevant number of decimal digits.
 * Enhance: `epsg()` now throws a warning if the LAS is in format 1.4 and CRS is stored as WKT.
 * New: `projection()<-` supports `crs` from `sf` and numeric values for espg code: `projection(las) <- 26918`.
 * New: in `spTransform()` it is now possible to use a parameter `scale` to change the scale factor after reprojection. This is useful for projecting from lon-lat data `las2 = spTransform(las, crs, scale = 0.01)`.
@@ -281,12 +285,12 @@ grid_terrain(las, 1, tin(), keep_lowest = TRUE, full_raster = TRUE, use_class = 
 
 ## lidR v3.0.2 (Release date: 2020-07-05)
 
-* Fix: in `grid_metrics()` and `grid_canopy()` when processing a `LAScatalog` the option to process by files without buffer and disabling the wall-to-wall guarantees (processing independant filles) is now repected. [See also](https://gis.stackexchange.com/questions/365686/how-to-exclude-bounding-boxes-of-plots-in-lascatalog). 
+* Fix: in `grid_metrics()` and `grid_canopy()` when processing a `LAScatalog` the option to process by files without buffer and disabling the wall-to-wall guarantees (processing independent files) is now respected. [See also](https://gis.stackexchange.com/questions/365686/how-to-exclude-bounding-boxes-of-plots-in-lascatalog). 
 * Fix: in `grid_metrics()` NA pixels were zeroed. They are now properly initialized to NA.
 
 ## lidR v3.0.1 (Release date: 2020-06-18)
 
-* Fix: in `grid_terrain()` and `normalize_height()` we introduced few releases ago an option `use_class` but we did not removed an internal test consisting in failling in absance of point classified 2. This invalidated the possibility to use e.g. `use_class = 1` in files that do not respect ASPRS standards [#350](https://github.com/Jean-Romain/lidR/issues/350).
+* Fix: in `grid_terrain()` and `normalize_height()` we introduced few releases ago an option `use_class` but we did not removed an internal test consisting in failing in absence of point classified 2. This invalidated the possibility to use e.g. `use_class = 1` in files that do not respect ASPRS standards [#350](https://github.com/Jean-Romain/lidR/issues/350).
 * Fix: many troubles introduced in v3.0.0 on CRAN
 * Fix: package explicitly depends on sp >= 1.4.2
 * Fix: `readLAS(filter = "-help")` was not working but was suggested in the documentation.
@@ -346,13 +350,13 @@ In efforts to avoid breaking users' scripts version 3 is fully backwards-compati
     filter_poi(las, !Classification %in% c(LASWIRECONDUCTOR, LASTRANSMISSIONTOWER))
     ```
 
-10. The internal function `catalog_makechunks()` has been exported. It is not actually intended to be used by regular users but might be useful in some specifc cases for debugging purposes.
+10. The internal function `catalog_makechunks()` has been exported. It is not actually intended to be used by regular users but might be useful in some specific cases for debugging purposes.
 
 11. `lasmetrics()`, `grid_metrics3d()`, `grid_hexametrics()` were deprecated in previous versions. They are now defunct.
 
 12. `las_check()` (formerly named `lascheck()`):
     - gains an option `print = FALSE`. 
-    - now returns a `list` for further automatic processing/parsing. If `print = TRUE` the list is returned invisibly so the former behavior looks the same.
+    - now returns a `list` for further automatic processing/parsing. If `print = TRUE` the list is returned invisibly so the former behaviour looks the same.
     ```r
     las_check(las, FALSE)
     #> $warnings
@@ -365,13 +369,13 @@ In efforts to avoid breaking users' scripts version 3 is fully backwards-compati
     #> [2] "Invalid file: the data contains a 'gpstime' attribute but point data format is not set to 1, 3, 6, 7 or 8."
     ```
     - gains an option `deep = TRUE` with a `LAScatalog` only. In this case it performs a deep inspection of each file reading each point cloud.
-    - the coordinates of the points are expected to be given with a resolution e.g. 0.01 meaning a centimetre accuracy. It means we are expecting values like 12345.67 and not like 12345.6712. This is always the case when read from a LAS file but users (or lidR itself) may transform the point cloud and generate LAS objects where this rule is no longer respected. `lidR` always ensures to return `LAS` objects that are stricly valid with respect to ASPRS standard. If not valid this may lead to failure in `lidR` because some functions, such as `tin()`, `dsmtin()`, `pitfree()` work with the integer representation of the coordinates. This is why we introduced a quantization check in `las_check()`.
+    - the coordinates of the points are expected to be given with a resolution e.g. 0.01 meaning a centimetre accuracy. It means we are expecting values like 12345.67 and not like 12345.6712. This is always the case when read from a LAS file but users (or lidR itself) may transform the point cloud and generate LAS objects where this rule is no longer respected. `lidR` always ensures to return `LAS` objects that are strictly valid with respect to ASPRS standard. If not valid this may lead to failure in `lidR` because some functions, such as `tin()`, `dsmtin()`, `pitfree()` work with the integer representation of the coordinates. This is why we introduced a quantization check in `las_check()`.
     - now reports problems for invalid data reported in [#327](https://github.com/Jean-Romain/lidR/issues/327)
     
 13. `merge_spatial()` (formerly named `lasmergespatial()`) now supports `sf` POLYGON objects.
 
 14. `plot()` 
-    - for LAS object gains an argument `add` to overprint two point clouds with e.g. different color palettes [#325](https://github.com/Jean-Romain/lidR/issues/325).
+    - for LAS object gains an argument `add` to overprint two point clouds with e.g. different colour palettes [#325](https://github.com/Jean-Romain/lidR/issues/325).
     ```r
     las = readLAS("classified.las")
     nonveg = filter_poi(las, Classification != LASHIGHVEGETATION)
