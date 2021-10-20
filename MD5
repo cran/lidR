@@ -1,7 +1,7 @@
 8f0e2cd40e05189ec81232da84bd6e1a *COPYING
-dc3e88c0342d02e74703ff43cb9969da *DESCRIPTION
+f5536b92b7c3fb7a6d48c5d09333d5df *DESCRIPTION
 e9cf8e3af5799bcc9bd407ddb2e65c77 *NAMESPACE
-63e9ad5a85711cfebfd77fdaeeef7d82 *NEWS.md
+1646a1ce51e0e7123212c858b058e027 *NEWS.md
 b09088e83fad31b3070857ca76781ad7 *R/Class-LAS.R
 49cb1cabd15c4058d82b1e4b8e014697 *R/Class-LAScatalog.R
 09c2f332308462d8a2a8d969a730ee6d *R/Class-LAScluster.R
@@ -60,11 +60,11 @@ d1f2ccab8ad77ef9c41ba09cf54d2e42 *R/grid_metrics.R
 08233113295ecc50ea0f9c3e250215fc *R/io_readXLAS.R
 0121d645c7a9e5f3abd6d130dafd43c8 *R/io_writeANY.R
 e674629e0341ff900418c5ed41f00388 *R/io_writeLAS.R
-a29981f16cb18a0cff6da051674d5b39 *R/las_check.R
+1b5454edcdec051cca98bcc16c39d906 *R/las_check.R
 000eacdcd312259bc96f2de8adfde13e *R/las_tools.R
 999a3fadd94ead0dba65d565a2caf2e9 *R/merge_las.R
 38d84ec745a1c99d502c61896db545bd *R/merge_spatial.R
-17d4ddf4b0f846caea54752b090c2ae3 *R/methods-LAS.R
+47702f4fcdfe6f45c7c9d967277bbb4d *R/methods-LAS.R
 f6ab01c431593d3d28b01b0d77918d3a *R/methods-LAScatalog.R
 eaf155b9b557822b37043699d8f698c7 *R/methods-LAScluster.R
 2db695703faf777bafecfb9594020e25 *R/methods-LASheader.R
@@ -99,7 +99,7 @@ ce50f3c1fd447d01dfd3fa63759c0180 *R/utils_spatial_index.R
 39c8dd23198f61f3561bd60850872166 *R/voxel_metrics.R
 865b7a10daaa7928b8606ddb6e35f074 *R/voxelize_points.R
 c7b92fe58aead9e6af228e5c08761840 *R/zzz.R
-40236ea2d712af777b0646d9b18c03fb *README.md
+f6941474c0f12bb0f8a89b42e2796411 *README.md
 0a478d0471e594f3266263a700b7f0c5 *build/vignette.rds
 b2a9a02dfac8c9f8ae5aa0170de34ea9 *inst/CITATION
 e57b151916ab3d1e9f4f7c54d2b52a59 *inst/WORDLIST
@@ -190,7 +190,7 @@ afc71fa8b2859f18159090d91cccdd6d *man/identify.Rd
 a01e01378a90e19472c4e67208e1bbfc *man/ivf.Rd
 03b51c1291b63deb5defdfe7e13efa3b *man/knnidw.Rd
 874174778c07e67c16ed9453befc04d2 *man/kriging.Rd
-5b5019e82f1c8b2ff38328ad6a7a4519 *man/las_check.Rd
+913e1bac5405f67d352d3f6c43c7465d *man/las_check.Rd
 26fb28d1452514504ae5fd59ae13b5fb *man/las_utilities.Rd
 ef0e954d91a56d02ae57732b192535be *man/li2012.Rd
 a7c9ea3f3f621df7be03e2d0473fcc32 *man/lidR-LAScatalog-drivers.Rd
@@ -245,8 +245,8 @@ cae7505e8547df1b4090e4d454151a3f *man/writeLAS.Rd
 95a35b16b30f5c49e1611b7c0decea3d *src/C_Gatziolis2019.cpp
 14a2767e9891243a7022e5407c683718 *src/C_dalponte2016.cpp
 1d3de08f3e5b5767ce94127cc3b1c824 *src/C_delaunay.cpp
-8384cc25c533e78a8ecc8386562adcad *src/LAS.cpp
-d07ce5dd34c768a4da68ecef0dd890f6 *src/LAS.h
+d0e39aea6b836919890f466a33b244a5 *src/LAS.cpp
+7d3671fcfc1719d9a643f0515dd9d022 *src/LAS.h
 8e5ae4374dd7bb3bd3931535a12a6a7d *src/Makevars
 8e5ae4374dd7bb3bd3931535a12a6a7d *src/Makevars.win
 9fd06e2b0e9149256e83a1d9a590dfb1 *src/Progress.cpp
@@ -263,7 +263,7 @@ f3dbea8c477f738bc594ba2eff25a91e *src/convaveman.cpp
 49940463bca67a58b6be54d6caba449a *src/myomp.h
 e5b7595922dbe2e0022d18123238767e *src/openmputils.cpp
 23dfdb8b83754c0b46818f547b8859af *tests/testthat.R
-d81487211f165b4bf20743d5a7bf0a56 *tests/testthat/Rplots.pdf
+5ac3a88bb73b51b37d8a31ac5e4699de *tests/testthat/Rplots.pdf
 76b2cfc0fa1c897754af8afebad0d24c *tests/testthat/setup-testthat.R
 760deb79fef2b1d37d3261f9c0be67c5 *tests/testthat/test-LAS.R
 436dd3664848f3d543f84f36d67ff762 *tests/testthat/test-LAScatalog.R
