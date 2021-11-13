@@ -1,7 +1,7 @@
 8f0e2cd40e05189ec81232da84bd6e1a *COPYING
-f5536b92b7c3fb7a6d48c5d09333d5df *DESCRIPTION
+3d092f62a0f9ddf299e8be044171c8e8 *DESCRIPTION
 e9cf8e3af5799bcc9bd407ddb2e65c77 *NAMESPACE
-1646a1ce51e0e7123212c858b058e027 *NEWS.md
+3468bc05887d2ed45d68d6541c1326b4 *NEWS.md
 b09088e83fad31b3070857ca76781ad7 *R/Class-LAS.R
 49cb1cabd15c4058d82b1e4b8e014697 *R/Class-LAScatalog.R
 09c2f332308462d8a2a8d969a730ee6d *R/Class-LAScluster.R
@@ -56,7 +56,7 @@ f1b0557d3d10f96c13a87effc49b3e1c *R/grid_canopy.R
 d1f2ccab8ad77ef9c41ba09cf54d2e42 *R/grid_metrics.R
 4d90daa38101c0b400c4e02af661fb66 *R/grid_terrain.R
 5295c24d56a72156fa0171cf36dd9eb0 *R/io_readLAS.R
-8e9ac9f6fb4290947a2be03195ff41e9 *R/io_readLAScatalog.R
+6ab817ba030c714f723e508d585a902f *R/io_readLAScatalog.R
 08233113295ecc50ea0f9c3e250215fc *R/io_readXLAS.R
 0121d645c7a9e5f3abd6d130dafd43c8 *R/io_writeANY.R
 e674629e0341ff900418c5ed41f00388 *R/io_writeLAS.R
@@ -99,7 +99,7 @@ ce50f3c1fd447d01dfd3fa63759c0180 *R/utils_spatial_index.R
 39c8dd23198f61f3561bd60850872166 *R/voxel_metrics.R
 865b7a10daaa7928b8606ddb6e35f074 *R/voxelize_points.R
 c7b92fe58aead9e6af228e5c08761840 *R/zzz.R
-f6941474c0f12bb0f8a89b42e2796411 *README.md
+aee6f93ca738364eca54c2387b1a6440 *README.md
 0a478d0471e594f3266263a700b7f0c5 *build/vignette.rds
 b2a9a02dfac8c9f8ae5aa0170de34ea9 *inst/CITATION
 e57b151916ab3d1e9f4f7c54d2b52a59 *inst/WORDLIST
@@ -177,7 +177,7 @@ ea3ec52d725487ba488eb8782158fb64 *man/extent.Rd
 7ba8e00024baeb2e7296ad52777cebc1 *man/filter_surfacepoints.Rd
 ff1d0b310dced96acde83a067c58cd84 *man/filters.Rd
 0a579b96438d20516b8e8bdcb327afaa *man/find_localmaxima.Rd
-97ed2684b235fb3da9e01d0aac0679d3 *man/find_trees.Rd
+65c10081a86f3f361589eaa691fd424e *man/find_trees.Rd
 c71a1dc43e84b958606dc793cd3bc4c1 *man/gap_fraction_profile.Rd
 ed2308d2f5719cef9ac526b3b233b1f0 *man/grid_canopy.Rd
 30b6063cf4dc6f1a83b8c22e6e0babf8 *man/grid_density.Rd
@@ -225,7 +225,7 @@ f2d00f1583923f7c11f0fa6dc19b2b11 *man/readLASheader.Rd
 187a6fa988702b8461d3de4bc774eec1 *man/redefined_behaviors.Rd
 011ee7b47a5c3dab6adb39296419b075 *man/rumple_index.Rd
 df214677f3e4f9d0e4dd9705d652a89b *man/segment_snags.Rd
-0b7f60ba7f14b85b2a882c38dd3b4f81 *man/segment_trees.Rd
+8fc5898926701c3cf61ab22c1fc09dad *man/segment_trees.Rd
 92b12e39fd704a74c28b5cadeb0f031b *man/set.colors.Rd
 f998549075ada1a7546d8a431e04b7fc *man/set_lidr_threads.Rd
 0dd51717ef8c2fee42eafb95e1182a70 *man/shape_detection.Rd
@@ -252,7 +252,7 @@ d0e39aea6b836919890f466a33b244a5 *src/LAS.cpp
 9fd06e2b0e9149256e83a1d9a590dfb1 *src/Progress.cpp
 4bf68728d60516c0d1ff15253445ccb3 *src/Progress.h
 a959b00e693c80da727362ae03fffde1 *src/RcppExports.cpp
-c43bc3fa0de9e37f91ed8d850b10f16b *src/RcppFunction.cpp
+d546169da9a6bdce227b70125675d3b8 *src/RcppFunction.cpp
 aa18ad6c9c03c16b0c8fe03cd5bc1318 *src/UnitTests.cpp
 fd21f4d7c17fa1f0206b086dd54e1899 *src/concaveman/README-LICENSE
 4a0339462e185fa0e2d97afbd8796753 *src/concaveman/concaveman.h
@@ -263,7 +263,7 @@ f3dbea8c477f738bc594ba2eff25a91e *src/convaveman.cpp
 49940463bca67a58b6be54d6caba449a *src/myomp.h
 e5b7595922dbe2e0022d18123238767e *src/openmputils.cpp
 23dfdb8b83754c0b46818f547b8859af *tests/testthat.R
-5ac3a88bb73b51b37d8a31ac5e4699de *tests/testthat/Rplots.pdf
+0447799faae5395ae9b1cab2f64addef *tests/testthat/Rplots.pdf
 76b2cfc0fa1c897754af8afebad0d24c *tests/testthat/setup-testthat.R
 760deb79fef2b1d37d3261f9c0be67c5 *tests/testthat/test-LAS.R
 436dd3664848f3d543f84f36d67ff762 *tests/testthat/test-LAScatalog.R
@@ -295,7 +295,7 @@ d29a7a45f44ab6bea155175b9b38a96a *tests/testthat/test-delineate_crowns.R
 a1704187e5720e3466d6bd9562a4884e *tests/testthat/test-filter_duplicates.R
 42f8b7116796c9293b633b3ab36d1943 *tests/testthat/test-filter_poi.R
 fd5ff5eca1690ea51ff6219979eb500b *tests/testthat/test-filter_surfacepoints.R
-dc062180399ec5d0a0960e57c1c8f147 *tests/testthat/test-find_trees.R
+2ae38b51b68c0c570d1520507dcf6b9a *tests/testthat/test-find_trees.R
 a1966df2c2971ec8547011026e09dbc7 *tests/testthat/test-grid_canopy.R
 dc61e677f789bf0b243eab35b31d1d5b *tests/testthat/test-grid_density.R
 e988c7ff2400576efe2b2d3c199ff371 *tests/testthat/test-grid_generic.R
