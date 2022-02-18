@@ -47,20 +47,18 @@ data = structure(list(Max.X = c(332099.99, 333600, 335099.99, 336217.52,
     "folder/file11.las", "folder/file12.las")), row.names = c(NA, 
 -12L), class = "data.frame")
 
-pgeom <- lapply(1:nrow(data), function(i)
+geom <- lapply(1:nrow(data), function(i)
 {
   mtx <- matrix(c(data$Min.X[i], data$Max.X[i], data$Min.Y[i], data$Max.Y[i])[c(1, 1, 2, 2, 1, 3, 4, 4, 3, 3)], ncol = 2)
-  sp::Polygons(list(sp::Polygon(mtx)),as.character(i))
+  sf::st_polygon(list(mtx))
 })
 
-Sr = sp::SpatialPolygons(pgeom, proj4string = sp::CRS("+init=epsg:3005"))
+geom <-sf::st_sfc(geom)
+sf::st_crs(geom) <- 26917
+data <- sf::st_set_geometry(data, geom)
 
-ctg <- new("LAScatalog")
-ctg@bbox <- Sr@bbox
-ctg@proj4string <- Sr@proj4string
-ctg@plotOrder <- Sr@plotOrder
-ctg@data <- data
-ctg@polygons <- Sr@polygons
+ctg       <- new("LAScatalog")
+ctg@data  <- data
 
 ## ----setbuffer2, echo = FALSE-------------------------------------------------
 opt_chunk_buffer(ctg) <- 0
@@ -84,7 +82,7 @@ plot(ctg, chunk = TRUE)
 
 ## ----dtmnobuffer, error=TRUE--------------------------------------------------
 opt_chunk_buffer(ctg) <- 0
-grid_terrain(ctg, 1, tin())
+rasterize_terrain(ctg, 1, tin())
 
 ## ----alignment, fig.show='hold'-----------------------------------------------
 opt_chunk_size(ctg) <- 2000
@@ -116,7 +114,7 @@ plot(ctg, chunk = TRUE)
 ## ----template, eval = FALSE---------------------------------------------------
 #  # Force the results to be written on disk
 #  opt_output_files(ctg2) <- paste0(tempdir(), "/tree_coordinate_{XLEFT}_{YBOTTOM}")
-#  trees <- find_trees(ctg2, lmf(3))
+#  trees <- locate_trees(ctg2, lmf(3))
 #  
 #  # The output has been modified by these options and it now gives
 #  # the paths to the written files (here shapefiles)
@@ -127,17 +125,17 @@ plot(ctg, chunk = TRUE)
 ## ----writechm, eval = FALSE---------------------------------------------------
 #  # Force the results to be written on disk
 #  opt_output_files(ctg2) <- paste0(tempdir(), "/tree_coordinate_{XLEFT}_{YBOTTOM}")
-#  chm <- grid_canopy(ctg2, 1, p2r())
+#  chm <- rasterize_canopy(ctg2, 1, p2r())
 #  
 #  # Many rasters have been written on disk
-#  # but a light RasterLayer has been returned anyway
+#  # but a light raster has been returned anyway
 #  chm
 #  #> class      : RasterLayer
 #  #> dimensions : 90, 90, 8100  (nrow, ncol, ncell)
 #  #> resolution : 1, 1  (x, y)
 #  #> extent     : 481260, 481350, 3812921, 3813011  (xmin, xmax, ymin, ymax)
 #  #> crs        : +proj=utm +zone=12 +datum=NAD83 +units=m +no_defs
-#  #> source     : /tmp/RtmpZVJ2hy/grid_canopy.vrt
+#  #> source     : /tmp/RtmpZVJ2hy/rasterize_canopy.vrt
 #  #> names      : tree_coordinate_481260_3812921
 #  #> values     : 0, 32.07  (min, max)
 
@@ -158,7 +156,7 @@ opt_chunk_size(ctg) <- 0
 opt_output_files(ctg) <- ""
 opt_wall_to_wall(ctg) <- FALSE
 opt_progress(ctg) <- TRUE
-cl <- lidR:::catalog_makecluster(ctg)
+cl <- engine_chunks(ctg)
 for (i in 1:5){
   bbox <- cl[[i]]@bbox
   graphics::rect(bbox[1], bbox[2], bbox[3], bbox[4], border = "black", col = "green3")
@@ -173,7 +171,7 @@ opt_chunk_size(ctg) <- 0
 opt_output_files(ctg) <- ""
 opt_wall_to_wall(ctg) <- FALSE
 opt_progress(ctg) <- TRUE
-cl <- lidR:::catalog_makecluster(ctg)
+cl <- engine_chunks(ctg)
 for (i in 1:6){
   bbox <- cl[[i]]@bbox
   graphics::rect(bbox[1], bbox[2], bbox[3], bbox[4], border = "black", col = "green3")
@@ -190,7 +188,7 @@ opt_chunk_size(ctg) <- 0
 opt_output_files(ctg) <- ""
 opt_wall_to_wall(ctg) <- FALSE
 opt_progress(ctg) <- TRUE
-cl <- lidR:::catalog_makecluster(ctg)
+cl <- engine_chunks(ctg)
 for (i in 1:8){
   bbox <- cl[[i]]@bbox
   graphics::rect(bbox[1], bbox[2], bbox[3], bbox[4], border = "black", col = "green3")
@@ -209,7 +207,7 @@ opt_output_files(ctg) <- ""
 opt_wall_to_wall(ctg) <- FALSE
 opt_progress(ctg) <- TRUE
 opt_restart(ctg) <- 9
-cl <- lidR:::catalog_makecluster(ctg)
+cl <- engine_chunks(ctg)
 for (i in 1:4){
   bbox <- cl[[i]]@bbox
   graphics::rect(bbox[1], bbox[2], bbox[3], bbox[4], border = "black", col = "green3")
@@ -221,7 +219,7 @@ opt_output_files(ctg) <- ""
 opt_wall_to_wall(ctg) <- FALSE
 opt_progress(ctg) <- TRUE
 opt_restart(ctg) <- 1
-cl <- lidR:::catalog_makecluster(ctg)
+cl <- engine_chunks(ctg)
 for (i in 1:length(cl)){
   bbox <- cl[[i]]@bbox
   graphics::rect(bbox[1], bbox[2], bbox[3], bbox[4], border = "black", col = "green3")
@@ -239,7 +237,7 @@ opt_chunk_size(ctg) <- 400
 opt_output_files(ctg) <- ""
 opt_wall_to_wall(ctg) <- FALSE
 opt_progress(ctg) <- TRUE
-cl <- lidR:::catalog_makecluster(ctg)
+cl <- engine_chunks(ctg)
 for (i in 1:50){
   bbox <- cl[[i]]@bbox
   graphics::rect(bbox[1], bbox[2], bbox[3], bbox[4], border = "black", col = "green3")
@@ -271,7 +269,7 @@ opt_chunk_size(ctg) <- 0
 opt_output_files(ctg) <- ""
 opt_wall_to_wall(ctg) <- FALSE
 opt_progress(ctg) <- TRUE
-cl <- lidR:::catalog_makecluster(ctg)
+cl <- engine_chunks(ctg)
 for (i in 1:6) {
   bbox <- cl[[i]]@bbox
   graphics::rect(bbox[1], bbox[2], bbox[3], bbox[4], border = "black", col = "green3")
@@ -305,7 +303,7 @@ catalog_apply(ctg, routine)
 #  opt_chunk_size(test) <- 150
 #  opt_chunk_alignment(test) <- c(50,10)
 #  opt_progress(ctg) <- FALSE
-#  chunks = lidR:::catalog_makecluster(test)
+#  chunks = engine_chunks(test)
 #  chunk = chunks[[5]]
 
 ## ----rglbuffer, rgl = TRUE, eval = FALSE--------------------------------------
@@ -336,7 +334,7 @@ catalog_apply(ctg, routine)
 
 ## ----bufferror, error = TRUE--------------------------------------------------
 opt_chunk_buffer(ctg) <- 0
-grid_terrain(ctg, 1, tin())
+rasterize_terrain(ctg, 1, tin())
 
 ## ----routineerror, error = TRUE-----------------------------------------------
 routine <- function(chunk){ 
@@ -360,8 +358,8 @@ opt_progress(ctg) <- FALSE
 #  routine <- function(chunk){
 #     las <- readLAS(chunk)               # read the chunk
 #     if (is.empty(las)) return(NULL)     # exit if empty
-#     ttop <- find_trees(las, lmf(3))     # make any computation
-#     ttop <- raster::crop(ttop, extent(chunk))   # remove the buffer
+#     ttop <- locate_trees(las, lmf(3))     # make any computation
+#     ttop <- sf::st_crop(ttop, st_bbox(chunk))   # remove the buffer
 #     return(ttop)
 #  }
 #  
@@ -369,37 +367,31 @@ opt_progress(ctg) <- FALSE
 #  class(out)
 #  #> [1] "list"
 #  print(out[[1]])
-#  #> class       : SpatialPointsDataFrame
-#  #> features    : 94
-#  #> extent      : 481260.1, 481349.8, 3812921, 3812950  (xmin, xmax, ymin, ymax)
-#  #> crs         : +proj=utm +zone=12 +datum=NAD83 +units=m +no_defs
-#  #> variables   : 2
-#  #> names       : treeID,     Z
-#  #> min values  :      1,  2.16
-#  #> max values  :    132, 32.07
+#  #> Simple feature collection with 178 features and 2 fields
+#  #> Attribute-geometry relationship: 2 constant, 0 aggregate, 0 identity
+#  #> Geometry type: POINT
+#  #> Dimension:     XYZ
+#  #> Bounding box:  xmin: 481260.8 ymin: 3812980 xmax: 483299.6 ymax: 3816011
+#  #> Projected CRS: NAD83 / UTM zone 12N
 
 ## ---- eval = FALSE------------------------------------------------------------
 #  out <- do.call(rbind, out)
 #  print(out)
-#  #> class       : SpatialPointsDataFrame
-#  #> features    : 297
-#  #> extent      : 481260, 481349.9, 3812921, 3813011  (xmin, xmax, ymin, ymax)
-#  #> crs         : +proj=utm +zone=12 +datum=NAD83 +units=m +no_defs
-#  #> variables   : 2
-#  #> names       : treeID,     Z
-#  #> min values  :      1,  2.16
-#  #> max values  :    247, 32.07
+#  #> Simple feature collection with 17865 features and 2 fields
+#  #> Attribute-geometry relationship: 2 constant, 0 aggregate, 0 identity
+#  #> Geometry type: POINT
+#  #> Dimension:     XYZ
+#  #> Bounding box:  xmin: 481260.8 ymin: 3812980 xmax: 483299.6 ymax: 3816011
+#  #> Projected CRS: NAD83 / UTM zone 12N
 
 ## ----automerge, eval = FALSE--------------------------------------------------
 #  options <- list(automerge = TRUE)
 #  out <- catalog_apply(ctg, routine, .options = options)
 #  print(out)
-#  #> class       : SpatialPointsDataFrame
-#  #> features    : 297
-#  #> extent      : 481260, 481349.9, 3812921, 3813011  (xmin, xmax, ymin, ymax)
-#  #> crs         : +proj=utm +zone=12 +datum=NAD83 +units=m +no_defs
-#  #> variables   : 2
-#  #> names       : treeID,     Z
-#  #> min values  :      1,  2.16
-#  #> max values  :    247, 32.07
+#  #> Simple feature collection with 17865 features and 2 fields
+#  #> Attribute-geometry relationship: 2 constant, 0 aggregate, 0 identity
+#  #> Geometry type: POINT
+#  #> Dimension:     XYZ
+#  #> Bounding box:  xmin: 481260.8 ymin: 3812980 xmax: 483299.6 ymax: 3816011
+#  #> Projected CRS: NAD83 / UTM zone 12N
 

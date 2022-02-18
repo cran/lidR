@@ -92,21 +92,18 @@ data = data.table::data.table(
   filename = paste0("path/to/las/files/file", 1:62, ".las")
 )
 
-
-pgeom <- lapply(1:nrow(data), function(i)
+geom <- lapply(1:nrow(data), function(i)
 {
   mtx <- matrix(c(data$Min.X[i], data$Max.X[i], data$Min.Y[i], data$Max.Y[i])[c(1, 1, 2, 2, 1, 3, 4, 4, 3, 3)], ncol = 2)
-  sp::Polygons(list(sp::Polygon(mtx)),as.character(i))
+  sf::st_polygon(list(mtx))
 })
 
-Sr = sp::SpatialPolygons(pgeom, proj4string = sp::CRS("+init=epsg:3005"))
+geom <-sf::st_sfc(geom)
+sf::st_crs(geom) <- 26917
+data <- sf::st_set_geometry(data, geom)
 
-ctg <- new("LAScatalog")
-ctg@bbox <- Sr@bbox
-ctg@proj4string <- Sr@proj4string
-ctg@plotOrder <- Sr@plotOrder
-ctg@data <- data
-ctg@polygons <- Sr@polygons
+ctg       <- new("LAScatalog")
+ctg@data  <- data
 
 ## ---- echo = FALSE------------------------------------------------------------
 bbox = as.numeric(ctg@data[42,1:4])

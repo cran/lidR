@@ -64,11 +64,15 @@ test_that("plot LASheader works", {
   expect_error(plot(las@header), NA)
 })
 
-test_that("plot LAScatalog works", {
+test_that("Plot LAScatalog object works", {
   expect_error(plot(ctg), NA)
+  expect_error(plot(ctg, chunk = TRUE), NA)
+  expect_error(plot(ctg, col = "red"), NA)
+  expect_error(plot(ctg@data["Min.Z"]), NA)
 
-  ctg$process <- 1
-  expect_warning(plot(ctg))
+  skip_on_cran()
+  skip_on_os("windows")
+  expect_error(plot(ctg, mapview = TRUE), NA)
 })
 
 test_that("plot lasmetrics3d works", {
@@ -94,7 +98,7 @@ test_that("add dtm3d works", {
 
 test_that("add treetop3d works", {
   skip_on_cran()
-  x = find_trees(las, lmf(3))
+  x = locate_trees(las, lmf(3))
   expect_error({y = plot(las) ; add_treetops3d(y, x)}, NA)
   rgl::rgl.close()
 })
@@ -108,5 +112,22 @@ test_that("add = x overlay a second point cloud", {
   expect_error(plot(gnd, color = "Classification", add = x), NA)
   rgl::rgl.close()
 
+})
+
+test_that("plot voxels", {
+  skip_on_cran()
+
+  v <- voxel_metrics(example, func = ~length(Z))
+
+  expect_error(plot(v, voxel = TRUE), NA)
+  rgl::rgl.close()
+
+  expect_error(plot(v, voxel = 2), NA)
+  rgl::rgl.close()
+
+  attr(v, "res") = NULL
+
+  expect_error(plot(v, voxel = TRUE), NA)
+  rgl::rgl.close()
 })
 

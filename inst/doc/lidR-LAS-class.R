@@ -29,13 +29,12 @@ las <- readLAS(LASfile)
 print(las)
 
 ## -----------------------------------------------------------------------------
-print(las@header)
+print(header(las))
 
 ## ---- echo=FALSE, eval=FALSE--------------------------------------------------
 #  las@header@PHB[["Global Encoding"]][["WKT"]] = TRUE
 #  
-#  projection(las) <- sp::CRS("+init=epsg:26917")
-#  projection(las)
+#  st_crs(las) <- 26917
 #  
 #  # Header has been updated but users do not need to take care of that
 #  las@header@VLR[["WKT OGC CS"]][["WKT OGC COORDINATE SYSTEM"]]

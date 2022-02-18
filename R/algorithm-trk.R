@@ -33,8 +33,9 @@
 #' plot(flightlines, add = TRUE)
 #' @references Roussel Jean-Romain, Bourdon Jean-Francois, Achim Alexis, (2020) Range-based intensity
 #' normalization of ALS data over forested areas using a sensor tracking method from multiple returns
-#' (preprint) Retrieved from eartharxiv.org/k32qw
+#' (preprint) Retrieved from eartharxiv.org/k32qw https://doi.org/10.31223/osf.io/k32qw
 #' @export
+#' @name track_sensor_roussel2020
 Roussel2020 = function(interval = 0.5, pmin = 50)
 {
   assert_is_a_number(interval)
@@ -54,7 +55,7 @@ Roussel2020 = function(interval = 0.5, pmin = 50)
     return(P)
   }
 
-  class(f) <- LIDRALGORITHMTRK
+  f <- plugin_track(f)
   return(f)
 }
 
@@ -86,6 +87,7 @@ Roussel2020 = function(interval = 0.5, pmin = 50)
 #' plot(flightlines, add = TRUE)
 #' @author Demetrios Gaziolis and Jean-Romain Roussel
 #' @export
+#' @name track_sensor_gatziolis2019
 Gatziolis2019 <- function(SEGLENFactor = 1.0059, AngleFactor = 0.8824, deltaT = 0.5)
 {
   assert_is_a_number(SEGLENFactor)
@@ -147,7 +149,7 @@ Gatziolis2019 <- function(SEGLENFactor = 1.0059, AngleFactor = 0.8824, deltaT = 
     return(trj.df)
   }
 
-  class(f) <- LIDRALGORITHMTRK
+  f <- plugin_track(f)
   return(f)
 }
 

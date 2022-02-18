@@ -149,16 +149,17 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>las <span class="ot">&lt;-</span> <span class="fu">readLAS</span>(LASfile)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(las)</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; class        : LAS (v1.0 format 1)</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; memory       : 22.2 Kb </span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; memory       : 21.2 Kb </span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; extent       : 339002.9, 339015.1, 5248000, 5248001 (xmin, xmax, ymin, ymax)</span></span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; coord. ref.  : NAD83 / UTM zone 17N </span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; area         : 9.920208 m²</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; area         : 16 m²</span></span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; points       : 30  points</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; density      : 3.02 points/m²</span></span></code></pre></div>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; density      : 1.88 points/m²</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; density      : 1.62 pulses/m²</span></span></code></pre></div>
 </div>
 <div id="basic-structure-of-a-las-object" class="section level2">
 <h2>Basic structure of a LAS object</h2>
-<p>A <code>LAS</code> object is composed of four slots: <code>@data</code>, <code>@header</code>, <code>@proj4string</code> and <code>@bbox</code>, and inherits <code>Spatial</code> from package <code>sp</code>.</p>
+<p>A <code>LAS</code> object is composed of four slots: <code>@data</code>, <code>@header</code>, <code>@crs</code> and <code>@index</code>.</p>
 <div id="data-the-point-cloud" class="section level3">
 <h3><span class="citation">@data</span>: the point cloud</h3>
 <p>The slot <code>data</code> of a LAS object contains a <code>data.table</code> with the data read from .las or .laz file(s). The columns of the table are named after the <a href="https://www.asprs.org/wp-content/uploads/2019/07/LAS_1_4_r15.pdf">LAS specification</a> version 1.4. Each name is reserved and is associated with a given type:</p>
@@ -188,7 +189,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="header-the-header" class="section level3">
 <h3><span class="citation">@header</span>: the header</h3>
 <p>A <code>LAS</code> object contains a slot <code>@header</code> that represents the header of the las file. The header is stored in a <code>LASheader</code> object. A <code>LASheader</code> object contains two slots: <code>@PHB</code> for the public header block and <code>@VLR</code> for the variable length records. Both slots are lists labelled according to the las file format specification. See <a href="https://www.asprs.org/wp-content/uploads/2019/07/LAS_1_4_r15.pdf">public documentation of las file format</a> for more information about las headers. Users should never normally have to worry about the header as long as they use functions from lidR. Everything is managed internally to ensure that objects are valid. However, users still need to know that the contents of the header are important, especially when writing <code>LAS</code> objects into las or laz files.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(las<span class="sc">@</span>header)</span>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">header</span>(las))</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; File signature:           LASF </span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; File source ID:           0 </span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Global encoding:</span></span>
@@ -222,22 +223,22 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;           Key 4099 value 9001 </span></span>
 <span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Extended Variable Length Records (EVLR):  void</span></span></code></pre></div>
 </div>
-<div id="proj4string-the-crs" class="section level3">
-<h3><span class="citation">@proj4string</span>: the CRS</h3>
-<p>The slot <code>@proj4string</code> is inherited from the <code>Spatial</code> class from the <code>sp</code> package. It is a <code>CRS</code> object that stores the coordinate reference system (CRS) of the las file. In the official las specifications the CRS is stored in the header. In a LAS object the CRS is stored in the header using the EPSG code of the CRS or a WKT string (depending how it has been recorded in the file), but it is also stored in the slot <code>@proj4string</code>. This is to ensure it meets R standards and is in accordance with other spatial data packages in the R ecosystem. Consequently, to get a valid LAS object properly written into a las file it is important to set the CRS using the function <code>projection()</code>. This function updates the header of the LAS object <strong>and</strong> the proj4string.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">projection</span>(las) <span class="ot">&lt;-</span> sp<span class="sc">::</span><span class="fu">CRS</span>(<span class="st">&quot;EPSG:26917&quot;</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">projection</span>(las)</span></code></pre></div>
+<div id="crs-the-crs" class="section level3">
+<h3><span class="citation">@crs</span>: the CRS</h3>
+<p>The slot <code>@crs</code> contains a <code>crs</code> object from package <code>sf</code> and stores the coordinate reference system (CRS) of the las file. In the official las specifications the CRS is stored in the header. In a LAS object the CRS is stored in the header using the EPSG code of the CRS or a WKT string (depending how it has been recorded in the file), but it is also stored in the slot <code>@crs</code>. This is to ensure it meets R standards and is in accordance with other spatial data packages in the R ecosystem. Consequently, to get a valid LAS object properly written into a las file it is important to set the CRS using the function <code>st_crs()</code>. This function updates the header of the LAS object <strong>and</strong> the <code>crs</code></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">st_crs</span>(las) <span class="ot">&lt;-</span> <span class="dv">26917</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">st_crs</span>(las)</span></code></pre></div>
 <p>According to LAS specification the CRS system can also be a WKT string when the WKT bit flag is set to <code>TRUE</code>.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>las<span class="sc">@</span>header<span class="sc">@</span>PHB[[<span class="st">&quot;Global Encoding&quot;</span>]][[<span class="st">&quot;WKT&quot;</span>]] <span class="ot">=</span> <span class="cn">TRUE</span></span></code></pre></div>
 </div>
-<div id="bbox-the-bounding-box" class="section level3">
-<h3><span class="citation">@bbox</span>: the bounding box</h3>
-<p>The slot <code>@bbox</code> is inherited from the <code>Spatial</code> class from <code>sp</code>. It is a <code>matrix</code> object that stores the XY bounding box of the point cloud. In the official las specifications the bounding box is stored in the header. In a <code>LAS</code> object the bounding box is stored both in the header and also stored in the slot <code>@bbox</code> (to be in compliance with R standards and other spatial data R packages). The user should never change the bounding box manually. However, doing that will have few consequences because this slot is of little practical use.</p>
+<div id="index-the-spatial-indexing-mode" class="section level3">
+<h3><span class="citation">@index</span>: the spatial indexing mode</h3>
+<p>Records what kind of spatial index will be used internally to perform computations that require spatial indexing. See <code>help(&quot;lidR-spatial-index&quot;)</code>.</p>
 </div>
 </div>
 <div id="allowed-and-non-allowed-manipulation-of-a-las-object" class="section level2">
 <h2>Allowed and non-allowed manipulation of a LAS object</h2>
-<p>R users who are used to manipulating spatial data are likely to be very familiar with the <code>sp</code> package and all the classes used to store spatial data, such as <code>SpatialPointsDataFrame</code>, <code>SpatialPolygonsDataFrame</code>, and so on. The data contained in these classes are freely modifiable by the user because they can be of any type. A <code>LAS</code> object is not freely modifiable because it is a strongly standardized representation of a las file.</p>
+<p>R users who are used to manipulating spatial data are likely to be very familiar with the <code>sp</code> or <code>sf</code> packages and all the classes used to store spatial data, such as <code>SpatialPointsDataFrame</code>, <code>SpatialPolygonsDataFrame</code>, <code>sf</code> and so on. The data contained in these classes are freely modifiable by the user because they can be of any type. A <code>LAS</code> object is not freely modifiable because it is a strongly standardized representation of a las file.</p>
 <p>For example, users cannot replace the <code>Classification</code> attribute with the value <code>0</code> because <code>0</code> is a decimal number in R and the ‘Classification’ attribute is an integer. The following throws an error:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>las<span class="sc">$</span>Classification <span class="ot">&lt;-</span> <span class="dv">0</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error: Trying to replace data of type integer by data of type double: this action is not allowed</span></span></code></pre></div>
@@ -246,13 +247,13 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>It would be possible to automatically cast the input into the correct type without throwing an error. But for the lidR package we chose to be very pedantic on this point to avoid any potential problems and because we would prefer users to be careful about the content of their data.</p>
 <p>The addition of a new column is also restricted. For example, one may want to add an attribute <code>R</code> corresponding to the red channel.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>las<span class="sc">$</span>R <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error: Addition of a new column using $ is forbidden for LAS objects. See ?add_attribute</span></span></code></pre></div>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error: Addition of a new column using [[ is forbidden for LAS objects. See ?add_attribute</span></span></code></pre></div>
 <p>This is not allowed because a LAS object should always be valid. By allowing the user to add an R column the LAS object would no longer be valid for two reasons:</p>
 <ol style="list-style-type: decimal">
 <li><code>R</code> is a reserved name of the core attributes and must be an integer. In the example above it is a decimal number.</li>
 <li>A LAS file with RGB attributes is of type 3, 7 or 8. As a result the header must be updated, but in the previous example it is not.</li>
 </ol>
-<p>In consequence, adding a column must be done via the functions <code>add_attribute</code> or <code>add_lasattribute</code>. This way users are forced to read the documentation of these two functions. And yet some restrictions are still in place. For example, the following is not allowed for the same reasons as above:</p>
+<p>In consequence, adding a column must be done via the functions <code>add_attribute</code>, <code>add_lasattribute</code>, <code>add_lasrgb</code>. This way users are forced to read the documentation of these two functions. And yet some restrictions are still in place. For example, the following is not allowed for the same reasons as above:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>las <span class="ot">&lt;-</span> <span class="fu">add_attribute</span>(las, <span class="dv">0</span>, <span class="st">&quot;R&quot;</span>)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Error: R is part of the core attributes and is a forbidden name.</span></span></code></pre></div>
 <p>But anyway, R being R, there is no way to completely restrict editing of objects. Users can always by-pass the restrictions to make LAS objects that are not strictly valid:</p>
@@ -271,7 +272,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </div>
 <div id="extra-bytes-attributes" class="section level3">
 <h3>Extra bytes attributes</h3>
-<p>The las specifications allow for storing extra attributes that are not part of the core attributes. but the way to do this is more complex. Basically it is called extra bytes attributes and it implies modification of the LAS object header to indicate that the contents of the file contains more than the core attributes. This is abstracted with the function <code>add_lasattribute</code>.</p>
+<p>The las specifications allow for storing extra attributes that are not part of the core attributes. The way to do this is more complex. Basically it is called extra bytes attributes and it implies modification of the LAS object header to indicate that the contents of the file contains more than the core attributes. This is abstracted with the function <code>add_lasattribute</code>.</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>las  <span class="ot">&lt;-</span> <span class="fu">add_lasattribute</span>(las, <span class="dv">1</span><span class="sc">:</span><span class="dv">30</span>, <span class="st">&quot;ID&quot;</span>, <span class="st">&quot;An ID for each point&quot;</span>)</span></code></pre></div>
 <p>Using this function, the header is updated according to the las specification and thus the extra bytes attributes can be written in the file. lidR supports up to 10 extra bytes attributes. The extra bytes attributes are limited to being of type numeric. Indeed, the las specifications do not allow for storing extra bytes attributes of type string or type boolean. Thus the following fails:</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>abc  <span class="ot">&lt;-</span> <span class="fu">sample</span>(letters, <span class="dv">30</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
@@ -331,8 +332,6 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(las, <span class="at">color =</span> <span class="st">&quot;Intensity&quot;</span>)</span></code></pre></div>
 <p>If your file contains RGB data the string <code>&quot;RGB&quot;</code> is supported:</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(las, <span class="at">color =</span><span class="st">&quot;RGB&quot;</span>)</span></code></pre></div>
-<p>The <code>trim</code> parameter enables trimming of values when outliers break the color palette range. For example, Intensity often contains large outliers. The palette range would be too large and most of the values will be considered as “very low”, so everything will appear in the same color.</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(las, <span class="at">color =</span> <span class="st">&quot;Intensity&quot;</span>, <span class="at">trim =</span> <span class="dv">450</span>)</span></code></pre></div>
 </div>
 <div id="memory-considerations" class="section level2">
 <h2>Memory considerations</h2>
@@ -342,9 +341,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="deep-copies" class="section level3">
 <h3>Deep copies</h3>
 <p>Let’s assume we have loaded a large las file that uses 1 GB of R memory.</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>las.original <span class="ot">&lt;-</span> <span class="fu">readLAS</span>(<span class="st">&quot;big_file.las&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>las.original <span class="ot">&lt;-</span> <span class="fu">readLAS</span>(<span class="st">&quot;big_file.las&quot;</span>)</span></code></pre></div>
 <p>Suppose we now want to remove a few outliers above 50 m. One can write the following:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>las.denoised <span class="ot">&lt;-</span> <span class="fu">filter_poi</span>(las.original, Z <span class="sc">&lt;</span> <span class="dv">50</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>las.denoised <span class="ot">&lt;-</span> <span class="fu">filter_poi</span>(las.original, Z <span class="sc">&lt;</span> <span class="dv">50</span>)</span></code></pre></div>
 <p>And the user now has two objects:</p>
 <ul>
 <li><code>las.original</code> of size 1 GB</li>
@@ -355,7 +354,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="shallow-copies" class="section level3">
 <h3>Shallow copies</h3>
 <p>In the previous example we showed a deep copy. A deep copy means that the point cloud is actually copied into the memory. A deep copy occurs when the number of points of the output is different from the number of points of the input. But many functions return the same number of point as the input. In such cases only <strong>shallow copies</strong> are made. For example, when classifying points into ground and non-ground:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>las.classified <span class="ot">&lt;-</span> <span class="fu">classify_ground</span>(las.original, <span class="fu">csf</span>())</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>las.classified <span class="ot">&lt;-</span> <span class="fu">classify_ground</span>(las.original, <span class="fu">csf</span>())</span></code></pre></div>
 <p>In this case the vectors that store the X Y Z coordinates as well as those that store the Intensity, ReturnNumber, NumberOfReturn and other attributes were not modified by the function. Only the contents of the ‘Classification’ attribute were modified. In this case <code>las.classified</code> and <code>las.original</code>, even though they are two different objects, share the same memory for X Y Z, and so on, but the attributes ‘Classification’ are different. In conclusion:</p>
 <ul>
 <li><code>las.original</code> is of size 1 GB</li>
@@ -367,15 +366,15 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="parameter-select" class="section level3">
 <h3>Parameter <code>select</code></h3>
 <p>To save memory only useful data can be loaded. <code>readLAS</code> can take an optional parameter <code>select</code> which enables the user to selectively load the data of interest. For example, one can load only the <code>X Y Z</code> fields. This selection is done at the C++ level while reading and is memory-optimized.</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>las <span class="ot">=</span> <span class="fu">readLAS</span>(<span class="st">&quot;file&quot;</span>, <span class="at">select =</span> <span class="st">&quot;xyz&quot;</span>)</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>las <span class="ot">=</span> <span class="fu">readLAS</span>(<span class="st">&quot;file&quot;</span>, <span class="at">select =</span> <span class="st">&quot;xyzi&quot;</span>)</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>las <span class="ot">=</span> <span class="fu">readLAS</span>(<span class="st">&quot;file&quot;</span>, <span class="at">select =</span> <span class="st">&quot;* -i -u&quot;</span>) <span class="co"># Negation works too</span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>las <span class="ot">=</span> <span class="fu">readLAS</span>(<span class="st">&quot;file&quot;</span>, <span class="at">select =</span> <span class="st">&quot;xyz&quot;</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>las <span class="ot">=</span> <span class="fu">readLAS</span>(<span class="st">&quot;file&quot;</span>, <span class="at">select =</span> <span class="st">&quot;xyzi&quot;</span>)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>las <span class="ot">=</span> <span class="fu">readLAS</span>(<span class="st">&quot;file&quot;</span>, <span class="at">select =</span> <span class="st">&quot;* -i -u&quot;</span>) <span class="co"># Negation works too</span></span></code></pre></div>
 </div>
 <div id="parameter-filter" class="section level3">
 <h3>Parameter <code>filter</code></h3>
 <p>While <code>select</code> enables the user to select “columns” (or attributes) while reading files, <code>filter</code> allows selection of “rows” (or points) while reading. Again, the selection is done at the C++ level and is memory-optimized so not a single bit is lost at the R level. Removing data at reading time that is superfluous for your purposes saves memory and decreases computation time.</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>las <span class="ot">=</span> <span class="fu">readLAS</span>(<span class="st">&quot;file&quot;</span>, <span class="at">filter =</span> <span class="st">&quot;-keep_first&quot;</span>)</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>las <span class="ot">=</span> <span class="fu">readLAS</span>(<span class="st">&quot;file&quot;</span>, <span class="at">select =</span> <span class="st">&quot;xyzi&quot;</span>, <span class="at">filter =</span> <span class="st">&quot;-keep_first -drop_z_below 5 -drop_z_above 50&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>las <span class="ot">=</span> <span class="fu">readLAS</span>(<span class="st">&quot;file&quot;</span>, <span class="at">filter =</span> <span class="st">&quot;-keep_first&quot;</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>las <span class="ot">=</span> <span class="fu">readLAS</span>(<span class="st">&quot;file&quot;</span>, <span class="at">select =</span> <span class="st">&quot;xyzi&quot;</span>, <span class="at">filter =</span> <span class="st">&quot;-keep_first -drop_z_below 5 -drop_z_above 50&quot;</span>)</span></code></pre></div>
 </div>
 </div>
 

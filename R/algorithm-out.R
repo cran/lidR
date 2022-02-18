@@ -36,6 +36,7 @@
 #' @references
 #' https://pointclouds.org/documentation/tutorials/statistical_outlier.html \cr
 #' https://www.cloudcompare.org/doc/wiki/index.php?title=SOR_filter
+#' @name noise_sor
 sor = function(k = 10, m = 3, quantile = FALSE)
 {
   assert_is_a_number(k)
@@ -67,7 +68,7 @@ sor = function(k = 10, m = 3, quantile = FALSE)
     return(dmean > th)
   }
 
-  class(f) <- c(LIDRALGORITHMOUT, LIDRALGORITHMOPENMP)
+  f <- plugin_outliers(f, omp = TRUE)
   return(f)
 }
 
@@ -98,6 +99,7 @@ sor = function(k = 10, m = 3, quantile = FALSE)
 #' las$Z[id] = las$Z[id] + err
 #'
 #' las <- classify_noise(las, ivf(5,2))
+#' @name noise_ivf
 ivf = function(res = 5, n = 6)
 {
   assert_is_a_number(res)
@@ -114,7 +116,7 @@ ivf = function(res = 5, n = 6)
     return(C_isolated_voxel(las, res, n))
   }
 
-  class(f) <- c(LIDRALGORITHMOUT)
+  f <- plugin_outliers(f)
   return(f)
 }
 

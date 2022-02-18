@@ -191,7 +191,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="simple-canopy-height-model" class="section level4">
 <h4>Simple canopy height model</h4>
 <p>A simple point-to-raster canopy height model using 25 files of 150 x 150 m with 30 pts/m² on a laptop with an SSD and an intel core i7 processor.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>chm <span class="ot">&lt;-</span> <span class="fu">grid_canopy</span>(ctg, <span class="dv">1</span>, <span class="fu">p2r</span>())</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>chm <span class="ot">&lt;-</span> <span class="fu">rasterize_canopy</span>(ctg, <span class="dv">1</span>, <span class="fu">p2r</span>())</span></code></pre></div>
 <table>
 <thead>
 <tr class="header">
@@ -223,7 +223,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="area-based-approach" class="section level4">
 <h4>Area-based Approach</h4>
 <p>Computation of a single metric on 360 files of 1 x 1 km with 3 pts/m² (~300 km² and 900 millions points) on a laptop with an SSD and an intel core i7 processor.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>hmean <span class="ot">&lt;-</span> <span class="fu">grid_metric</span>(ctg, <span class="fu">mean</span>(Z), <span class="dv">20</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>hmean <span class="ot">&lt;-</span> <span class="fu">pixel_metric</span>(ctg, <span class="fu">mean</span>(Z), <span class="dv">20</span>)</span></code></pre></div>
 <table>
 <thead>
 <tr class="header">
