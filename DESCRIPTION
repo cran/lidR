@@ -2,7 +2,7 @@ Package: lidR
 Type: Package
 Title: Airborne LiDAR Data Manipulation and Visualization for Forestry
         Applications
-Version: 4.0.0
+Version: 4.0.1
 Authors@R: c(
     person("Jean-Romain", "Roussel", email = "jean-romain.roussel.1@ulaval.ca", role = c("aut", "cre", "cph")),
     person("David", "Auty", email = "", role = c("aut", "ctb"), comment = "Reviews the documentation"),
@@ -20,10 +20,10 @@ Description: Airborne LiDAR (Light Detection and Ranging) interface for data
 URL: https://github.com/r-lidar/lidR
 BugReports: https://github.com/r-lidar/lidR/issues
 License: GPL-3
-Depends: R (>= 3.4.0), methods
+Depends: R (>= 3.5.0), methods
 Imports: classInt, data.table (>= 1.12.0), glue, grDevices, lazyeval,
         raster, Rcpp (>= 1.0.3), rgl, rlas (>= 1.5.0), sf, sp, stats,
-        stars, terra, tools, utils
+        stars, terra (>= 1.5-17), tools, utils
 Suggests: EBImage, future, geometry, gstat, RCSF, RMCC, rgdal, mapview,
         mapedit, progress, testthat (>= 2.1.0), knitr, rmarkdown
 RoxygenNote: 7.1.2
@@ -32,7 +32,7 @@ Encoding: UTF-8
 ByteCompile: true
 VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2022-02-18 15:24:48 UTC; jr
+Packaged: 2022-05-04 06:48:16 UTC; jr
 Author: Jean-Romain Roussel [aut, cre, cph],
   David Auty [aut, ctb] (Reviews the documentation),
   Florian De Boissieu [ctb] (Fixed bugs and improved catalog features),
@@ -46,4 +46,4 @@ Author: Jean-Romain Roussel [aut, cre, cph],
   Stanislaw Adaszewski [cph] (Author of the C++ concaveman code)
 Maintainer: Jean-Romain Roussel <jean-romain.roussel.1@ulaval.ca>
 Repository: CRAN
-Date/Publication: 2022-02-18 16:10:03 UTC
+Date/Publication: 2022-05-04 08:30:02 UTC

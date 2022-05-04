@@ -138,7 +138,7 @@ summary.LAScatalog <- function(object, ...)
 
 setMethod("show", "LAS", function(object)
 {
-  size      <- format(utils::object.size(object), units = "auto")
+  size      <- format(las_size(object), units = "auto")
   area      <- as.numeric(st_area(object))
   area.h    <- area
   npoints   <- nrow(object@data)
@@ -249,7 +249,7 @@ setMethod("show", "LAScatalog", function(object)
   cat("points      : ", npoints.h, " ", pointprefix, " points\n", sep = "")
   cat("density     : ", density, " points/", units, "\u00B2\n", sep = "")
   if (dpulse > 0)
-    cat("density      : ", round(dpulse, 2), " pulses/", units, "\u00B2\n", sep = "")
+    cat("density     : ", round(dpulse, 2), " pulses/", units, "\u00B2\n", sep = "")
   cat("num. files  :", dim(object@data)[1], "\n")
   return(invisible(object))
 })
