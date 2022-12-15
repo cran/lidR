@@ -23,7 +23,6 @@ knitr::knit_hooks$set(time_it = local({
 }))
 knitr::opts_chunk$set(time_it = TRUE)
 #rgl::setupKnitr()
-rgdal::set_thin_PROJ6_warnings(TRUE)
 options(rmarkdown.html_vignette.check_title = FALSE)
 
 library(lidR)
