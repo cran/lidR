@@ -102,7 +102,7 @@ plot(ctg, chunk = TRUE)
 #m = structure(c(0.921, -0.146, 0.362, 0, 0.386, 0.482, -0.787, 0, 
 #-0.06, 0.864, 0.5, 0, 0, 0, 0, 1), .Dim = c(4L, 4L))
 #plot(las)
-#rgl::rgl.viewpoint(fov = 50, userMatrix = m)
+#rgl::view3d(fov = 50, userMatrix = m)
 
 ## ----writeondisk, echo = FALSE, eval = FALSE----------------------------------
 #  LASfile <- system.file("extdata", "MixedConifer.laz", package="lidR")

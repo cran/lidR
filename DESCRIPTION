@@ -2,7 +2,7 @@ Package: lidR
 Type: Package
 Title: Airborne LiDAR Data Manipulation and Visualization for Forestry
         Applications
-Version: 4.0.2
+Version: 4.0.3
 Authors@R: c(
     person("Jean-Romain", "Roussel", email = "jean-romain.roussel.1@ulaval.ca", role = c("aut", "cre", "cph")),
     person("David", "Auty", email = "", role = c("aut", "ctb"), comment = "Reviews the documentation"),
@@ -32,7 +32,7 @@ Encoding: UTF-8
 ByteCompile: true
 VignetteBuilder: knitr
 NeedsCompilation: yes
-Packaged: 2022-12-15 13:46:31 UTC; jr
+Packaged: 2023-03-09 11:12:43 UTC; jr
 Author: Jean-Romain Roussel [aut, cre, cph],
   David Auty [aut, ctb] (Reviews the documentation),
   Florian De Boissieu [ctb] (Fixed bugs and improved catalog features),
@@ -46,4 +46,4 @@ Author: Jean-Romain Roussel [aut, cre, cph],
   Stanislaw Adaszewski [cph] (Author of the C++ concaveman code)
 Maintainer: Jean-Romain Roussel <jean-romain.roussel.1@ulaval.ca>
 Repository: CRAN
-Date/Publication: 2022-12-15 15:10:02 UTC
+Date/Publication: 2023-03-09 14:20:02 UTC
