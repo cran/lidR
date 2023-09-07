@@ -119,13 +119,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
   for (var i = 0; i < sheets.length; i++) {
     if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
     try { var rules = sheets[i].cssRules; } catch (e) { continue; }
-    for (var j = 0; j < rules.length; j++) {
+    var j = 0;
+    while (j < rules.length) {
       var rule = rules[j];
       // check if there is a div.sourceCode rule
-      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -352,19 +359,19 @@ for example, 20%. This can easily be built in lidR using
 <code>filter_poi</code>, and should work either on a normalized or a raw
 point cloud. Let’s create a function method
 <code>filter_noise</code>:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>filter_noise <span class="ot">=</span> <span class="cf">function</span>(las, sensitivity)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>{</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  p95 <span class="ot">&lt;-</span> <span class="fu">pixel_metrics</span>(las, <span class="sc">~</span><span class="fu">quantile</span>(Z, <span class="at">probs =</span> <span class="fl">0.95</span>), <span class="dv">10</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  las <span class="ot">&lt;-</span> <span class="fu">merge_spatial</span>(las, p95, <span class="st">&quot;p95&quot;</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  las <span class="ot">&lt;-</span> <span class="fu">filter_poi</span>(las, Z <span class="sc">&lt;</span> p95<span class="sc">*</span>sensitivity)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  las<span class="sc">$</span>p95 <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(las)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>filter_noise <span class="ot">=</span> <span class="cf">function</span>(las, sensitivity)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>{</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  p95 <span class="ot">&lt;-</span> <span class="fu">pixel_metrics</span>(las, <span class="sc">~</span><span class="fu">quantile</span>(Z, <span class="at">probs =</span> <span class="fl">0.95</span>), <span class="dv">10</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  las <span class="ot">&lt;-</span> <span class="fu">merge_spatial</span>(las, p95, <span class="st">&quot;p95&quot;</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>  las <span class="ot">&lt;-</span> <span class="fu">filter_poi</span>(las, Z <span class="sc">&lt;</span> p95<span class="sc">*</span>sensitivity)</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>  las<span class="sc">$</span>p95 <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>  <span class="fu">return</span>(las)</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>}</span></code></pre></div>
 <p>This function is fully functional on a point cloud loaded in
 memory</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>las <span class="ot">&lt;-</span> <span class="fu">readLAS</span>(<span class="st">&quot;file.las&quot;</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>las <span class="ot">&lt;-</span> <span class="fu">filter_noise</span>(las, <span class="at">sensitivity =</span> <span class="fl">1.2</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">writeLAS</span>(las, <span class="st">&quot;denoised-file.las&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>las <span class="ot">&lt;-</span> <span class="fu">readLAS</span>(<span class="st">&quot;file.las&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>las <span class="ot">&lt;-</span> <span class="fu">filter_noise</span>(las, <span class="at">sensitivity =</span> <span class="fl">1.2</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">writeLAS</span>(las, <span class="st">&quot;denoised-file.las&quot;</span>)</span></code></pre></div>
 </div>
 <div id="extend-the-filter_noise-function-to-a-lascatalog" class="section level2">
 <h2>Extend the <code>filter_noise</code> function to a
@@ -378,34 +385,34 @@ our custom <code>filter_noise</code> function with
 <code>catalog_map</code>. To use our function <code>filter_noise</code>
 on a <code>LAScatalog</code> we must create a compatible function (see
 documentation of <code>catalog_apply</code>):</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>filter_noise <span class="ot">=</span> <span class="cf">function</span>(las, sensitivity)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>{</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is</span>(las, <span class="st">&quot;LAS&quot;</span>))</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  {</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>      p95 <span class="ot">&lt;-</span> <span class="fu">pixel_metrics</span>(las, <span class="sc">~</span><span class="fu">quantile</span>(Z, <span class="at">probs =</span> <span class="fl">0.95</span>), <span class="dv">10</span>)</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>      las <span class="ot">&lt;-</span> <span class="fu">merge_spatial</span>(las, p95, <span class="st">&quot;p95&quot;</span>)</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>      las <span class="ot">&lt;-</span> <span class="fu">filter_poi</span>(las, Z <span class="sc">&lt;</span> p95<span class="sc">*</span>sensitivity)</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>      las<span class="sc">$</span>p95 <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span>(las)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is</span>(las, <span class="st">&quot;LAScatalog&quot;</span>))</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  {</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>      res <span class="ot">&lt;-</span> <span class="fu">catalog_map</span>(las, filter_noise, <span class="at">sensitivity =</span> sensitivity)</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span>(res)</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>filter_noise <span class="ot">=</span> <span class="cf">function</span>(las, sensitivity)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>{</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is</span>(las, <span class="st">&quot;LAS&quot;</span>))</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  {</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>      p95 <span class="ot">&lt;-</span> <span class="fu">pixel_metrics</span>(las, <span class="sc">~</span><span class="fu">quantile</span>(Z, <span class="at">probs =</span> <span class="fl">0.95</span>), <span class="dv">10</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>      las <span class="ot">&lt;-</span> <span class="fu">merge_spatial</span>(las, p95, <span class="st">&quot;p95&quot;</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>      las <span class="ot">&lt;-</span> <span class="fu">filter_poi</span>(las, Z <span class="sc">&lt;</span> p95<span class="sc">*</span>sensitivity)</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>      las<span class="sc">$</span>p95 <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>      <span class="fu">return</span>(las)</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  }</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  </span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is</span>(las, <span class="st">&quot;LAScatalog&quot;</span>))</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  {</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>      res <span class="ot">&lt;-</span> <span class="fu">catalog_map</span>(las, filter_noise, <span class="at">sensitivity =</span> sensitivity)</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>      <span class="fu">return</span>(res)</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>  }</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>}</span></code></pre></div>
 <p>And it just works. This function <code>filter_noise</code> is now
 fully compatible with the catalog processing engine and supports all the
 options of the engine.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>myproject <span class="ot">&lt;-</span> <span class="fu">readLAScatalog</span>(<span class="st">&quot;folder/to/lidar/data/&quot;</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">opt_filter</span>(myproject)       <span class="ot">&lt;-</span> <span class="st">&quot;-drop_z_below 0&quot;</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fu">opt_chunk_buffer</span>(myproject) <span class="ot">&lt;-</span> <span class="dv">10</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">opt_chunk_size</span>(myproject)   <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="fu">opt_output_files</span>(myproject) <span class="ot">&lt;-</span> <span class="st">&quot;folder/to/lidar/data/denoised/{ORIGINALFILENAME}_denoised&quot;</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>output <span class="ot">&lt;-</span> <span class="fu">filter_noise</span>(myproject, <span class="at">tolerance =</span> <span class="fl">1.2</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>myproject <span class="ot">&lt;-</span> <span class="fu">readLAScatalog</span>(<span class="st">&quot;folder/to/lidar/data/&quot;</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">opt_filter</span>(myproject)       <span class="ot">&lt;-</span> <span class="st">&quot;-drop_z_below 0&quot;</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="fu">opt_chunk_buffer</span>(myproject) <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="fu">opt_chunk_size</span>(myproject)   <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="fu">opt_output_files</span>(myproject) <span class="ot">&lt;-</span> <span class="st">&quot;folder/to/lidar/data/denoised/{ORIGINALFILENAME}_denoised&quot;</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>output <span class="ot">&lt;-</span> <span class="fu">filter_noise</span>(myproject, <span class="at">tolerance =</span> <span class="fl">1.2</span>)</span></code></pre></div>
 </div>
 <div id="finalize-the-functions" class="section level2">
 <h2>Finalize the functions</h2>
@@ -413,26 +420,26 @@ options of the engine.</p>
 complete. Indeed the processing options were not checked. For example,
 this function should not allow the output to be returned into R
 otherwise the whole point cloud will be returned.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>filter_noise <span class="ot">=</span> <span class="cf">function</span>(las, sensitivity)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>{</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is</span>(las, <span class="st">&quot;LAS&quot;</span>))</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  {</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>      p95 <span class="ot">&lt;-</span> <span class="fu">pixel_metrics</span>(las, <span class="sc">~</span><span class="fu">quantile</span>(Z, <span class="at">probs =</span> <span class="fl">0.95</span>), <span class="dv">10</span>)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>      las <span class="ot">&lt;-</span> <span class="fu">merge_spatial</span>(las, p95, <span class="st">&quot;p95&quot;</span>)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>      las <span class="ot">&lt;-</span> <span class="fu">filter_poi</span>(las, Z <span class="sc">&lt;</span> p95<span class="sc">*</span>sensitivity)</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>      las<span class="sc">$</span>p95 <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">return</span>(las)</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is</span>(las, <span class="st">&quot;LAScatalog&quot;</span>))</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  {</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>     options <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>       <span class="at">need_output_file =</span> <span class="cn">TRUE</span>,    <span class="co"># Throw an error if no output template is provided</span></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>       <span class="at">need_buffer =</span> <span class="cn">TRUE</span>)         <span class="co"># Throw an error if buffer is 0</span></span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>     res <span class="ot">&lt;-</span> <span class="fu">catalog_map</span>(las, filter_noise, <span class="at">sensitivity =</span> sensitivity, <span class="at">.options =</span> options)</span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>     <span class="fu">return</span>(res)</span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>filter_noise <span class="ot">=</span> <span class="cf">function</span>(las, sensitivity)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>{</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is</span>(las, <span class="st">&quot;LAS&quot;</span>))</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  {</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>      p95 <span class="ot">&lt;-</span> <span class="fu">pixel_metrics</span>(las, <span class="sc">~</span><span class="fu">quantile</span>(Z, <span class="at">probs =</span> <span class="fl">0.95</span>), <span class="dv">10</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>      las <span class="ot">&lt;-</span> <span class="fu">merge_spatial</span>(las, p95, <span class="st">&quot;p95&quot;</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>      las <span class="ot">&lt;-</span> <span class="fu">filter_poi</span>(las, Z <span class="sc">&lt;</span> p95<span class="sc">*</span>sensitivity)</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>      las<span class="sc">$</span>p95 <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>      <span class="fu">return</span>(las)</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>  }</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>  </span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is</span>(las, <span class="st">&quot;LAScatalog&quot;</span>))</span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>  {</span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>     options <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a>       <span class="at">need_output_file =</span> <span class="cn">TRUE</span>,    <span class="co"># Throw an error if no output template is provided</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a>       <span class="at">need_buffer =</span> <span class="cn">TRUE</span>)         <span class="co"># Throw an error if buffer is 0</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a>     res <span class="ot">&lt;-</span> <span class="fu">catalog_map</span>(las, filter_noise, <span class="at">sensitivity =</span> sensitivity, <span class="at">.options =</span> options)</span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a>     <span class="fu">return</span>(res)</span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a>  }</span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a>}</span></code></pre></div>
 <p>Now you know how to build your custom functions that work either on a
 <code>LAS</code> or a <code>LAScatalog</code> object. Be careful,
 <code>catalog_map</code> is only a simplification of
