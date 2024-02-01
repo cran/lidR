@@ -101,7 +101,7 @@ crown_metrics.LAScluster = function(las, func, geom = "point", concaveman = c(3,
   x <- readLAS(las)
   if (is.empty(x)) return(NULL)
   metrics <- crown_metrics(x, func, geom, concaveman, attribute, ...)
-
+  if (is.null(metrics)) return(NULL) # fix #733
   bbox <- st_bbox(las)
   sf::st_agr(metrics) <- "constant"
   centroid <- sf::st_centroid(metrics)
@@ -118,7 +118,8 @@ crown_metrics.LAScatalog = function(las, func, geom = "point", concaveman = c(3,
 
   is_formula <- tryCatch(lazyeval::is_formula(func), error = function(e) FALSE)
   if (!is_formula && !is.null(func)) func <- lazyeval::f_capture(func)
-  globals <- future::getGlobalsAndPackages(func)
+  globals <- NULL
+  if (engine_use_future()) globals <- future::getGlobalsAndPackages(func)
 
   options <- list(need_buffer = TRUE, drop_null = TRUE, globals = names(globals$globals), automerge = TRUE)
   output  <- catalog_apply(las, crown_metrics, func = func, geom = geom, concaveman = concaveman, attribute = attribute, ..., .options = options)

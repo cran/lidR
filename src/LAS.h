@@ -41,13 +41,13 @@ class LAS
 
     NumericVector rasterize(List layout, double subcircle, int method);
     NumericVector compute_range(DataFrame flightlines);
-    IntegerVector find_polygon_ids(CharacterVector wkts);
+    SEXP find_polygon_ids(CharacterVector wkts, bool by_poly);
     IntegerVector segment_snags(NumericVector neigh_radii, double low_int_thrsh, double uppr_int_thrsh, int pt_den_req, NumericMatrix BBPRthrsh_mat);
     IntegerVector segment_trees(double dt1, double dt2, double Zu, double R, double th_tree, double radius);
     List point_metrics(unsigned int k, double r, DataFrame data, int nalloc, SEXP call, SEXP env);
     NumericVector fast_knn_metrics(unsigned int k, IntegerVector metrics);
     NumericVector interpolate_knnidw(NumericVector x, NumericVector y, int k, double p, double rmax);
-    DataFrame eigen_decomposition(int k, double r);
+    DataFrame eigen_decomposition(int k, double r, bool get_coef);
 
   private:
     static bool coplanar (arma::vec& latent, arma::mat& coeff, NumericVector& th) { return latent[1] > th[0]*latent[2] && th[1]*latent[1] > latent[0]; }

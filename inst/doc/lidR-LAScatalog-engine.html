@@ -924,7 +924,7 @@ internally.</p>
 <span id="cb32-3"><a href="#cb32-3" tabindex="-1"></a><span class="co">#&gt; features    : 1 </span></span>
 <span id="cb32-4"><a href="#cb32-4" tabindex="-1"></a><span class="co">#&gt; extent      : 684800, 684950, 5017810, 5017960  (xmin, xmax, ymin, ymax)</span></span>
 <span id="cb32-5"><a href="#cb32-5" tabindex="-1"></a><span class="co">#&gt; crs         : +proj=utm +zone=17 +datum=NAD83 +units=m +no_defs</span></span></code></pre></div>
-<p><code>raster::extent()</code> and <code>sp::bbox()</code> and
+<p><code>raster::extent()</code>, <code>terra::ext()</code> and
 <code>sf::st_bbox()</code> are valid functions that return the bounding
 box of the chunk. The bounding box of the chunk is the bounding box
 without the buffer.</p>
@@ -934,13 +934,9 @@ without the buffer.</p>
 <span id="cb33-4"><a href="#cb33-4" tabindex="-1"></a><span class="co">#&gt; xmax       : 684950 </span></span>
 <span id="cb33-5"><a href="#cb33-5" tabindex="-1"></a><span class="co">#&gt; ymin       : 5017810 </span></span>
 <span id="cb33-6"><a href="#cb33-6" tabindex="-1"></a><span class="co">#&gt; ymax       : 5017960</span></span>
-<span id="cb33-7"><a href="#cb33-7" tabindex="-1"></a>sp<span class="sc">::</span><span class="fu">bbox</span>(chunk)</span>
-<span id="cb33-8"><a href="#cb33-8" tabindex="-1"></a><span class="co">#&gt;         [,1]    [,2]</span></span>
-<span id="cb33-9"><a href="#cb33-9" tabindex="-1"></a><span class="co">#&gt; [1,]  684800  684950</span></span>
-<span id="cb33-10"><a href="#cb33-10" tabindex="-1"></a><span class="co">#&gt; [2,] 5017810 5017960</span></span>
-<span id="cb33-11"><a href="#cb33-11" tabindex="-1"></a>sf<span class="sc">::</span><span class="fu">st_bbox</span>(chunk)</span>
-<span id="cb33-12"><a href="#cb33-12" tabindex="-1"></a><span class="co">#&gt;    xmin    ymin    xmax    ymax </span></span>
-<span id="cb33-13"><a href="#cb33-13" tabindex="-1"></a><span class="co">#&gt;  684800 5017810  684950 5017960</span></span></code></pre></div>
+<span id="cb33-7"><a href="#cb33-7" tabindex="-1"></a>sf<span class="sc">::</span><span class="fu">st_bbox</span>(chunk)</span>
+<span id="cb33-8"><a href="#cb33-8" tabindex="-1"></a><span class="co">#&gt;    xmin    ymin    xmax    ymax </span></span>
+<span id="cb33-9"><a href="#cb33-9" tabindex="-1"></a><span class="co">#&gt;  684800 5017810  684950 5017960</span></span></code></pre></div>
 <p>Being able to retrieve the true bounding box allows for removal of
 the buffer. Indeed, the point cloud is loaded with a buffer and all
 subsequent computation will provide an output with the buffer included

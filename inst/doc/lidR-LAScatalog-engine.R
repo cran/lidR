@@ -150,7 +150,7 @@ plot(ctg, chunk = TRUE)
 #  #> density     : 8 points/m²
 #  #> num. files  : 4
 
-## ---- echo=FALSE--------------------------------------------------------------
+## ----echo=FALSE---------------------------------------------------------------
 opt_chunk_size(ctg) <- 0
 opt_output_files(ctg) <- ""
 opt_wall_to_wall(ctg) <- FALSE
@@ -165,7 +165,7 @@ bbox <- cl[[6]]@bbox
 graphics::rect(bbox[1], bbox[2], bbox[3], bbox[4], border = "black", col = "cornflowerblue")
 
 
-## ---- echo=FALSE--------------------------------------------------------------
+## ----echo=FALSE---------------------------------------------------------------
 opt_chunk_size(ctg) <- 0
 opt_output_files(ctg) <- ""
 opt_wall_to_wall(ctg) <- FALSE
@@ -182,7 +182,7 @@ graphics::rect(bbox[1], bbox[2], bbox[3], bbox[4], border = "black", col = "oran
 bbox <- cl[[8]]@bbox
 graphics::rect(bbox[1], bbox[2], bbox[3], bbox[4], border = "black", col = "cornflowerblue")
 
-## ---- echo=FALSE--------------------------------------------------------------
+## ----echo=FALSE---------------------------------------------------------------
 opt_chunk_size(ctg) <- 0
 opt_output_files(ctg) <- ""
 opt_wall_to_wall(ctg) <- FALSE
@@ -200,7 +200,7 @@ bbox <- cl[[9]]@bbox
 graphics::rect(bbox[1], bbox[2], bbox[3], bbox[4], border = "black", col = "red")
 
 
-## ---- echo=FALSE--------------------------------------------------------------
+## ----echo=FALSE---------------------------------------------------------------
 opt_chunk_size(ctg) <- 0
 opt_output_files(ctg) <- ""
 opt_wall_to_wall(ctg) <- FALSE
@@ -212,7 +212,7 @@ for (i in 1:4){
   graphics::rect(bbox[1], bbox[2], bbox[3], bbox[4], border = "black", col = "green3")
 }
 
-## ---- echo=FALSE--------------------------------------------------------------
+## ----echo=FALSE---------------------------------------------------------------
 opt_chunk_size(ctg) <- 0
 opt_output_files(ctg) <- ""
 opt_wall_to_wall(ctg) <- FALSE
@@ -231,7 +231,7 @@ bbox <- cl[[9]]@bbox
 graphics::rect(bbox[1], bbox[2], bbox[3], bbox[4], border = "black", col = "red")
 
 
-## ---- echo=FALSE--------------------------------------------------------------
+## ----echo=FALSE---------------------------------------------------------------
 opt_chunk_size(ctg) <- 400
 opt_output_files(ctg) <- ""
 opt_wall_to_wall(ctg) <- FALSE
@@ -263,7 +263,7 @@ graphics::rect(bbox[1], bbox[2], bbox[3], bbox[4], border = "black", col = "gray
 bbox <- cl[[29]]@bbox
 graphics::rect(bbox[1], bbox[2], bbox[3], bbox[4], border = "black", col = "gray")
 
-## ---- echo=FALSE--------------------------------------------------------------
+## ----echo=FALSE---------------------------------------------------------------
 opt_chunk_size(ctg) <- 0
 opt_output_files(ctg) <- ""
 opt_wall_to_wall(ctg) <- FALSE
@@ -284,11 +284,11 @@ ctg$processed <- FALSE
 ctg$processed[6:7] <- TRUE
 plot(ctg)
 
-## ---- echo = FALSE------------------------------------------------------------
+## ----echo = FALSE-------------------------------------------------------------
 opt_wall_to_wall(ctg) <- TRUE
 opt_progress(ctg) <- FALSE
 
-## ---- error = TRUE------------------------------------------------------------
+## ----error = TRUE-------------------------------------------------------------
 routine <- function(chunk){ 
   las <- readLAS(chunk)
 }
@@ -309,24 +309,20 @@ catalog_apply(ctg, routine)
 #  las <- readLAS(chunk)
 #  plot(las, color = "buffer")
 
-## ---- eval = FALSE------------------------------------------------------------
+## ----eval = FALSE-------------------------------------------------------------
 #  print(chunk)
 #  #> class       : LAScluster
 #  #> features    : 1
 #  #> extent      : 684800, 684950, 5017810, 5017960  (xmin, xmax, ymin, ymax)
 #  #> crs         : +proj=utm +zone=17 +datum=NAD83 +units=m +no_defs
 
-## ---- warning = FALSE, eval = FALSE-------------------------------------------
+## ----warning = FALSE, eval = FALSE--------------------------------------------
 #  raster::extent(chunk)
 #  #> class      : Extent
 #  #> xmin       : 684800
 #  #> xmax       : 684950
 #  #> ymin       : 5017810
 #  #> ymax       : 5017960
-#  sp::bbox(chunk)
-#  #>         [,1]    [,2]
-#  #> [1,]  684800  684950
-#  #> [2,] 5017810 5017960
 #  sf::st_bbox(chunk)
 #  #>    xmin    ymin    xmax    ymax
 #  #>  684800 5017810  684950 5017960
@@ -373,7 +369,7 @@ opt_progress(ctg) <- FALSE
 #  #> Bounding box:  xmin: 481260.8 ymin: 3812980 xmax: 483299.6 ymax: 3816011
 #  #> Projected CRS: NAD83 / UTM zone 12N
 
-## ---- eval = FALSE------------------------------------------------------------
+## ----eval = FALSE-------------------------------------------------------------
 #  out <- do.call(rbind, out)
 #  print(out)
 #  #> Simple feature collection with 17865 features and 2 fields
