@@ -49,8 +49,8 @@ C_lowest <- function(las, layout) {
     .Call(`_lidR_C_lowest`, las, layout)
 }
 
-C_in_polygon <- function(las, wkts, by_poly) {
-    .Call(`_lidR_C_in_polygon`, las, wkts, by_poly)
+C_in_polygon <- function(las, polygons, by_poly) {
+    .Call(`_lidR_C_in_polygon`, las, polygons, by_poly)
 }
 
 C_lasdetectshape <- function(las, method, th, k, filter, ncpu) {
@@ -75,10 +75,6 @@ C_rasterize <- function(las, layout, subcircle = 0, method = 1L) {
 
 C_knnidw <- function(las, x, y, k, p, rmax, ncpu) {
     .Call(`_lidR_C_knnidw`, las, x, y, k, p, rmax, ncpu)
-}
-
-C_point_metrics <- function(las, k, r, nalloc, call, env, filter) {
-    .Call(`_lidR_C_point_metrics`, las, k, r, nalloc, call, env, filter)
 }
 
 C_fast_knn_metrics <- function(las, k, metrics, cpu) {

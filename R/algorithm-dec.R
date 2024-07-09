@@ -19,8 +19,8 @@
 #'
 #' # Reach a pulse density of 1 on the overall dataset
 #' thinned1 = decimate_points(las, random(1))
-#' plot(grid_density(las))
-#' plot(grid_density(thinned1))
+#' plot(rasterize_density(las))
+#' plot(rasterize_density(thinned1))
 #' @name sample_random
 random = function(density, use_pulse = FALSE)
 {
@@ -48,7 +48,11 @@ random = function(density, use_pulse = FALSE)
     else
     {
       if (nrow(las@data) > n)
-        return(sample(1:nrow(las@data), n))
+      {
+        idx = sample(1:nrow(las@data), n)
+        idx = sort(idx)
+        return(idx)
+      }
       else
         return(1:nrow(las@data))
     }
@@ -87,7 +91,7 @@ random = function(density, use_pulse = FALSE)
 #'
 #' # Select points randomly to reach an homogeneous density of 1
 #' thinned <- decimate_points(las, homogenize(1,5))
-#' plot(grid_density(thinned, 10))
+#' plot(rasterize_density(thinned, 10))
 #' @name sample_homogenize
 homogenize = function(density, res = 5, use_pulse = FALSE)
 {
@@ -220,7 +224,7 @@ random_per_voxel = function(res = 1, n = 1)
   f = function(las)
   {
     by <- group_grid_3d(las$X, las$Y, las$Z, res)
-    return(las@data[, .selected_pulses(1:.N, n), by = by]$V1)
+    return(las@data[, .I[.selected_pulses(1:.N, n)], by = by]$V1)
   }
 
   f <- plugin_decimate(f)
@@ -237,6 +241,7 @@ random_per_voxel = function(res = 1, n = 1)
 
   selectedPulses <- sample(p, n)
   selectedPulses <- pulseID %in% selectedPulses
+  selectedPulses <- sort(selectedPulses)
 
   return(selectedPulses)
 }

@@ -1,13 +1,23 @@
 If you are viewing this file on CRAN, please check [the latest news on GitHub](https://github.com/r-lidar/lidR/blob/master/NEWS.md) where the formatting is also better
 
+## lidR v4.1.2 (Release date: )
+
+- Fix: strongly improved arithmetic accuracy in `point_in_triangle` to improve the quality of delaunay triangulation interpolations and avoid local NAs
+- Enhance: `decimate_points()` with `random()` now preserves the point ordering.
+- Fix: #757
+- Fix: algorithm `random_per_voxel` that was not working
+- Fix: `readLAScatalog` if `sp` is missing
+- Internal: remove dependency to `boost` for `point_in_polygon` #763
+- Breaking change: we temporarily removed the function `point_metrics()` because the CRAN policies changed and we are no longer allows to use some internal functions that are crucial for this function #764
+
 ## lidR v4.1.1 (Release date: 2024-02-03)
 
-Fix: `readLAScatalog()` was not working if package `raster` was not installed.
-Fix: regression of the `stars` package makes `rasterize_terrain()` extremely slow and blow up the RAM memory
-New: `catalog_intersects()` support a `SpatExtent`
-Fix: `lidR` can fully works without `raster` ans `sp`
-Fix: [#742](https://github.com/r-lidar/lidR/discussions/742)
-Fix: local maximum filter `lmf()` with a fixed windows is now 20 times faster.
+- Fix: `readLAScatalog()` was not working if package `raster` was not installed.
+- Fix: regression of the `stars` package makes `rasterize_terrain()` extremely slow and blow up the RAM memory
+- New: `catalog_intersects()` support a `SpatExtent`
+- Fix: `lidR` can fully works without `raster` ans `sp`
+- Fix: [#742](https://github.com/r-lidar/lidR/discussions/742)
+- Fix: local maximum filter `lmf()` with a fixed windows is now 20 times faster.
 
 ## lidR v4.1.0 (Release date: 2024-01-31)
 

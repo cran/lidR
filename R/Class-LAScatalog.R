@@ -100,7 +100,7 @@
 #' }
 #' This option will generate as many filenames as needed with custom names for each file. The allowed
 #' templates are \code{{XLEFT}, {XRIGHT}, {YBOTTOM}, {YTOP}, {ID}, {XCENTER},
-#' {YCENTER}, {ORIGNALFILENAME}}. See \link{opt_output_files}.
+#' {YCENTER}, {ORIGINALFILENAME}}. See \link{opt_output_files}.
 #' - **drivers**: list. This contains all the drivers required to seamlessly write `Raster*`,
 #' `SpatRaster`, `stars`, `Spatial*`, `sf`, and `LAS` objects. It is recommended that only advanced
 #' users change this option. A dedicated page describes the drivers in \link{lidR-LAScatalog-drivers}.
@@ -180,8 +180,9 @@ setMethod("initialize", "LAScatalog", function(.Object)
 {
   Raster = NULL
   stars = NULL
+  spatial = NULL
 
-  if (system.file(package='raster') != "")
+  if (system.file(package='raster') != "" && system.file(package='sp') != "")
   {
     Raster = list(
       write = raster::writeRaster,
@@ -201,9 +202,20 @@ setMethod("initialize", "LAScatalog", function(.Object)
       param = list(NA_value = -999999))
   }
 
+  if (system.file(package='sp') != "")
+  {
+    spatial = list(
+      write = writeSpatial,
+      extension = ".shp",
+      object = "x",
+      path = "filename",
+      param = list(overwrite = FALSE))
+  }
+
   drivers = list(
     Raster = Raster,
     stars = stars,
+    Spatial = spatial,
     SpatRaster = list(
       write = terra::writeRaster,
       extension = ".tif",
@@ -225,13 +237,6 @@ setMethod("initialize", "LAScatalog", function(.Object)
       object = "las",
       path = "file",
       param = list()
-    ),
-    Spatial = list(
-      write = writeSpatial,
-      extension = ".shp",
-      object = "x",
-      path = "filename",
-      param = list(overwrite = FALSE)
     ),
     sf = list(
       write = sf::st_write,
