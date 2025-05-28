@@ -138,7 +138,7 @@ NULL
     if (epsg == 0L)
     {
       warning(paste0("EPSG code not found: header not updated. Try to provide the ESPG code instead of a ", class(value)[1]), call. = FALSE)
-      pos <- rlas:::where_is_epsg(as.list(x@header))
+      pos <- rlas::find_epsg_position(as.list(x@header))
       if (pos != 0)  x@header@VLR[["GeoKeyDirectoryTag"]][["tags"]][[pos]] <- NULL
     }
     else
@@ -202,27 +202,19 @@ projection <- function(x, asText = TRUE)
 
 # ==== CRS ====
 
-#' @export
+#' @importMethodsFrom terra crs
+#' @importMethodsFrom terra crs<-
 #' @rdname st_crs
-setGeneric("crs", function(x, asText = FALSE) standardGeneric("crs"))
-
-#' @export
-#' @rdname st_crs
-setGeneric("crs<-", function(x, ..., value) standardGeneric("crs<-"))
-
-
-#' @export
-#' @rdname st_crs
-setMethod("crs", "LASheader", function(x, asText = FALSE)
+setMethod("crs", "LASheader", function(x)
 {
-  return(projection(x, asText))
+  return(projection(x, FALSE))
 })
 
 #' @export
 #' @rdname st_crs
-setMethod("crs", "LAS", function(x, asText = FALSE)
+setMethod("crs", "LAS", function(x)
 {
-  return(projection(x, asText))
+  return(projection(x, FALSE))
 })
 
 #' @export

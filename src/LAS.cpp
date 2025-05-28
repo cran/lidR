@@ -352,8 +352,9 @@ NumericVector LAS::compute_range(DataFrame flightlines)
   // Compute the median sensor elevation then average range for this sensor
   // elevation. This gives a rough idea of the expected range and allows for
   // detecting failure and bad computations
-  double median_z_sensor = Rcpp::median(z);
-  double R_control = mean(median_z_sensor - Z);
+  //double median_z_sensor = Rcpp::median(z);
+  //double R_control = mean(median_z_sensor - Z);
+  double R_control = DBL_MAX;
 
   NumericVector R(npoints);
 
@@ -1695,9 +1696,9 @@ DataFrame LAS::eigen_decomposition(int k, double r, bool get_coef)
 }
 
 
-NumericVector LAS::fast_knn_metrics(unsigned int k, IntegerVector metrics)
+NumericVector LAS::knn_distance(unsigned int k)
 {
-  Progress pb(npoints, "Metrics computation: ");
+  Progress pb(npoints, "knn distance: ");
 
   bool abort = false;
 
@@ -1725,10 +1726,7 @@ NumericVector LAS::fast_knn_metrics(unsigned int k, IntegerVector metrics)
       dmean += d;
     }
 
-    #pragma omp critical
-    {
-      out(i) = dmean/(double)(k-1);
-    }
+    out(i) = dmean/(double)(k-1);
   }
 
   if (abort) throw Rcpp::internal::InterruptedException();
