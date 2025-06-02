@@ -1,7 +1,7 @@
 8f0e2cd40e05189ec81232da84bd6e1a *COPYING
-f7fd35c22fdf40bf51a8a5311fbbbdff *DESCRIPTION
+cc7c84dd5988801007c67ef869f74adf *DESCRIPTION
 f5ffa8f38f03620ced57dc889f328848 *NAMESPACE
-4c591344f1809284517da1f7e1ccf88a *NEWS.md
+3735af3062bab8072cdaa5768f6dfbb9 *NEWS.md
 86826628b37c85c68ca6d14bdd2f7c58 *R/Class-LAS.R
 111eb9e87f081c37ac2276bc32054187 *R/Class-LAScatalog.R
 4ddf965266bb90425cf3b8861da7c5c3 *R/Class-LAScluster.R
@@ -117,7 +117,7 @@ d6ee981a39118791a55e415f6d5af374 *R/utils_spatial_index.R
 bbddf60a6ddc3dd42eca53b770fbc2fb *R/utils_threads.R
 167e864e4432b424a294c56addca0e40 *R/voxelize_points.R
 5ff9c2b42f2b34bec923097f737a5f63 *R/zzz.R
-7329eec8adf2ad6a22cc96feb248f36d *README.md
+3f6c6b60c367a39888366edeaaf31efb *README.md
 6e9ec35a325ef9b5d1f7e5be19b79941 *build/vignette.rds
 c936975c4c006e03bef0394ed41d43ca *inst/CITATION
 e57b151916ab3d1e9f4f7c54d2b52a59 *inst/WORDLIST
@@ -265,7 +265,7 @@ fd21f4d7c17fa1f0206b086dd54e1899 *src/concaveman/README-LICENSE
 4983de28e3558ccca26744ee9af7815a *src/concaveman/concaveman.h
 75646a98df284cae2cb555f8a2ecbb3e *src/concaveman/rtree.h
 f3dbea8c477f738bc594ba2eff25a91e *src/convaveman.cpp
-20297a1cdc5bc372bd2f7752ea71de88 *src/knn.cpp
+cb6c7b89c946052e6d9fb51342d3282a *src/knn.cpp
 49940463bca67a58b6be54d6caba449a *src/myomp.h
 e5b7595922dbe2e0022d18123238767e *src/openmputils.cpp
 23dfdb8b83754c0b46818f547b8859af *tests/testthat.R

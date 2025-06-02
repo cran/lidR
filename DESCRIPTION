@@ -2,7 +2,7 @@ Package: lidR
 Type: Package
 Title: Airborne LiDAR Data Manipulation and Visualization for Forestry
         Applications
-Version: 4.2.0
+Version: 4.2.1
 Authors@R: c(
     person("Jean-Romain", "Roussel", email = "info@r-lidar.com", role = c("aut", "cre", "cph")),
     person("David", "Auty", email = "", role = c("aut", "ctb"), comment = "Reviews the documentation"),
@@ -73,7 +73,7 @@ Collate: 'Class-LAS.R' 'Class-LAScatalog.R' 'Class-LAScluster.R'
         'utils_spatial_index.R' 'utils_threads.R' 'voxelize_points.R'
         'zzz.R'
 NeedsCompilation: yes
-Packaged: 2025-05-28 12:00:27 UTC; jr
+Packaged: 2025-06-01 22:51:49 UTC; jr
 Author: Jean-Romain Roussel [aut, cre, cph],
   David Auty [aut, ctb] (Reviews the documentation),
   Florian De Boissieu [ctb] (Fixed bugs and improved catalog features),
@@ -88,4 +88,4 @@ Author: Jean-Romain Roussel [aut, cre, cph],
   Benoît St-Onge [cph] (Author of the 'chm_prep' function)
 Maintainer: Jean-Romain Roussel <info@r-lidar.com>
 Repository: CRAN
-Date/Publication: 2025-05-28 20:50:02 UTC
+Date/Publication: 2025-06-02 10:20:02 UTC
