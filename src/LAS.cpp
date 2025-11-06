@@ -2,9 +2,34 @@
 #include "Progress.h"
 #include "myomp.h"
 #include "SpatialIndex.h"
+#include "nanoflann.hpp"
 #include <limits>
 
 using namespace lidR;
+
+class DataFrameAdaptor
+{
+public:
+  std::vector<Rcpp::NumericVector> coords;
+  size_t dim;
+
+  DataFrameAdaptor(const Rcpp::DataFrame& df, std::vector<std::string> col_names)
+  {
+    dim = col_names.size();
+    coords.reserve(dim);
+    for (const auto& name : col_names)
+      coords.push_back(df[name]);
+  }
+
+  inline size_t kdtree_get_point_count() const { return coords[0].size(); }
+  inline double kdtree_get_pt(const size_t idx, const size_t d) const {
+    return coords[d][idx];
+  }
+  template <class BBOX> bool kdtree_get_bbox(BBOX&) const { return false; }
+};
+
+using KDTree = nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, DataFrameAdaptor>, DataFrameAdaptor, 3>;
+
 
 bool pnpoly(NumericMatrix polygon, double x, double y)
 {
@@ -615,56 +640,42 @@ SEXP LAS::find_polygon_ids(Rcpp::List polygons, bool by_poly)
     std::fill(poly_id.begin(), poly_id.end(), NA_INTEGER);
   }
 
-  SpatialIndex tree(las);
+  if (polygons.size() == 0)
+    Rcpp::stop("0 size input");
 
-  for (unsigned int i = 0 ; i < polygons.size() ; i++)
+  if (polygons.size() == 1)
   {
-    bool is_in_polygon = false;
+    // "Stupid algo": test every point against the single polygon
+    Rcpp::List rings = polygons[0];
 
-    // This list can be made of several rings (MULTIPOLYGON) and interior rings
-    Rcpp::List rings = polygons[i];
-
-    // Find the bbox of the polygons
-    double min_x = INFINITY;
-    double min_y = INFINITY;
-    double max_x = -INFINITY;
-    double max_y = -INFINITY;
-    for (int j = 0 ; j < rings.size() ; j++)
+    // Compute bounding box
+    double min_x = INFINITY, min_y = INFINITY;
+    double max_x = -INFINITY, max_y = -INFINITY;
+    for (int j = 0; j < rings.size(); j++)
     {
       Rcpp::NumericMatrix ring = rings[j];
       Rcpp::NumericVector x = ring(_, 0);
       Rcpp::NumericVector y = ring(_, 1);
 
-      double maxx = max(x);
-      double maxy = max(y);
-      double minx = min(x);
-      double miny = min(y);
-
-      if (min_x > minx) min_x = minx;
-      if (min_y > miny) min_y = miny;
-      if (max_x < maxx) max_x = maxx;
-      if (max_y < maxy) max_y = maxy;
+      min_x = std::min(min_x, (double)min(x));
+      min_y = std::min(min_y, (double)min(y));
+      max_x = std::max(max_x, (double)max(x));
+      max_y = std::max(max_y, (double)max(y));
     }
 
-    // Spatial query of the point that are in the bounding box of the polygon
-    lidR::Rectangle rect(min_x, max_x, min_y, max_y);
-    std::vector<PointXYZ> pts;
-    tree.lookup(rect, pts);
-
-    // For each point we check if it is in the potential multi part polygon
-    for (unsigned int k = 0 ; k < pts.size() ; k++)
+    for (size_t pid = 0; pid < X.size(); pid++)
     {
+      // Bounding box test
+      if (X[pid] < min_x || X[pid] > max_x || Y[pid] < min_y || Y[pid] > max_y)
+        continue;
+
       bool inpoly = false;
 
-      // Loop through sub polygons (ring)
-      for (int j = 0 ; j < rings.size() ; j++)
+      for (int j = 0; j < rings.size(); j++)
       {
         Rcpp::NumericMatrix ring = rings[j];
-
-        // We need to know if the ring is an exterior/interior ring (hole)
-        bool exterior_ring = ring(0,2) == 1;
-
-        bool b = pnpoly(ring, pts[k].x, pts[k].y);
+        bool exterior_ring = ring(0, 2) == 1;
+        bool b = pnpoly(ring, X[pid], Y[pid]);
 
         if (b)
         {
@@ -683,9 +694,68 @@ SEXP LAS::find_polygon_ids(Rcpp::List polygons, bool by_poly)
       if (inpoly)
       {
         if (by_poly)
-          res[i].push_back(pts[k].id+1);
+          res[0].push_back(pid + 1);
         else
-          poly_id[pts[k].id] = i+1;
+          poly_id[pid] = 1;
+      }
+    }
+  }
+  else
+  {
+    // Usual algo with spatial index
+    GridPartition tree(las);
+
+    for (unsigned int i = 0 ; i < polygons.size() ; i++)
+    {
+      Rcpp::List rings = polygons[i];
+
+      // Find bbox
+      double min_x = INFINITY, min_y = INFINITY;
+      double max_x = -INFINITY, max_y = -INFINITY;
+      for (int j = 0 ; j < rings.size() ; j++)
+      {
+        Rcpp::NumericMatrix ring = rings[j];
+        Rcpp::NumericVector x = ring(_, 0);
+        Rcpp::NumericVector y = ring(_, 1);
+
+        min_x = std::min(min_x, (double)min(x));
+        min_y = std::min(min_y, (double)min(y));
+        max_x = std::max(max_x, (double)max(x));
+        max_y = std::max(max_y, (double)max(y));
+      }
+
+      lidR::Rectangle rect(min_x, max_x, min_y, max_y);
+      std::vector<PointXYZ> pts;
+      tree.lookup(rect, pts);
+
+      for (unsigned int k = 0 ; k < pts.size() ; k++)
+      {
+        bool inpoly = false;
+        for (int j = 0 ; j < rings.size() ; j++)
+        {
+          Rcpp::NumericMatrix ring = rings[j];
+          bool exterior_ring = ring(0, 2) == 1;
+          bool b = pnpoly(ring, pts[k].x, pts[k].y);
+
+          if (b)
+          {
+            if (exterior_ring)
+              inpoly = true;
+            else
+            {
+              inpoly = false;
+              break;
+            }
+          }
+        }
+
+        if (inpoly)
+        {
+          if (by_poly)
+            res[i].push_back(pts[k].id + 1);
+          else
+            poly_id[pts[k].id] = i + 1;
+        }
       }
     }
   }
@@ -1409,7 +1479,6 @@ List LAS::point_metrics(unsigned int k, double r, DataFrame data, int nalloc, SE
       // Query the knn neighborhood
       PointXYZ p(X[i], Y[i], Z[i]);
       tree.knn(p, k, pts);
-
       // No need to reallocate the memory because it is always of size k
     }
     else
@@ -1546,6 +1615,161 @@ List LAS::point_metrics(unsigned int k, double r, DataFrame data, int nalloc, SE
   return output;
 }
 #endif
+
+DataFrame LAS::fast_eigen_decomposition(int k, double r, bool get_coef)
+{
+  int n = npoints;
+  k = std::min(k, n);
+  double rsq = r*r;
+
+  int mode = 0;
+  if (k == 0 && r > 0)
+    mode = 1;
+  else if (k > 0 && r == 0)
+    mode = 0;
+  else if (k > 0 && r > 0)
+    mode = 2;
+  else
+    Rcpp::stop("Internal error: invalid argument k or r");
+
+  NumericVector eigen_largest(n);
+  NumericVector eigen_medium(n);
+  NumericVector eigen_smallest(n);
+  NumericVector coeff0;
+  NumericVector coeff1;
+  NumericVector coeff2;
+  NumericVector coeff3;
+  NumericVector coeff4;
+  NumericVector coeff5;
+  NumericVector coeff6;
+  NumericVector coeff7;
+  NumericVector coeff8;
+
+  if (get_coef)
+  {
+    coeff0 = NumericVector(n);
+    coeff1 = NumericVector(n);
+    coeff2 = NumericVector(n);
+    coeff3 = NumericVector(n);
+    coeff4 = NumericVector(n);
+    coeff5 = NumericVector(n);
+    coeff6 = NumericVector(n);
+    coeff7 = NumericVector(n);
+    coeff8 = NumericVector(n);
+  }
+
+  bool abort = false;
+
+  DataFrame df = as<DataFrame>(las.slot("data"));
+  DataFrameAdaptor adaptor(df, {"X", "Y", "Z"});
+  KDTree tree = KDTree(3, adaptor, nanoflann::KDTreeSingleIndexAdaptorParams(10));
+  tree.buildIndex();
+
+  Progress pb(npoints, "Eigen decomposition: ");
+
+  #pragma omp parallel for num_threads(ncpu)
+  for (unsigned int i = 0 ; i < npoints ; i++)
+  {
+    if (abort) continue;
+    if (pb.check_interrupt()) abort = true;
+    pb.increment();
+
+    double p[3] = { X[i], Y[i], Z[i] };
+
+    std::vector<uint32_t> indices;
+    std::vector<KDTree::DistanceType> dists;
+
+    switch (mode)
+    {
+      case 2:
+      {
+        // ---- KNN with radius cap ----
+        std::vector<uint32_t> tmp_idx(k);
+        std::vector<KDTree::DistanceType> tmp_dist(k);
+
+        size_t found = tree.knnSearch(p, k, tmp_idx.data(), tmp_dist.data());
+        for (size_t j = 0; j < found; j++)
+        {
+          if (tmp_dist[j] <= rsq)
+            indices.push_back(tmp_idx[j]);
+        }
+        break;
+      }
+      case 0:
+      {
+        // ---- Pure KNN ----
+        indices.resize(k);
+        dists.resize(k);
+        tree.knnSearch(p, k, indices.data(), dists.data());
+        break;
+      }
+      case 1:
+      {
+        // ---- Pure Radius ----
+        std::vector<nanoflann::ResultItem<uint32_t, KDTree::DistanceType>> matches;
+        const size_t found = tree.radiusSearch(p, rsq+EPSILON, matches);
+
+        for (const auto& m : matches)
+          indices.push_back(m.first);
+
+        break;
+      }
+    }
+
+    // build matrix A
+    arma::mat A(indices.size(), 3);
+    arma::mat coeff;  // Principle component matrix
+    arma::mat score;
+    arma::vec latent; // Eigenvalues in descending order
+
+    for (size_t j = 0; j < indices.size(); j++)
+    {
+      A(j,0) = X[indices[j]];
+      A(j,1) = Y[indices[j]];
+      A(j,2) = Z[indices[j]];
+    }
+
+    arma::princomp(coeff, score, latent, A);
+
+    eigen_largest[i] = latent[0];
+    eigen_medium[i] = latent[1];
+    eigen_smallest[i] = latent[2];
+
+    if (get_coef)
+    {
+      coeff0[i] = coeff(0,0);
+      coeff1[i] = coeff(0,1);
+      coeff2[i] = coeff(0,2);
+      coeff3[i] = coeff(1,0);
+      coeff4[i] = coeff(1,1);
+      coeff5[i] = coeff(1,2);
+      coeff6[i] = coeff(2,0);
+      coeff7[i] = coeff(2,1);
+      coeff8[i] = coeff(2,2);
+    }
+  }
+
+  DataFrame out;
+  out.push_back(eigen_largest, "eigen_largest");
+  out.push_back(eigen_medium, "eigen_medium");
+  out.push_back(eigen_smallest, "eigen_smallest");
+
+  if (get_coef)
+  {
+    out.push_back(coeff0, "coeff00");
+    out.push_back(coeff1, "coeff01");
+    out.push_back(coeff2, "coeff02");
+    out.push_back(coeff3, "coeff10");
+    out.push_back(coeff4, "coeff11");
+    out.push_back(coeff5, "coeff12");
+    out.push_back(coeff6, "coeff20");
+    out.push_back(coeff7, "coeff21");
+    out.push_back(coeff8, "coeff22");
+  }
+
+  return out;
+}
+
 
 DataFrame LAS::eigen_decomposition(int k, double r, bool get_coef)
 {

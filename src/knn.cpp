@@ -1,23 +1,49 @@
-#include "SpatialIndex.h"
+#include "nanoflann.hpp"
 #include "Progress.h"
 
 #include <Rcpp.h>
 #include "myomp.h"
 
 using namespace Rcpp;
-using namespace lidR;
+
+class DataFrameAdaptor
+{
+public:
+  std::vector<Rcpp::NumericVector> coords;
+  size_t dim;
+
+  DataFrameAdaptor(const Rcpp::DataFrame& df, std::vector<std::string> col_names)
+  {
+    dim = col_names.size();
+    coords.reserve(dim);
+    for (const auto& name : col_names)
+      coords.push_back(df[name]);
+  }
+
+  inline size_t kdtree_get_point_count() const { return coords[0].size(); }
+  inline double kdtree_get_pt(const size_t idx, const size_t d) const {
+    return coords[d][idx];
+  }
+  template <class BBOX> bool kdtree_get_bbox(BBOX&) const { return false; }
+};
+
+using KDTree = nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, DataFrameAdaptor>, DataFrameAdaptor, 3>;
 
 // [[Rcpp::export]]
 List cpp_knn(S4 data, int k, int ncpu)
 {
-  SpatialIndex tree(data);
 
-  DataFrame tmp = as<DataFrame>(data.slot("data"));
-  NumericVector X = tmp["X"];
-  NumericVector Y = tmp["Y"];
-  NumericVector Z = tmp["Z"];
+  DataFrame df = as<DataFrame>(data.slot("data"));
+  NumericVector X = df["X"];
+  NumericVector Y = df["Y"];
+  NumericVector Z = df["Z"];
+
+  DataFrameAdaptor adaptor(df, {"X", "Y", "Z"});
+  KDTree tree = KDTree(3, adaptor, nanoflann::KDTreeSingleIndexAdaptorParams(10));
+  tree.buildIndex();
 
   int npoints = X.size();
+  k = std::min(k, npoints);
 
   IntegerMatrix knn_idx(npoints, k);
   NumericMatrix knn_dist(npoints, k);
@@ -36,19 +62,15 @@ List cpp_knn(S4 data, int k, int ncpu)
     if (pb.check_interrupt()) abort = true;
     pb.increment();
 
-    std::vector<PointXYZ> pts;
-    PointXYZ p(X[i], Y[i], Z[i]);
-    tree.knn(p, k, pts);
+    std::vector<uint32_t> indices(k);
+    std::vector<KDTree::DistanceType> dists(k);
+    double p[3] = { X[i], Y[i], Z[i] };
+    tree.knnSearch(p, k, indices.data(), dists.data());
 
-    for (unsigned int j = 1; j < pts.size(); j++)
+    for (auto j = 1; j < indices.size(); j++)
     {
-      double dx = X[i] - pts[j].x;
-      double dy = Y[i] - pts[j].y;
-      double dz = Z[i] - pts[j].z;
-      double d = std::sqrt(dx*dx+dy*dy+dz*dz);
-
-      knn_idx(i,j-1) = pts[j].id+1;
-      knn_dist(i,j-1) = d;
+      knn_idx(i,j-1) = indices[j]+1;
+      knn_dist(i,j-1) = std::sqrt(dists[j]);
     }
   }
 
@@ -60,7 +82,10 @@ List cpp_knn(S4 data, int k, int ncpu)
 // [[Rcpp::export]]
 List cpp_knnx(S4 data, S4 query, int k, int ncpu)
 {
-  SpatialIndex tree(data);
+  DataFrame temp = as<DataFrame>(data.slot("data"));
+  DataFrameAdaptor adaptor(temp, {"X", "Y", "Z"});
+  KDTree tree = KDTree(3, adaptor, nanoflann::KDTreeSingleIndexAdaptorParams(10));
+  tree.buildIndex();
 
   DataFrame tmp = as<DataFrame>(query.slot("data"));
   NumericVector X = tmp["X"];
@@ -68,6 +93,7 @@ List cpp_knnx(S4 data, S4 query, int k, int ncpu)
   NumericVector Z = tmp["Z"];
 
   int npoints = X.size();
+  k = std::min(k, temp.nrow());
 
   IntegerMatrix knn_idx(npoints, k);
   NumericMatrix knn_dist(npoints, k);
@@ -84,19 +110,15 @@ List cpp_knnx(S4 data, S4 query, int k, int ncpu)
     if (pb.check_interrupt()) abort = true;
     pb.increment();
 
-    std::vector<PointXYZ> pts;
-    PointXYZ p(X[i], Y[i], Z[i]);
-    tree.knn(p, k, pts);
+    std::vector<uint32_t> indices(k);
+    std::vector<KDTree::DistanceType> dists(k);
+    double p[3] = { X[i], Y[i], Z[i] };
+    tree.knnSearch(p, k, indices.data(), dists.data());
 
-    for (unsigned int j = 0 ; j < pts.size(); j++)
+    for (auto j = 0; j < indices.size(); j++)
     {
-      double dx = X[i] - pts[j].x;
-      double dy = Y[i] - pts[j].y;
-      double dz = Z[i] - pts[j].z;
-      double d = std::sqrt(dx*dx+dy*dy+dz*dz);
-
-      knn_idx(i,j) = pts[j].id+1;
-      knn_dist(i,j) = d;
+      knn_idx(i,j) = indices[j]+1;
+      knn_dist(i,j) = std::sqrt(dists[j]);
     }
   }
 

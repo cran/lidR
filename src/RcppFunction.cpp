@@ -236,14 +236,21 @@ DataFrame C_eigen_metrics(S4 las, int k, double r, bool coeffs, LogicalVector fi
   return pt.eigen_decomposition(k, r, coeffs);
 }
 
+//[[Rcpp::export(rng = false)]]
+DataFrame C_fast_eigen_decomposition(S4 las, int k, double r, bool coeffs, int ncpu)
+{
+  LAS pt(las, ncpu);
+  return pt.fast_eigen_decomposition(k, r, coeffs);
+}
+
 
 #include "lidR/Grid3D.h"
 
 //[[Rcpp::export(rng = false)]]
-IntegerVector C_connected_component(S4 las, double res)
+IntegerVector C_connected_component(S4 las, double res, int connectivity)
 {
   lidR::Grid3D grid(las, res);
-  return grid.connected_components();
+  return grid.connected_components(connectivity);
 }
 
 //[[Rcpp::export(rng = false)]]
