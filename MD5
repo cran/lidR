@@ -1,7 +1,7 @@
 8f0e2cd40e05189ec81232da84bd6e1a *COPYING
-55b8edda3c91dc824da65509e39f6ca6 *DESCRIPTION
+d6e03ceb8f440691b24a02349cef8a77 *DESCRIPTION
 d654bb46ae9a5ac3e36aac3fe0a6fdf0 *NAMESPACE
-cfb547aedd7f283b17901ee21ff82b4c *NEWS.md
+ea303fe02c7a5a334de7d262893dd6b9 *NEWS.md
 aa90d596f2b9be553ef81dcf132d880e *R/Class-LAS.R
 111eb9e87f081c37ac2276bc32054187 *R/Class-LAScatalog.R
 4ddf965266bb90425cf3b8861da7c5c3 *R/Class-LAScluster.R
@@ -72,7 +72,7 @@ f2a72ae5aa727eaaac0e7241663063a4 *R/methods-LASheader.R
 69aec50146a4cd6bc562ee8a687c2e64 *R/metrics_hexagons.R
 3dc1b577178e0554eb886d5c914d9904 *R/metrics_pixels.R
 c2dc1128cb2e983f2de47ff1715e0d40 *R/metrics_plot.R
-2953a0d47dad283ebcc2e8bbbc853b88 *R/metrics_point.R
+0ef20146ae82d62a4b1724c98d99c7f4 *R/metrics_point.R
 de7d8d09825a93557e67bf582bed7191 *R/metrics_polygon.R
 b2761ac904c873b7527baf46eb8b5855 *R/metrics_stdmetrics.R
 6f70757c47687fa1e1eec0036f08d4c4 *R/metrics_template.R
@@ -259,7 +259,7 @@ d4a18e74f756be4a0ae2a5eb398b2265 *src/C_ptd.cpp
 678ba5e72d9f7e58d473af51b6939ba4 *src/C_spikefree.cpp
 21c313e3e29458195ec0afae05ed6e5c *src/LAS.cpp
 b56910af25fa29ea660994b9b6e5e8e8 *src/LAS.h
-e6bf555bb0135853d05bcab0ec080cf9 *src/LAS_point_metrics.cpp
+96122ecca82bebeee461f28eb134d445 *src/LAS_point_metrics.cpp
 60dc1324691291214347b23a839eeb7d *src/Makevars
 4eb96f461a635e7eab1bccf2c0e8e772 *src/Progress.cpp
 4bf68728d60516c0d1ff15253445ccb3 *src/Progress.h
@@ -310,7 +310,7 @@ a08d6ce8581792fef35008ee61b284e6 *tests/testthat/test-assertions.R
 3accd9ea66ba46418394ce52c6d99a1a *tests/testthat/test-catalog_intersect.R
 b4579c2d89748f0f83e6485c43d31ab0 *tests/testthat/test-catalog_laxindex.R
 25ee40fd7d7ca785a56a215528143f8c *tests/testthat/test-catalog_retile.R
-431c4d08b18f6e34965aa8690ef1c546 *tests/testthat/test-classify_ground.R
+91078f5a24b19a2844f1702221f9c5f7 *tests/testthat/test-classify_ground.R
 a479955be2f0ce5b7f6f62697d7c1905 *tests/testthat/test-classify_noise.R
 eecc62af8135c8b39a34146b56fa3236 *tests/testthat/test-classify_poi.R
 c4b394466db361a25b95f7e1f4e5494b *tests/testthat/test-clip.R
@@ -338,7 +338,7 @@ ad0ef3205a0bbaa6ccb4537930838137 *tests/testthat/test-metrics_crowns.R
 94259a7702549681359cd81c78418397 *tests/testthat/test-metrics_hexagon.R
 b263be165c3f8aef9b51c2d50d91effc *tests/testthat/test-metrics_pixels.R
 90221cbfb2df6f91b889b2f0b6c0df97 *tests/testthat/test-metrics_plots.R
-aaadcb5b5e9052018438d21d7d745968 *tests/testthat/test-metrics_points.R
+f1906967c16640be285bc5611ec7fd83 *tests/testthat/test-metrics_points.R
 806e782c320e5bfa3c4715b13f9d32a8 *tests/testthat/test-metrics_standard.R
 3d5c0ae85e34246cea3e1a76184bd102 *tests/testthat/test-metrics_template.R
 98644f7eb867f1a5a3affac94c3a8dcf *tests/testthat/test-metrics_tools.R
