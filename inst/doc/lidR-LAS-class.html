@@ -499,7 +499,8 @@ attribute with the value <code>0</code> because <code>0</code> is a
 decimal number in R and the ‘Classification’ attribute is an integer.
 The following throws an error:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>las<span class="sc">$</span>Classification <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; Error: Trying to replace data of type integer by data of type double: this action is not allowed</span></span></code></pre></div>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; Error:</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; ! Trying to replace data of type integer by data of type double: this action is not allowed</span></span></code></pre></div>
 <p>In R <code>0L</code> is an integer and thus the following is
 allowed:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>las<span class="sc">$</span>Classification <span class="ot">&lt;-</span> <span class="dv">0</span><span class="dt">L</span></span></code></pre></div>
@@ -511,7 +512,8 @@ we would prefer users to be careful about the content of their data.</p>
 want to add an attribute <code>R</code> corresponding to the red
 channel.</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>las<span class="sc">$</span>R <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; Error: Addition of a new column using [[ is forbidden for LAS objects. See ?add_attribute</span></span></code></pre></div>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; Error:</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; ! Addition of a new column using [[ is forbidden for LAS objects. See ?add_attribute</span></span></code></pre></div>
 <p>This is not allowed because a LAS object should always be valid. By
 allowing the user to add an R column the LAS object would no longer be
 valid for two reasons:</p>
@@ -528,7 +530,8 @@ documentation of these two functions. And yet some restrictions are
 still in place. For example, the following is not allowed for the same
 reasons as above:</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>las <span class="ot">&lt;-</span> <span class="fu">add_attribute</span>(las, <span class="dv">0</span>, <span class="st">&quot;R&quot;</span>)</span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; Error: R is part of the core attributes and is a forbidden name.</span></span></code></pre></div>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; Error:</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; ! R is part of the core attributes and is a forbidden name.</span></span></code></pre></div>
 <p>But anyway, R being R, there is no way to completely restrict editing
 of objects. Users can always by-pass the restrictions to make LAS
 objects that are not strictly valid:</p>
@@ -578,7 +581,8 @@ specifications do not allow for storing extra bytes attributes of type
 string or type boolean. Thus the following fails:</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>abc  <span class="ot">&lt;-</span> <span class="fu">sample</span>(letters, <span class="dv">30</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>las  <span class="ot">&lt;-</span> <span class="fu">add_lasattribute</span>(las, abc, <span class="st">&quot;ID&quot;</span>, <span class="st">&quot;An ID for each point&quot;</span>)</span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; Error: &#39;x&#39; must be numeric. LAS format specifications do not allow storing of &#39;character&#39; extra bytes.</span></span></code></pre></div>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; Error:</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt; ! &#39;x&#39; must be numeric. LAS format specifications do not allow storing of &#39;character&#39; extra bytes.</span></span></code></pre></div>
 </div>
 </div>
 <div id="validation-of-las-objects" class="section level2">
